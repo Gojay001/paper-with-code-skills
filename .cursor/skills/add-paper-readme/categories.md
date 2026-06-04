@@ -27,6 +27,7 @@
 |-------------|-------------|------|
 | Transformer / Attention | Attention or Transformer | `#Attention-or-Transformer` |
 | ViT / Vision Transformer | Vision Transformer | `#Vision-Transformer` |
+| VLM / 视觉语言模型 / CLIP | VLM | `#VLM` |
 
 ## CV 子分类
 

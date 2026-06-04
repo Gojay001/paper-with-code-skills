@@ -16,6 +16,7 @@ There are paper with code for CV / AIGC / LLM / VLM.
 - **LLM / VLM** (Large Language Model / Vision-Language Model)
     - [Transformer](#Attention-or-Transformer)
     - [ViT](#Vision-Transformer)
+    - [VLM](#VLM)
 - **CV** (Computer Vision)
     - [Backbone](#Backbone)
     - [Optimization](#Optimization)
@@ -126,6 +127,13 @@ There are paper with code for CV / AIGC / LLM / VLM.
 | DINOv3 | [DINOv3](https://arxiv.org/abs/2508.10104) | arXiv(2025) | [PyTorch](https://github.com/facebookresearch/dinov3)
 | LAST-ViT | [Vision Transformers Need More Than Registers](https://arxiv.org/abs/2602.22394) | arXiv(2026) | [PyTorch](https://github.com/ChengShiest/LAST-ViT)
 > More implementation for ViTs can be found in [vit-pytorch](https://github.com/lucidrains/vit-pytorch).
+
+## VLM
+| Title | Paper | Conf | Code |
+|:--------|:--------:|:--------:|:--------:|
+| CLIP | [Learning Transferable Visual Models From Natural Language Supervision](https://arxiv.org/abs/2103.00020) | arXiv(2021) / ICML(2021) | [PyTorch](https://github.com/openai/CLIP)
+| BLIP | [BLIP: Bootstrapping Language-Image Pre-training for Unified Vision-Language Understanding and Generation](https://arxiv.org/abs/2201.12086) | arXiv(2022) / ICML(2022) | [PyTorch](https://github.com/salesforce/BLIP)
+| SigLIP | [Sigmoid Loss for Language Image Pre-Training](https://arxiv.org/abs/2303.15343) | arXiv(2023) / ICCV(2023) | [JAX](https://github.com/google-research/big_vision)
 
 ---
 

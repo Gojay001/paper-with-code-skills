@@ -137,6 +137,10 @@ There are paper with code for CV / AIGC / LLM / VLM.
 | CLIP | [Learning Transferable Visual Models From Natural Language Supervision](https://arxiv.org/abs/2103.00020) | arXiv(2021) / ICML(2021) | [PyTorch](https://github.com/openai/CLIP)
 | BLIP | [BLIP: Bootstrapping Language-Image Pre-training for Unified Vision-Language Understanding and Generation](https://arxiv.org/abs/2201.12086) | arXiv(2022) / ICML(2022) | [PyTorch](https://github.com/salesforce/BLIP)
 | SigLIP | [Sigmoid Loss for Language Image Pre-Training](https://arxiv.org/abs/2303.15343) | arXiv(2023) / ICCV(2023) | [JAX](https://github.com/google-research/big_vision)
+| Qwen-VL | [Qwen-VL: A Versatile Vision-Language Model for Understanding, Localization, Text Reading, and Beyond](https://arxiv.org/abs/2308.12966) | arXiv(2023) | [PyTorch](https://github.com/QwenLM/Qwen-VL)
+| Qwen2-VL | [Qwen2-VL: Enhancing Vision-Language Model's Perception of the World at Any Resolution](https://arxiv.org/abs/2409.12191) | arXiv(2024) | [PyTorch](https://github.com/QwenLM/Qwen2-VL)
+| Qwen2.5-VL | [Qwen2.5-VL Technical Report](https://arxiv.org/abs/2502.13923) | arXiv(2025) | [PyTorch](https://github.com/QwenLM/Qwen2.5-VL)
+| Qwen3-VL | [Qwen3-VL Technical Report](https://arxiv.org/abs/2511.21631) | arXiv(2025) | [PyTorch](https://github.com/QwenLM/Qwen3-VL)
 | Vision Banana | [Image Generators are Generalist Vision Learners](https://arxiv.org/abs/2604.20329) | arXiv(2026) | [code]
 
 ---

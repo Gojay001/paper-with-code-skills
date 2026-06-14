@@ -53,6 +53,9 @@ There are paper with code for CV / AIGC / LLM / VLM.
 | Title | Paper | Conf | Code |
 |:--------|:--------:|:--------:|:--------:|
 | VAE | [Auto-Encoding Variational Bayes](https://arxiv.org/abs/1312.6114) | arXiv(2013) / ICLR(2014) | [PyTorch](https://github.com/AntixK/PyTorch-VAE)
+| VQ-VAE | [Neural Discrete Representation Learning](https://arxiv.org/abs/1711.00937) | arXiv(2017) / NeurIPS(2017) | [TensorFlow](https://github.com/google-deepmind/sonnet)
+| VQ-VAE-2 | [Generating Diverse High-Fidelity Images with VQ-VAE-2](https://arxiv.org/abs/1906.00446) | arXiv(2019) / NeurIPS(2019) | [TensorFlow](https://github.com/google-deepmind/sonnet)
+| VQGAN | [Taming Transformers for High-Resolution Image Synthesis](https://arxiv.org/abs/2012.09841) | arXiv(2020) / CVPR(2021) | [PyTorch](https://github.com/CompVis/taming-transformers)
 > More implementation for VAEs can be found in [PyTorch-VAE](https://github.com/AntixK/PyTorch-VAE).
 
 ## Diffusion Model

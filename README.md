@@ -1,99 +1,99 @@
 # Paper-with-Code Skills
 
+**English** | [中文](README.zh-CN.md)
+
 [![Awesome](https://awesome.re/badge.svg)](https://awesome.re) ![Skills](https://img.shields.io/badge/Cursor-Skills-blue) ![Papers](https://img.shields.io/badge/Deep%20Learning-Papers-green) ![Reading](https://img.shields.io/badge/Paper-Reading-orange)
 
-一个把**论文整理**与**论文精读**流程沉淀为 Cursor / Claude Skills 的仓库。它既维护一份按领域分类的「论文 + 代码」清单，又能把任意论文转换成三栏批注的精读 HTML，让「收集 → 整理 → 精读」形成闭环。
+A repository that turns **paper curation** and **deep paper reading** into reusable Cursor / Claude Skills. It maintains a domain-sorted paper-with-code list and can turn any paper into a triple-column annotated reading HTML — closing the loop from collect → organize → read deeply.
 
-## 这个仓库做什么
+## What This Repo Does
 
+| Capability | Description | Output |
+|------------|-------------|--------|
+| **Paper curation** | Given a paper alias or hints, search for full title, arXiv link, venue/year, official code, and framework; write into the list by category and sort by arXiv ID | Table rows in [`paper-with-code-list.md`](paper-with-code-list.md) |
+| **Deep reading** | Given a paper (link or list row), produce triple-column HTML (original · Chinese translation · analysis) with Feynman summary, structured Q&A, deep-dive, and logic diagrams | `paper-reading/{slug}.html` |
 
-| 能力       | 说明                                                              | 产物                                                         |
-| -------- | --------------------------------------------------------------- | ---------------------------------------------------------- |
-| **论文整理** | 给定论文简称/线索，自动检索全称、arXiv 链接、会议年份、官方代码与框架，按分类写入清单并按 arXiv 编号排序     | `[paper-with-code-list.md](paper-with-code-list.md)` 中的表格行 |
-| **论文精读** | 给定论文（链接或清单中的行），生成「原文 | 中文翻译 | 解析」三栏批注 HTML，含费曼速读、结构化十问、深挖追问与逻辑图 | `paper-reading/{slug}.html`                                |
+Both capabilities are implemented as [Agent Skills](https://docs.cursor.com/) under `.cursor/skills/` and are triggered automatically when you ask in natural language.
 
-
-两个能力以 [Agent Skill](https://docs.cursor.com/) 形式实现，放在 `.cursor/skills/` 下，会在你提出相关请求时被自动触发。
-
-## 仓库结构
+## Repository Structure
 
 ```
 paper-with-code-skills/
-├── README.md                       # 本文件：仓库说明
-├── paper-with-code-list.md         # 论文清单（按 AIGC / LLM·VLM / CV 分类，Title|Paper|Conf|Code）
-├── paper-reading/                  # 精读 HTML 输出目录
-│   ├── ddpm.html                   # DDPM 三栏精读示例
-│   └── assets/{slug}/              # 各篇精读用到的图片资源
+├── README.md                       # This file (English)
+├── README.zh-CN.md                 # Chinese README
+├── paper-with-code-list.md         # Paper list (AIGC / LLM·VLM / CV; Title|Paper|Conf|Code)
+├── paper-reading/                  # Deep-reading HTML output
+│   ├── ddpm.html                   # DDPM triple-column example
+│   └── assets/{slug}/              # Images per reading
 └── .cursor/skills/
-    ├── add-paper-to-list/          # Skill 1：整理论文进清单
-    │   ├── SKILL.md                # 工作流、检索来源、表格格式、排序规则
-    │   └── categories.md           # 用户措辞 ↔ 清单章节 ↔ 锚点 映射表
-    └── paper-logic-reading/        # Skill 2：论文三栏精读
-        ├── SKILL.md                # 工作流、保真性铁律、深度解析要求
-        ├── template.html           # 三栏 HTML 骨架（KaTeX / 五色高亮 / sticky 导航）
-        └── examples.md             # DDPM 精读示例的元数据与命令
+    ├── add-paper-to-list/          # Skill 1: add papers to the list
+    │   ├── SKILL.md                # Workflow, sources, table format, sorting rules
+    │   └── categories.md           # User phrases ↔ list sections ↔ anchors
+    └── paper-logic-reading/        # Skill 2: triple-column deep reading
+        ├── SKILL.md                # Workflow, fidelity rules, deep analysis
+        ├── template.html           # HTML skeleton (KaTeX, highlights, sticky nav)
+        └── examples.md             # DDPM example metadata and commands
 ```
 
-## 用法
+## Usage
 
-无需手动调用脚本——在 Cursor 中用自然语言描述需求，对应 Skill 会被自动加载并执行。
+No scripts to run manually — describe what you want in Cursor and the matching Skill loads and runs.
 
-### 1. 整理论文进清单（`add-paper-to-list`）
+### 1. Add papers to the list (`add-paper-to-list`)
 
-触发措辞：「添加 XXX 论文」「把 XXX 加到论文列表」，或直接给出论文简称/一批论文，可附带领域、代码仓库、会议等线索。
+**Triggers:** “Add paper XXX”, “Add XXX to the paper list”, or a batch of aliases with optional domain, repo, or venue hints.
 
-工作流概要：
+**Workflow:**
 
-1. 解析输入（简称、全称线索、领域、代码仓库、会议）
-2. 检索论文信息（arXiv / Semantic Scholar / Google Scholar / HF Papers，≥2 源交叉验证）
-3. 读取 `paper-with-code-list.md`，按 `[categories.md](.cursor/skills/add-paper-to-list/categories.md)` 确定分类与插入位置
-4. 写入表格行，并对该章节**按 arXiv 编号升序整表重排**
-5. 逐项校验（全称、链接、会议、代码、框架、分类、顺序）
-6. 确认无误后询问是否 `git` 提交
+1. Parse input (alias, full-title hints, domain, repo, venue)
+2. Search (arXiv / Semantic Scholar / Google Scholar / HF Papers; cross-check ≥2 sources)
+3. Read `paper-with-code-list.md`; pick section via [`categories.md`](.cursor/skills/add-paper-to-list/categories.md)
+4. Insert table row and **re-sort the whole section by ascending arXiv ID**
+5. Validate (title, links, venue, code, framework, category, order)
+6. Ask whether to `git` commit after confirmation
 
-表格行格式：
+**Table row format:**
 
 ```markdown
 | {Title} | [{Full Title}]({paper_url}) | {Conf} | [{Framework}]({code_url})
 ```
 
-### 2. 论文精读（`paper-logic-reading`）
+### 2. Deep paper reading (`paper-logic-reading`)
 
-触发措辞：「精读论文」「逻辑分析」「三栏批注 HTML」，并给出 arXiv/PDF 链接或清单中的某一行。
+**Triggers:** “Deep read this paper”, “logic analysis”, “triple-column HTML”, plus arXiv/PDF link or a list row.
 
-产出一个自包含 HTML，逐段呈现：
+Produces a self-contained HTML file, paragraph by paragraph:
 
-- **左栏**：论文原文，五类维度高亮（核心论点 / 关键概念 / 实证证据 / 让步反驳 / 方法论）
-- **中栏**：忠实中文翻译，逐段对应
-- **右栏**：段落功能、逻辑角色、论证技巧/漏洞；核心方法与实验章节加厚解析并配逻辑图
+- **Left:** Original text with five highlight dimensions (thesis / terms / evidence / concession / method)
+- **Middle:** Faithful Chinese translation, aligned per paragraph
+- **Right:** Paragraph role, logic position, rhetorical moves or gaps; thicker analysis + diagrams for method and experiments
 
-另含顶部**费曼速读**、底部**结构化十问**与**深挖追问**。最高优先级是「保真性铁律」：论文未给出的内容一律写「论文未说明」，关键论断与实验数字标注出处，**严禁编造**。
+Also includes **Feynman summary** at the top and **structured ten questions** + **deep dive** at the bottom. Top rule: **fidelity** — if the paper does not state something, write “not stated in paper”; cite sources for claims and numbers; **no fabrication**.
 
-## 例子
+## Examples
 
-### 整理：添加 LEDITS++
+### Curation: add DDPM
 
-> 用户：添加 LEDITS++
+> User: Add DDPM
 
-检索后判定属于 `AIGC-Applications → Face Editing`，写入：
+Classified under `Diffusion Model`, appended as:
 
 ```markdown
-| LEDITS++ | [LEDITS++: Limitless Image Editing using Text-to-Image Models](https://arxiv.org/abs/2311.16711) | arXiv(2023) / CVPR(2024) | [PyTorch](https://github.com/ml-research/ledits_pp)
+| DDPM | [Denoising Diffusion Probabilistic Models](https://arxiv.org/abs/2006.11239) | arXiv(2020) / NIPS(2020) | [PyTorch](https://github.com/lucidrains/denoising-diffusion-pytorch)
 ```
 
-### 精读：DDPM
+### Deep reading: DDPM
 
-> 用户：精读 DDPM
+> User: Deep read DDPM
 
-把清单中 `| DDPM | [Denoising Diffusion...](https://arxiv.org/abs/2006.11239) | ...` 的 `abs` 链接转为 `pdf` 下载阅读，输出到 `[paper-reading/ddpm.html](paper-reading/ddpm.html)`（覆盖 Abstract、Introduction、Background、Method、Experiments、Conclusion）。
+Convert the list row’s `abs` URL to `pdf`, read, and write [`paper-reading/ddpm.html`](paper-reading/ddpm.html) (Abstract, Introduction, Background, Method, Experiments, Conclusion).
 
-在浏览器中打开该 HTML 即可阅读三栏批注。
+Open the HTML in a browser to read the triple-column notes.
 
-## 论文清单
+## Paper List
 
-完整的「论文 + 代码」分类清单见 `[paper-with-code-list.md](paper-with-code-list.md)`，涵盖：
+Full categorized paper-with-code list: [`paper-with-code-list.md`](paper-with-code-list.md)
 
-- **AIGC**：GAN / VAE / Diffusion / 应用（Face Editing、Face Swapping）
-- **LLM · VLM**：Transformer / ViT / VLM
-- **CV**：Backbone / Detection / Segmentation / Tracking / Few-Shot / 3D Face / SOD / Optimization / Survey
-
+- **AIGC:** GAN / VAE / Diffusion / applications (Face Editing, Face Swapping)
+- **LLM · VLM:** Transformer / ViT / VLM
+- **CV:** Backbone / Detection / Segmentation / Tracking / Few-Shot / 3D Face / SOD / Optimization / Survey

@@ -4,7 +4,7 @@
 
 [![Awesome](https://awesome.re/badge.svg)](https://awesome.re) ![Skills](https://img.shields.io/badge/Cursor-Skills-blue) ![Papers](https://img.shields.io/badge/Deep%20Learning-Papers-green) ![Reading](https://img.shields.io/badge/Paper-Reading-orange)
 
-一个把**论文整理**与**论文精读**流程沉淀为 Cursor / Claude Skills 的仓库。它既维护一份按领域分类的「论文 + 代码」清单，又能把任意论文转换成三栏批注的精读 HTML，让「收集 → 整理 → 精读」形成闭环。
+一个把**论文整理**与**论文精读**流程沉淀为 **Cursor / Claude Code / Codex** 通用 Agent Skills 的仓库。它既维护一份按领域分类的「论文 + 代码」清单，又能把任意论文转换成三栏批注的精读 HTML，让「收集 → 整理 → 精读」形成闭环。
 
 ## 这个仓库做什么
 
@@ -13,7 +13,15 @@
 | **论文整理** | 给定论文简称/线索，自动检索全称、arXiv 链接、会议年份、官方代码与框架，按分类写入清单并按 arXiv 编号排序 | [`paper-with-code-list.md`](paper-with-code-list.md) 中的表格行 |
 | **论文精读** | 给定论文（链接或清单中的行），生成「原文 · 中文翻译 · 解析」三栏批注 HTML，含费曼速读、结构化十问、深挖追问与逻辑图 | `paper-reading/{slug}.html` |
 
-两个能力以 [Agent Skill](https://docs.cursor.com/) 形式实现，放在 `.cursor/skills/` 下，会在你提出相关请求时被自动触发。
+两个能力以 [Agent Skill](https://agentskills.io/specification) 形式实现，源码放在 `skills/`（唯一维护位置）。各工具通过符号链接自动发现：
+
+| 工具 | 发现路径 |
+|------|----------|
+| **Cursor** | `.cursor/skills/` → `skills/` |
+| **Claude Code** | `.claude/skills/` → `skills/` |
+| **Codex** | `.agents/skills/` → `skills/` |
+
+用自然语言描述需求即可，对应 Skill 会被自动加载。
 
 ## 仓库结构
 
@@ -25,19 +33,24 @@ paper-with-code-skills/
 ├── paper-reading/                  # 精读 HTML 输出目录
 │   ├── ddpm.html                   # DDPM 三栏精读示例
 │   └── assets/{slug}/              # 各篇精读用到的图片资源
-└── .cursor/skills/
-    ├── add-paper-to-list/          # Skill 1：整理论文进清单
-    │   ├── SKILL.md                # 工作流、检索来源、表格格式、排序规则
-    │   └── categories.md           # 用户措辞 ↔ 清单章节 ↔ 锚点 映射表
-    └── paper-logic-reading/        # Skill 2：论文三栏精读
-        ├── SKILL.md                # 工作流、保真性铁律、深度解析要求
-        ├── template.html           # 三栏 HTML 骨架（KaTeX / 五色高亮 / sticky 导航）
-        └── examples.md             # DDPM 精读示例的元数据与命令
+├── skills/                         # Skill 源码（在此编辑）
+│   ├── add-paper-to-list/          # Skill 1：整理论文进清单
+│   │   ├── SKILL.md                # 工作流、检索来源、表格格式、排序规则
+│   │   └── categories.md           # 用户措辞 ↔ 清单章节 ↔ 锚点 映射表
+│   └── paper-logic-reading/        # Skill 2：论文三栏精读
+│       ├── SKILL.md                # 工作流、保真性铁律、深度解析要求
+│       ├── template.html           # 三栏 HTML 骨架（KaTeX / 五色高亮 / sticky 导航）
+│       └── examples.md             # DDPM 精读示例的元数据与命令
+├── .cursor/skills/                 # → skills/（Cursor）
+├── .claude/skills/                 # → skills/（Claude Code）
+└── .agents/skills/                 # → skills/（Codex）
 ```
 
 ## 用法
 
-无需手动调用脚本——在 Cursor 中用自然语言描述需求，对应 Skill 会被自动加载并执行。
+无需手动调用脚本——在 Cursor、Claude Code 或 Codex 中打开本仓库，用自然语言描述需求，对应 Skill 会被自动加载并执行。
+
+> **说明：** macOS/Linux 下 clone 后符号链接可直接使用；若工具未识别 Skill，请重启 agent 会话。Windows 若不支持符号链接，需手动将 `skills/` 复制或链接到上表中的发现路径。
 
 ### 1. 整理论文进清单（`add-paper-to-list`）
 
@@ -47,7 +60,7 @@ paper-with-code-skills/
 
 1. 解析输入（简称、全称线索、领域、代码仓库、会议）
 2. 检索论文信息（arXiv / Semantic Scholar / Google Scholar / HF Papers，≥2 源交叉验证）
-3. 读取 `paper-with-code-list.md`，按 [`categories.md`](.cursor/skills/add-paper-to-list/categories.md) 确定分类与插入位置
+3. 读取 `paper-with-code-list.md`，按 [`categories.md`](skills/add-paper-to-list/categories.md) 确定分类与插入位置
 4. 写入表格行，并对该章节**按 arXiv 编号升序整表重排**
 5. 逐项校验（全称、链接、会议、代码、框架、分类、顺序）
 6. 确认无误后询问是否 `git` 提交

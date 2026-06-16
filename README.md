@@ -4,7 +4,7 @@
 
 [![Awesome](https://awesome.re/badge.svg)](https://awesome.re) ![Skills](https://img.shields.io/badge/Cursor-Skills-blue) ![Papers](https://img.shields.io/badge/Deep%20Learning-Papers-green) ![Reading](https://img.shields.io/badge/Paper-Reading-orange)
 
-A repository that turns **paper curation** and **deep paper reading** into reusable Cursor / Claude Skills. It maintains a domain-sorted paper-with-code list and can turn any paper into a triple-column annotated reading HTML — closing the loop from collect → organize → read deeply.
+A repository that turns **paper curation** and **deep paper reading** into reusable Agent Skills for **Cursor**, **Claude Code**, and **Codex**. It maintains a domain-sorted paper-with-code list and can turn any paper into a triple-column annotated reading HTML — closing the loop from collect → organize → read deeply.
 
 ## What This Repo Does
 
@@ -13,7 +13,15 @@ A repository that turns **paper curation** and **deep paper reading** into reusa
 | **Paper curation** | Given a paper alias or hints, search for full title, arXiv link, venue/year, official code, and framework; write into the list by category and sort by arXiv ID | Table rows in [`paper-with-code-list.md`](paper-with-code-list.md) |
 | **Deep reading** | Given a paper (link or list row), produce triple-column HTML (original · Chinese translation · analysis) with Feynman summary, structured Q&A, deep-dive, and logic diagrams | `paper-reading/{slug}.html` |
 
-Both capabilities are implemented as [Agent Skills](https://docs.cursor.com/) under `.cursor/skills/` and are triggered automatically when you ask in natural language.
+Both capabilities are implemented as [Agent Skills](https://agentskills.io/specification) under `skills/` (canonical source). Symlinks let each tool discover them from its own path:
+
+| Tool | Discovery path |
+|------|----------------|
+| **Cursor** | `.cursor/skills/` → `skills/` |
+| **Claude Code** | `.claude/skills/` → `skills/` |
+| **Codex** | `.agents/skills/` → `skills/` |
+
+Describe what you want in natural language; the matching skill is loaded automatically.
 
 ## Repository Structure
 
@@ -25,19 +33,24 @@ paper-with-code-skills/
 ├── paper-reading/                  # Deep-reading HTML output
 │   ├── ddpm.html                   # DDPM triple-column example
 │   └── assets/{slug}/              # Images per reading
-└── .cursor/skills/
-    ├── add-paper-to-list/          # Skill 1: add papers to the list
-    │   ├── SKILL.md                # Workflow, sources, table format, sorting rules
-    │   └── categories.md           # User phrases ↔ list sections ↔ anchors
-    └── paper-logic-reading/        # Skill 2: triple-column deep reading
-        ├── SKILL.md                # Workflow, fidelity rules, deep analysis
-        ├── template.html           # HTML skeleton (KaTeX, highlights, sticky nav)
-        └── examples.md             # DDPM example metadata and commands
+├── skills/                         # Canonical skill source (edit here)
+│   ├── add-paper-to-list/          # Skill 1: add papers to the list
+│   │   ├── SKILL.md                # Workflow, sources, table format, sorting rules
+│   │   └── categories.md           # User phrases ↔ list sections ↔ anchors
+│   └── paper-logic-reading/        # Skill 2: triple-column deep reading
+│       ├── SKILL.md                # Workflow, fidelity rules, deep analysis
+│       ├── template.html           # HTML skeleton (KaTeX, highlights, sticky nav)
+│       └── examples.md             # DDPM example metadata and commands
+├── .cursor/skills/                 # → skills/ (Cursor)
+├── .claude/skills/                 # → skills/ (Claude Code)
+└── .agents/skills/                 # → skills/ (Codex)
 ```
 
 ## Usage
 
-No scripts to run manually — describe what you want in Cursor and the matching Skill loads and runs.
+No scripts to run manually — open this repo in Cursor, Claude Code, or Codex and describe what you want; the matching skill loads and runs.
+
+> **Note:** After cloning, symlinks should work on macOS/Linux. If a tool does not see skills, restart the agent session. On Windows without symlink support, copy or link `skills/` manually to the tool’s discovery path above.
 
 ### 1. Add papers to the list (`add-paper-to-list`)
 
@@ -47,7 +60,7 @@ No scripts to run manually — describe what you want in Cursor and the matching
 
 1. Parse input (alias, full-title hints, domain, repo, venue)
 2. Search (arXiv / Semantic Scholar / Google Scholar / HF Papers; cross-check ≥2 sources)
-3. Read `paper-with-code-list.md`; pick section via [`categories.md`](.cursor/skills/add-paper-to-list/categories.md)
+3. Read `paper-with-code-list.md`; pick section via [`categories.md`](skills/add-paper-to-list/categories.md)
 4. Insert table row and **re-sort the whole section by ascending arXiv ID**
 5. Validate (title, links, venue, code, framework, category, order)
 6. Ask whether to `git` commit after confirmation

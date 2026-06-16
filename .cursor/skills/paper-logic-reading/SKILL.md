@@ -10,7 +10,7 @@ description: Produce triple-column annotated HTML for intensive academic paper r
 ## 触发场景
 
 - 用户说「精读论文」「逻辑分析」「三栏批注 HTML」
-- 用户提供 arXiv / PDF 链接，或 README 表格中的论文行
+- 用户提供 arXiv / PDF 链接，或 paper-with-code-list.md 表格中的论文行
 - 用户引用 Prompt B / 纯逻辑分析版
 
 ## 三栏布局
@@ -64,14 +64,14 @@ Task Progress:
 **来源优先级：**
 
 1. 用户提供的 PDF 路径
-2. arXiv 链接（README 中多为 `abs` 链接）
+2. arXiv 链接（paper-with-code-list.md 中多为 `abs` 链接）
 3. 用户粘贴的全文
 
 **arXiv URL 转换（必读）：**
 
 | 用途 | 格式 |
 |------|------|
-| 页面 / README 链接 | `https://arxiv.org/abs/YYMM.NNNNN` |
+| 页面 / 列表链接 | `https://arxiv.org/abs/YYMM.NNNNN` |
 | **下载 PDF** | `https://arxiv.org/pdf/YYMM.NNNNN.pdf` |
 | LaTeX 源码 | `https://arxiv.org/e-print/YYMM.NNNNN` |
 
@@ -223,7 +223,7 @@ flowchart LR
 
 **文件名：** `{slug}.html`，`slug` 为小写连字符，取自论文简称或标题关键词。
 
-示例（README Diffusion Model 第 64 行 DDPM）：
+示例（paper-with-code-list.md Diffusion Model 章节 DDPM）：
 
 | 字段 | 值 |
 |------|-----|
@@ -342,9 +342,9 @@ flowchart LR
 
 **符号速查表（可选，符号密集论文建议加）：** 放在顶部图例下方或底部论证总览旁，汇总全文关键符号 → 含义，便于跨段落回查（如 $x_t$、$\bar\alpha_t$、$\epsilon_\theta$、$\beta_t$）。符号须与论文定义一致。
 
-## 从 README 行启动
+## 从 paper-with-code-list 行启动
 
-当用户给出 README 表格行（如 `| DDPM | [Denoising Diffusion...](https://arxiv.org/abs/2006.11239) | ...`）：
+当用户给出 paper-with-code-list.md 表格行（如 `| DDPM | [Denoising Diffusion...](https://arxiv.org/abs/2006.11239) | ...`）：
 
 1. 提取 Title、Paper 链接文字、abs URL
 2. `abs` → `pdf` 下载并阅读

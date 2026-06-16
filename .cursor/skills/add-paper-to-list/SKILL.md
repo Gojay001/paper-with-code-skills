@@ -1,15 +1,15 @@
 ---
-name: add-paper-readme
-description: Search for deep learning papers and add entries to README.md with Title/Paper/Conf/Code table rows. Use when the user asks to add a paper, update the paper list, append to README tables, or mentions paper names/abbreviations with optional domain or code repo hints.
+name: add-paper-to-list
+description: Search for deep learning papers and add entries to paper-with-code-list.md with Title/Paper/Conf/Code table rows. Use when the user asks to add a paper, update the paper list, append to the paper-with-code tables, or mentions paper names/abbreviations with optional domain or code repo hints.
 ---
 
-# Add Paper to README
+# Add Paper to List
 
-将用户输入的论文（简称或附带领域、代码仓库等线索）检索补全后，写入仓库根目录 `README.md` 对应分类表格。
+将用户输入的论文（简称或附带领域、代码仓库等线索）检索补全后，写入仓库根目录 `paper-with-code-list.md` 对应分类表格。
 
 ## 触发场景
 
-- 用户说「添加 XXX 论文」「把 XXX 加到 README」
+- 用户说「添加 XXX 论文」「把 XXX 加到论文列表」
 - 用户提供论文简称（如 `LEDITS++`、`YOLOv8`）或一批论文名
 - 用户附带领域、代码仓库、会议等额外信息
 
@@ -19,7 +19,7 @@ description: Search for deep learning papers and add entries to README.md with T
 Task Progress:
 - [ ] 1. 解析用户输入
 - [ ] 2. 检索论文信息
-- [ ] 3. 读取 README.md，确定分类与插入位置
+- [ ] 3. 读取 paper-with-code-list.md，确定分类与插入位置
 - [ ] 4. 写入表格行
 - [ ] 5. 校验信息
 - [ ] 6. 询问用户是否提交 git
@@ -72,9 +72,9 @@ Task Progress:
 | JAX | `import jax` |
 | 无法判断 / 无仓库 | 使用 `[code]`；有仓库但框架不明时用 `[GitHub](url)` |
 
-### Step 3: 确定分类并写入 README
+### Step 3: 确定分类并写入列表
 
-1. **读取** `README.md` 全文
+1. **读取** `paper-with-code-list.md` 全文
 2. **对照** [categories.md](categories.md) 中的分类 ↔ 章节映射
 3. **默认**：放入已有分类表格；**仅当用户明确要求新建分类**时才新增 `##` / `###` 章节与 TOC 条目
 4. **检查重复**：若 `Title` 已存在，告知用户并询问是否更新而非重复添加
@@ -95,7 +95,7 @@ Task Progress:
 **操作要求**：
 
 - 新增单行：插入后**检查并调整**整表顺序，必要时重排该表所有行
-- 用户修改 README 后：以当前文件内容为准，若顺序违反上述规则则整表重排
+- 用户修改 paper-with-code-list.md 后：以当前文件内容为准，若顺序违反上述规则则整表重排
 - 写入完成后在回复中简要说明排序依据（如「DiT 2212 已移至 SDXL 2307 之前」）
 
 **表格行格式**：
@@ -144,11 +144,11 @@ Task Progress:
 用户确认后再执行 git 操作。遵循仓库 commit 规范：
 
 1. `git status`、`git diff`、`git log -1` 了解当前状态与 commit 风格
-2. 仅 stage 相关文件（通常 `README.md`）
+2. 仅 stage 相关文件（通常 `paper-with-code-list.md`）
 3. Commit message 示例：
 
 ```
-docs(readme): add LEDITS++ to Face Editing
+docs(list): add LEDITS++ to Face Editing
 
 Add paper entry with arXiv link, venue info, and official PyTorch repo.
 ```

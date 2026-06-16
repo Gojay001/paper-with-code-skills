@@ -1,6 +1,6 @@
 # DDPM 示例
 
-本仓库 `paper-reading/ddpm.html` 为 README Diffusion Model 表格第 64 行 DDPM 的精读输出。
+本仓库 `paper-reading/ddpm.html` 为 paper-with-code-list.md Diffusion Model 章节 DDPM 的精读输出。
 
 ## 论文元数据
 
@@ -9,7 +9,7 @@
 | Title（简称） | DDPM |
 | 全称 | Denoising Diffusion Probabilistic Models |
 | 作者 | Jonathan Ho, Ajay Jain, Pieter Abbeel |
-| README abs | `https://arxiv.org/abs/2006.11239` |
+| 列表 abs | `https://arxiv.org/abs/2006.11239` |
 | **精读 PDF** | `https://arxiv.org/pdf/2006.11239.pdf` |
 | Conf | arXiv(2020) / NeurIPS(2020) |
 | Code | [PyTorch](https://github.com/lucidrains/denoising-diffusion-pytorch)（社区实现；原文官方为 [hojonathanho/diffusion](https://github.com/hojonathanho/diffusion)） |

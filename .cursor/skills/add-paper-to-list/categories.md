@@ -1,6 +1,6 @@
-# README 分类映射
+# paper-with-code-list 分类映射
 
-写入前先读取 `README.md` 确认最新结构；本文件为快速参考。
+写入前先读取 `paper-with-code-list.md` 确认最新结构；本文件为快速参考。
 
 ## TOC 顶层
 
@@ -12,7 +12,7 @@
 
 ## AIGC 子分类
 
-| 用户可能说的 | README 章节 | 锚点 |
+| 用户可能说的 | 列表章节 | 锚点 |
 |-------------|-------------|------|
 | GAN | Generative Adversarial Network | `#Generative-Adversarial-Network` |
 | VAE | Variational Auto-Encoder | `#Variational-Auto-Encoder` |
@@ -23,7 +23,7 @@
 
 ## LLM / VLM 子分类
 
-| 用户可能说的 | README 章节 | 锚点 |
+| 用户可能说的 | 列表章节 | 锚点 |
 |-------------|-------------|------|
 | Transformer / Attention | Attention or Transformer | `#Attention-or-Transformer` |
 | ViT / Vision Transformer | Vision Transformer | `#Vision-Transformer` |
@@ -31,7 +31,7 @@
 
 ## CV 子分类
 
-| 用户可能说的 | README 章节 | 锚点 |
+| 用户可能说的 | 列表章节 | 锚点 |
 |-------------|-------------|------|
 | Backbone / 分类网络 | Backbone | `#Backbone` |
 | Detection / 检测 | Object Detection | `#Object-Detection` |

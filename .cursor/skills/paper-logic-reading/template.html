@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{PAPER_TITLE}} — 逻辑精读</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <!-- KaTeX：数学公式渲染（行内 $...$，行间 $$...$$） -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+  <style>
+    :root {
+      --navy: #1a2744;
+      --paper: #faf8f5;
+      --thesis: #fff3cd;
+      --concept: #f8d7da;
+      --evidence: #cfe2ff;
+      --counter: #d1e7dd;
+      --method: #e2d9f3;
+      --text: #2c2c2c;
+      --muted: #6c757d;
+      --border: #e8e4df;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'IBM Plex Sans', sans-serif; background: var(--paper); color: var(--text); line-height: 1.6; }
+    .sticky-head { position: sticky; top: 0; z-index: 100; }
+    .top-nav { background: var(--navy); color: #fff; padding: 1rem 2rem; }
+    .top-nav h1 { font-size: 1.25rem; font-weight: 600; }
+    .top-nav h1 a { color: #fff; text-decoration: none; border-bottom: 1px dotted rgba(255,255,255,0.5); }
+    .top-nav h1 a:hover { border-bottom-style: solid; }
+    .top-nav .meta { font-size: 0.85rem; opacity: 0.85; margin-top: 0.25rem; }
+    .legend { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.75rem; font-size: 0.8rem; }
+    .legend span { padding: 0.15rem 0.5rem; border-radius: 3px; }
+    .chapter-nav { background: #fff; border-bottom: 1px solid var(--border); padding: 0.75rem 2rem; overflow-x: auto; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+    .chapter-nav a { color: var(--navy); text-decoration: none; margin-right: 1.25rem; font-size: 0.9rem; font-weight: 500; }
+    .chapter-nav a:hover { text-decoration: underline; }
+    main { max-width: 1680px; margin: 0 auto; padding: 2rem; }
+    .section-title { font-size: 1.5rem; color: var(--navy); margin: 2rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--navy); }
+    .col-labels { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 0.5rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+    .row { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; align-items: start; }
+    .col-original { font-family: 'Lora', serif; font-size: 0.95rem; line-height: 1.75; }
+    .col-original p { margin-bottom: 0.75rem; }
+    .col-translation { font-size: 0.92rem; line-height: 1.75; color: #333; }
+    .col-translation p { margin-bottom: 0.75rem; }
+    .analysis-card { background: #fff; border-left: 4px solid var(--navy); padding: 1rem 1.25rem; border-radius: 0 6px 6px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.06); font-size: 0.9rem; }
+    .analysis-card .tag { display: inline-block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0.5rem; color: var(--navy); }
+    .analysis-card h4 { font-size: 0.85rem; color: var(--muted); margin: 0.75rem 0 0.25rem; }
+    .analysis-card p { margin-bottom: 0.5rem; }
+    /* 深度解析（核心方法 / 实验章节） */
+    .analysis-card.deep { border-left-width: 5px; }
+    .analysis-detail { margin: 0.75rem 0; padding-top: 0.5rem; border-top: 1px dashed var(--border); }
+    .analysis-detail:first-of-type { border-top: none; }
+    .exp-detail { list-style: none; margin: 0.5rem 0; }
+    .exp-detail li { margin-bottom: 0.4rem; }
+    .exp-detail li strong { color: var(--navy); }
+    .exp-table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.82rem; }
+    .exp-table th, .exp-table td { border: 1px solid var(--border); padding: 0.35rem 0.5rem; text-align: left; }
+    .exp-table th { background: var(--paper); color: var(--navy); font-weight: 600; }
+    .exp-table tr.is-ours { background: var(--evidence); }
+    .exp-table tr.is-ours td { font-weight: 600; }
+    /* 符号速查表（复用 exp-table 外观） */
+    .notation { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.85rem; background: #fff; }
+    .notation th, .notation td { border: 1px solid var(--border); padding: 0.4rem 0.6rem; text-align: left; }
+    .notation th { background: var(--paper); color: var(--navy); font-weight: 600; }
+    .notation td:first-child { width: 22%; white-space: nowrap; }
+    /* 图与流程图 */
+    .diagram { margin: 0.75rem 0; }
+    .diagram img, .diagram svg { max-width: 100%; height: auto; display: block; border: 1px solid var(--border); border-radius: 4px; background: #fff; }
+    .diagram figcaption, .figure-row figcaption { font-size: 0.78rem; color: var(--muted); margin-top: 0.35rem; }
+    .figure-row { margin: 1.5rem 0; padding: 1rem; background: #fff; border: 1px solid var(--border); border-radius: 8px; }
+    .figure-row figure { margin: 0; text-align: center; }
+    .figure-row img, .figure-row svg { max-width: 100%; height: auto; }
+    .mermaid { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem; margin: 0.75rem 0; }
+    .hl-thesis { background: var(--thesis); padding: 0 2px; }
+    .hl-concept { background: var(--concept); padding: 0 2px; }
+    .hl-evidence { background: var(--evidence); padding: 0 2px; }
+    .hl-counter { background: var(--counter); padding: 0 2px; }
+    .hl-method { background: var(--method); padding: 0 2px; }
+    .summary { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 2rem; margin-top: 3rem; }
+    .summary h2 { color: var(--navy); margin-bottom: 1rem; }
+    .summary .skeleton { font-family: 'IBM Plex Sans', monospace; background: var(--paper); padding: 1rem; border-radius: 4px; margin: 1rem 0; }
+    .summary .strength, .summary .weakness { padding: 0.75rem 1rem; border-radius: 4px; margin: 0.5rem 0; }
+    .summary .strength { background: var(--counter); }
+    .summary .weakness { background: var(--concept); }
+    /* 三步精读模块：费曼速读 / 结构化十问 / 深挖追问 */
+    .feynman { background: #fff; border: 1px solid var(--border); border-left: 5px solid #0d9488; border-radius: 0 8px 8px 0; padding: 1.25rem 1.5rem; margin: 1.5rem 0 2rem; }
+    .feynman h2 { color: #0d9488; font-size: 1.15rem; margin-bottom: 0.35rem; }
+    .feynman .tldr-meta { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.6rem; }
+    .feynman p { font-size: 0.95rem; line-height: 1.85; margin-bottom: 0.6rem; }
+    .faq details { background: #fff; border: 1px solid var(--border); border-radius: 6px; margin: 0.5rem 0; }
+    .faq details[open] { box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .faq summary { cursor: pointer; font-weight: 600; color: var(--navy); padding: 0.7rem 0.9rem; list-style: none; font-size: 0.92rem; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::before { content: '▸'; color: #0d9488; margin-right: 0.5rem; }
+    .faq details[open] summary::before { content: '▾'; }
+    .faq .answer { padding: 0 0.9rem 0.85rem 1.8rem; font-size: 0.9rem; line-height: 1.8; color: #333; }
+    .deepdive .block { margin: 0.9rem 0; padding: 0.85rem 1.1rem; border-radius: 4px; background: var(--paper); border-left: 3px solid #6f42c1; }
+    .deepdive .block.crit { border-left-color: #dc3545; background: #fdf0f1; }
+    .deepdive .block h4 { color: var(--navy); margin-bottom: 0.3rem; }
+    .deepdive .block ul { margin: 0.3rem 0 0 1.1rem; }
+    .deepdive .block li { margin-bottom: 0.3rem; font-size: 0.9rem; }
+    @media (max-width: 1100px) {
+      .col-labels { display: none; }
+      .row { grid-template-columns: 1fr; }
+      .row > div { position: relative; }
+      .row > div::before {
+        display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+        letter-spacing: 0.05em; color: var(--muted); margin-bottom: 0.35rem;
+      }
+      .col-original::before { content: '原文'; }
+      .col-translation::before { content: '翻译'; }
+      .col-analysis::before { content: '解析'; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sticky-head">
+    <header class="top-nav">
+      <h1><a href="{{PAPER_URL}}" target="_blank" rel="noopener">{{PAPER_TITLE}}</a></h1>
+      <div class="meta">{{COURSE_INFO}} · {{VENUE}}</div>
+      <div class="legend">
+        <span class="hl-thesis">核心论点</span>
+        <span class="hl-concept">关键概念</span>
+        <span class="hl-evidence">实证证据</span>
+        <span class="hl-counter">让步/反驳</span>
+        <span class="hl-method">方法论</span>
+      </div>
+    </header>
+
+    <nav class="chapter-nav">
+      <!-- <a href="#feynman">速读</a> <a href="#abstract">Abstract</a> … <a href="#faq">十问</a> <a href="#deepdive">深挖</a> -->
+      <!-- 按论文章节添加锚点，首尾分别接「速读」与「十问/深挖」 -->
+    </nav>
+  </div>
+
+  <main>
+
+    <!-- ① 费曼速读卡（顶部，Abstract 之前）
+    <section class="feynman" id="feynman">
+      <h2>🎮 费曼一分钟（通俗速读）</h2>
+      <div class="tldr-meta">通俗速读 · 先建立模糊认知，再读正文</div>
+      <p>~300 字大白话：核心思想 + 一个生活/游戏类比 + 点出 2–4 个核心概念（公式可少量用 $...$）…</p>
+    </section>
+    -->
+
+    <!-- 每节结构示例 -->
+    <!--
+    <h2 class="section-title" id="intro">1. Introduction</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>Original paragraph with <span class="hl-thesis">highlighted thesis</span>…</p>
+      </div>
+      <div class="col-translation">
+        <p>对应段落的中文翻译…</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #1a2744;">
+          <span class="tag">引出问题</span>
+          <h4>段落功能</h4>
+          <p>…</p>
+          <h4>逻辑角色</h4>
+          <p>…</p>
+          <h4>论证技巧 / 潜在漏洞</h4>
+          <p>…</p>
+        </div>
+      </div>
+    </div>
+    -->
+
+    <!-- 核心方法：深度解析卡片 + 流程图 示例
+    <div class="col-analysis">
+      <div class="analysis-card deep" style="border-left-color: #6f42c1;">
+        <span class="tag">核心方法</span>
+        <div class="analysis-detail"><h4>方法动机</h4><p>…</p></div>
+        <div class="analysis-detail"><h4>公式拆解</h4><p>…</p></div>
+        <div class="analysis-detail"><h4>数据流</h4>
+          <div class="diagram">
+            <pre class="mermaid">flowchart LR
+  A[输入] --> B[模块] --> C[输出]</pre>
+            <figcaption>训练数据流（自绘）</figcaption>
+          </div>
+        </div>
+        <div class="analysis-detail"><h4>设计取舍</h4><p>…</p></div>
+      </div>
+    </div>
+    -->
+
+    <!-- 实验：实验细节块 + 指标对比表 示例
+    <div class="col-analysis">
+      <div class="analysis-card deep" style="border-left-color: #0d6efd;">
+        <span class="tag">实验</span>
+        <ul class="exp-detail">
+          <li><strong>数据集：</strong>CIFAR10（训练 50k / 测试 10k，32×32）…（出处 §X）</li>
+          <li><strong>训练 Loss：</strong>$L_\text{simple}=\mathbb{E}\,\lVert\epsilon-\epsilon_\theta\rVert^2$…</li>
+          <li><strong>训练策略：</strong>优化器 / lr / batch / 步数 / EMA / 硬件（未给出写「论文未说明」）</li>
+          <li><strong>指标：</strong>FID↓、IS↑、NLL↓</li>
+          <li><strong>论点↔证据：</strong>Table N 的 FID 支撑 Intro 第 X 条「生成质量 SOTA」主张</li>
+          <li><strong>统计严谨性：</strong>是否多次运行 / 误差棒；差异显著或仅小幅（论文未报告则注明）</li>
+          <li><strong>指标局限：</strong>FID 依赖 Inception 特征、对样本数敏感；对比协议是否一致</li>
+        </ul>
+        <table class="exp-table">
+          <thead><tr><th>模型</th><th>IS↑</th><th>FID↓</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>Baseline</td><td>…</td><td>…</td><td>…</td></tr>
+            <tr class="is-ours"><td>本文</td><td>9.46</td><td>3.17</td><td>SOTA</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    -->
+
+    <!-- 跨三栏大图（论文原图）示例
+    <div class="figure-row">
+      <figure>
+        <img src="assets/{slug}/fig2.png" alt="原文图2">
+        <figcaption>图 2：有向图模型（原文 p.3）</figcaption>
+      </figure>
+    </div>
+    -->
+
+    <!-- 符号速查表（可选，符号密集论文建议加）
+    <section class="summary" id="notation">
+      <h2>符号速查表</h2>
+      <table class="notation">
+        <thead><tr><th>符号</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td>$x_t$</td><td>第 $t$ 步加噪后的隐变量</td></tr>
+          <tr><td>$\bar\alpha_t$</td><td>累积噪声保留系数 $\prod_{s=1}^{t}\alpha_s$</td></tr>
+          <tr><td>$\epsilon_\theta$</td><td>预测噪声的网络（U-Net）</td></tr>
+        </tbody>
+      </table>
+    </section>
+    -->
+
+    <section class="summary" id="overview">
+      <h2>论证结构总览</h2>
+      <div class="skeleton">问题 → 论点 → 证据 → 反驳 → 结论</div>
+      <h4>核心主张（一句话）</h4>
+      <p>{{THESIS_ONE_LINER}}</p>
+      <div class="strength"><strong>论证最强处：</strong> …</div>
+      <div class="weakness"><strong>论证最弱处：</strong> …</div>
+    </section>
+
+    <!-- ② 结构化十问（底部）
+    <section class="summary faq" id="faq">
+      <h2>🧩 结构化十问（AI 解构）</h2>
+      <details open><summary>Q1 · 论文试图解决什么问题？</summary><div class="answer">…（标注 §出处；缺失写「论文未说明」）</div></details>
+      <details><summary>Q2 · 这是否是一个新问题？</summary><div class="answer">…</div></details>
+      <details><summary>Q3 · 要验证什么科学假设？</summary><div class="answer">…</div></details>
+      <details><summary>Q4 · 相关研究如何归类？值得关注的研究者？</summary><div class="answer">…</div></details>
+      <details><summary>Q5 · 解决方案的关键是什么？</summary><div class="answer">…</div></details>
+      <details><summary>Q6 · 实验是如何设计的？</summary><div class="answer">…</div></details>
+      <details><summary>Q7 · 数据集？代码是否开源（给链接）？</summary><div class="answer">…</div></details>
+      <details><summary>Q8 · 结果是否很好支持了假设？</summary><div class="answer">…</div></details>
+      <details><summary>Q9 · 这篇论文到底有什么贡献？</summary><div class="answer">…</div></details>
+      <details><summary>Q10 · 下一步可以做什么？</summary><div class="answer">…（区分作者展望 / 本文补充）</div></details>
+    </section>
+    -->
+
+    <!-- ③ 深挖追问（底部，十问之后）
+    <section class="summary deepdive" id="deepdive">
+      <h2>🔬 深挖追问</h2>
+      <div class="block"><h4>第一性原理 · 本质</h4><p>…</p></div>
+      <div class="block"><h4>第一性原理 · 哲学基础</h4><p>…</p></div>
+      <div class="block"><h4>第一性原理 · 数学基础</h4><p>…</p></div>
+      <div class="block crit"><h4>批判性思维 · 我们还没问的根本问题（盲区）</h4>
+        <ul><li>…（效率 / 假设最优性 / 泛化 / 对比公平性 / 可复现，4–6 条）</li></ul>
+      </div>
+    </section>
+    -->
+  </main>
+  <script>
+    // 锚点跳转偏移 = 固定头部高度（随图例换行变化），避免标题被遮挡
+    function syncScrollPad() {
+      var head = document.querySelector('.sticky-head');
+      if (head) document.documentElement.style.scrollPaddingTop = (head.offsetHeight + 8) + 'px';
+    }
+    window.addEventListener('load', syncScrollPad);
+    window.addEventListener('resize', syncScrollPad);
+    syncScrollPad();
+  </script>
+</body>
+</html>

@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DDPM — Denoising Diffusion Probabilistic Models · 逻辑精读</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <!-- KaTeX：数学公式渲染（行内 $...$，行间 $$...$$） -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+  <style>
+    :root {
+      --navy: #1a2744;
+      --paper: #faf8f5;
+      --thesis: #fff3cd;
+      --concept: #f8d7da;
+      --evidence: #cfe2ff;
+      --counter: #d1e7dd;
+      --method: #e2d9f3;
+      --text: #2c2c2c;
+      --muted: #6c757d;
+      --border: #e8e4df;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'IBM Plex Sans', sans-serif; background: var(--paper); color: var(--text); line-height: 1.6; }
+    .sticky-head { position: sticky; top: 0; z-index: 100; }
+    .top-nav { background: var(--navy); color: #fff; padding: 1rem 2rem; }
+    .top-nav h1 { font-size: 1.25rem; font-weight: 600; }
+    .top-nav h1 a { color: #fff; text-decoration: none; border-bottom: 1px dotted rgba(255,255,255,0.5); }
+    .top-nav h1 a:hover { border-bottom-style: solid; }
+    .top-nav .meta { font-size: 0.85rem; opacity: 0.85; margin-top: 0.25rem; }
+    .legend { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.75rem; font-size: 0.8rem; }
+    .legend span { padding: 0.15rem 0.5rem; border-radius: 3px; }
+    .chapter-nav { background: #fff; border-bottom: 1px solid var(--border); padding: 0.75rem 2rem; overflow-x: auto; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+    .chapter-nav a { color: var(--navy); text-decoration: none; margin-right: 1.25rem; font-size: 0.9rem; font-weight: 500; }
+    .chapter-nav a:hover { text-decoration: underline; }
+    main { max-width: 1680px; margin: 0 auto; padding: 2rem; }
+    .section-title { font-size: 1.5rem; color: var(--navy); margin: 2rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--navy); }
+    .col-labels { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 0.5rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+    .row { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; align-items: start; }
+    .col-original { font-family: 'Lora', serif; font-size: 0.95rem; line-height: 1.75; }
+    .col-original p { margin-bottom: 0.75rem; }
+    .col-translation { font-size: 0.92rem; line-height: 1.75; color: #333; }
+    .col-translation p { margin-bottom: 0.75rem; }
+    .analysis-card { background: #fff; border-left: 4px solid var(--navy); padding: 1rem 1.25rem; border-radius: 0 6px 6px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.06); font-size: 0.9rem; }
+    .analysis-card .tag { display: inline-block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0.5rem; color: var(--navy); }
+    .analysis-card h4 { font-size: 0.85rem; color: var(--muted); margin: 0.75rem 0 0.25rem; }
+    .analysis-card p { margin-bottom: 0.5rem; }
+    .analysis-card.deep { border-left-width: 5px; }
+    .analysis-detail { margin: 0.75rem 0; padding-top: 0.5rem; border-top: 1px dashed var(--border); }
+    .analysis-detail:first-of-type { border-top: none; }
+    .exp-detail { list-style: none; margin: 0.5rem 0; }
+    .exp-detail li { margin-bottom: 0.4rem; }
+    .exp-detail li strong { color: var(--navy); }
+    .exp-table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.8rem; }
+    .exp-table th, .exp-table td { border: 1px solid var(--border); padding: 0.35rem 0.5rem; text-align: left; }
+    .exp-table th { background: var(--paper); color: var(--navy); font-weight: 600; }
+    .exp-table tr.is-ours { background: var(--evidence); }
+    .exp-table tr.is-ours td { font-weight: 600; }
+    /* 符号速查表（复用 exp-table 外观） */
+    .notation { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.88rem; background: #fff; }
+    .notation th, .notation td { border: 1px solid var(--border); padding: 0.4rem 0.6rem; text-align: left; }
+    .notation th { background: var(--paper); color: var(--navy); font-weight: 600; }
+    .notation td:first-child { width: 22%; white-space: nowrap; }
+    .diagram { margin: 0.75rem 0; }
+    .diagram img, .diagram svg { max-width: 100%; height: auto; display: block; }
+    .diagram figcaption { font-size: 0.78rem; color: var(--muted); margin-top: 0.35rem; }
+    .figure-row { margin: 1.5rem 0; padding: 1.25rem; background: #fff; border: 1px solid var(--border); border-radius: 8px; }
+    .figure-row figure { margin: 0; text-align: center; }
+    .figure-row img, .figure-row svg { max-width: 100%; height: auto; display: inline-block; }
+    .figure-row figcaption { font-size: 0.82rem; color: var(--muted); margin-top: 0.5rem; }
+    .figure-row h3 { color: var(--navy); font-size: 1rem; margin-bottom: 0.75rem; }
+    .mermaid { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem; margin: 0.5rem 0; text-align: center; }
+    .hl-thesis { background: var(--thesis); padding: 0 2px; }
+    .hl-concept { background: var(--concept); padding: 0 2px; }
+    .hl-evidence { background: var(--evidence); padding: 0 2px; }
+    .hl-counter { background: var(--counter); padding: 0 2px; }
+    .hl-method { background: var(--method); padding: 0 2px; }
+    .summary { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 2rem; margin-top: 3rem; }
+    .summary h2 { color: var(--navy); margin-bottom: 1rem; }
+    .summary .skeleton { font-family: 'IBM Plex Sans', monospace; background: var(--paper); padding: 1rem; border-radius: 4px; margin: 1rem 0; line-height: 1.9; }
+    .summary .strength, .summary .weakness { padding: 0.75rem 1rem; border-radius: 4px; margin: 0.5rem 0; }
+    .summary .strength { background: var(--counter); }
+    .summary .weakness { background: var(--concept); }
+    /* Karpathy 三步法：费曼速读 / 结构化十问 / 深挖追问 */
+    .feynman { background: #fff; border: 1px solid var(--border); border-left: 5px solid #0d9488; border-radius: 0 8px 8px 0; padding: 1.25rem 1.5rem; margin: 1.5rem 0 2rem; }
+    .feynman h2 { color: #0d9488; font-size: 1.15rem; margin-bottom: 0.35rem; }
+    .feynman .tldr-meta { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.6rem; }
+    .feynman p { font-size: 0.95rem; line-height: 1.85; margin-bottom: 0.6rem; }
+    .faq details { background: #fff; border: 1px solid var(--border); border-radius: 6px; margin: 0.5rem 0; }
+    .faq details[open] { box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .faq summary { cursor: pointer; font-weight: 600; color: var(--navy); padding: 0.7rem 0.9rem; list-style: none; font-size: 0.92rem; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::before { content: '▸'; color: #0d9488; margin-right: 0.5rem; }
+    .faq details[open] summary::before { content: '▾'; }
+    .faq .answer { padding: 0 0.9rem 0.85rem 1.8rem; font-size: 0.9rem; line-height: 1.8; color: #333; }
+    .deepdive .block { margin: 0.9rem 0; padding: 0.85rem 1.1rem; border-radius: 4px; background: var(--paper); border-left: 3px solid #6f42c1; }
+    .deepdive .block.crit { border-left-color: #dc3545; background: #fdf0f1; }
+    .deepdive .block h4 { color: var(--navy); margin-bottom: 0.3rem; }
+    .deepdive .block ul { margin: 0.3rem 0 0 1.1rem; }
+    .deepdive .block li { margin-bottom: 0.3rem; font-size: 0.9rem; }
+    @media (max-width: 1100px) {
+      .col-labels { display: none; }
+      .row { grid-template-columns: 1fr; }
+      .row > div::before {
+        display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+        letter-spacing: 0.05em; color: var(--muted); margin-bottom: 0.35rem;
+      }
+      .col-original::before { content: '原文'; }
+      .col-translation::before { content: '翻译'; }
+      .col-analysis::before { content: '解析'; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sticky-head">
+    <header class="top-nav">
+      <h1><a href="https://arxiv.org/abs/2006.11239" target="_blank" rel="noopener">DDPM — Denoising Diffusion Probabilistic Models</a></h1>
+      <div class="meta">DeepLearning-Paper-with-Code · Diffusion Model · arXiv(2020) / NeurIPS(2020)</div>
+      <div class="legend">
+        <span class="hl-thesis">核心论点</span>
+        <span class="hl-concept">关键概念</span>
+        <span class="hl-evidence">实证证据</span>
+        <span class="hl-counter">让步/反驳</span>
+        <span class="hl-method">方法论</span>
+      </div>
+    </header>
+
+    <nav class="chapter-nav">
+      <a href="#feynman">速读</a>
+      <a href="#abstract">Abstract</a>
+      <a href="#intro">Introduction</a>
+      <a href="#background">Background</a>
+      <a href="#method">Method</a>
+      <a href="#experiments">Experiments</a>
+      <a href="#conclusion">Conclusion</a>
+      <a href="#notation">符号表</a>
+      <a href="#overview">总览</a>
+      <a href="#faq">十问</a>
+      <a href="#deepdive">深挖</a>
+    </nav>
+  </div>
+
+  <main>
+
+    <section class="feynman" id="feynman">
+      <h2>🎮 费曼一分钟（通俗速读）</h2>
+      <div class="tldr-meta">通俗速读 · 先建立模糊认知，再读正文</div>
+      <p>想象一个「倒放」游戏：先把一张清晰照片一帧帧泼上雪花噪点，直到变成满屏的电视雪花；DDPM 要训练 AI 学会把这个过程<strong>倒着放</strong>——从纯雪花开始，一步步擦掉噪点，最后还原出一张全新的、以前没见过的照片。</p>
+      <p>用《我的世界》打比方：正向过程像让 TNT 把一座建筑逐格炸成碎块（规则固定、不用学）；反向过程才是真本事——AI 看着一堆碎块，要猜出「上一秒少炸了哪一块」，逐格还原回完整建筑。把「凭空造图」这个难题，拆成了「许多步各自简单的去噪」。</p>
+      <p>三个核心概念：① <strong>前向加噪</strong>——按固定方差表逐步加高斯噪声，还能一步算到任意时刻 $x_t$；② <strong>反向去噪</strong>——一条可学习的马尔可夫链，每步去掉一点噪声；③ <strong>噪声预测</strong>（本文关键招）——不让网络直接画图，而是预测「这一步混进了多少噪声 $\epsilon$」，损失就退化成简单的 MSE，训练又稳又好。</p>
+    </section>
+
+    <h2 class="section-title" id="abstract">Abstract</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>We present <span class="hl-thesis">high quality image synthesis results using diffusion probabilistic models</span>, a class of <span class="hl-concept">latent variable models inspired by considerations from nonequilibrium thermodynamics</span>. Our best results are obtained by training on a <span class="hl-method">weighted variational bound</span> designed according to a novel connection between diffusion probabilistic models and <span class="hl-concept">denoising score matching with Langevin dynamics</span>, and our models naturally admit a <span class="hl-thesis">progressive lossy decompression scheme</span> that can be interpreted as a generalization of autoregressive decoding. On the unconditional CIFAR10 dataset, we obtain an <span class="hl-evidence">Inception score of 9.46 and a state-of-the-art FID score of 3.17</span>. On 256×256 LSUN, we obtain sample quality similar to ProgressiveGAN.</p>
+      </div>
+      <div class="col-translation">
+        <p>我们利用扩散概率模型（diffusion probabilistic models）取得了高质量的图像合成结果。它是一类受非平衡热力学启发的潜变量模型。我们的最佳结果通过在一个加权变分下界（weighted variational bound）上训练获得，该下界依据扩散概率模型与「去噪分数匹配 + Langevin 动力学」之间一种新颖的联系而设计；并且我们的模型天然支持一种渐进式有损解压方案，可被解释为自回归解码的推广。在无条件 CIFAR10 数据集上，我们取得了 9.46 的 Inception 分数与当时最优的 3.17 FID 分数。在 256×256 的 LSUN 上，我们获得了与 ProgressiveGAN 相近的样本质量。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #ffc107;">
+          <span class="tag">概括主张</span>
+          <h4>段落功能</h4>
+          <p>用一句话宣告全文贡献：扩散模型可以高质量生成图像，并预告方法与结果。</p>
+          <h4>逻辑角色</h4>
+          <p>论证链起点——将「扩散模型能否实用」这一隐含问题，直接以肯定结论回应，为后文铺垫。</p>
+          <h4>论证技巧 / 潜在漏洞</h4>
+          <p>技巧：摘要同时抛出理论连接（score matching）、工程收益（渐进解码）和硬指标（IS/FID），三重锚定可信度。漏洞：未说明与当时最强 GAN 的公平对比条件（训练集 FID vs 测试集 FID 差异留到 §4 才交代）。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="intro">1. Introduction</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>Deep generative models of all kinds have recently exhibited high quality samples in a wide variety of data modalities. Generative adversarial networks (GANs), autoregressive models, flows, and variational autoencoders (VAEs) have synthesized striking image and audio samples, and there have been remarkable advances in energy-based modeling and score matching that have produced images comparable to those of GANs.</p>
+      </div>
+      <div class="col-translation">
+        <p>近来各类深度生成模型已在多种数据模态上展现出高质量样本。生成对抗网络（GAN）、自回归模型、流模型与变分自编码器（VAE）已合成出惊艳的图像与音频样本；同时，基于能量的建模与分数匹配也取得了显著进展，生成的图像质量可与 GAN 相媲美。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #1a2744;">
+          <span class="tag">引出问题</span>
+          <h4>段落功能</h4>
+          <p>建立研究领域背景，说明生成模型赛道已非常拥挤且成绩斐然。</p>
+          <h4>逻辑角色</h4>
+          <p>「问题语境」——读者会问：既然 GAN/自回归等已很强，为何还要研究扩散模型？</p>
+          <h4>论证技巧 / 潜在漏洞</h4>
+          <p>技巧：列举多类 SOTA 方法，暗示新范式必须证明自己有存在价值。无实质漏洞，标准文献综述开场。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <p>This paper presents progress in <span class="hl-concept">diffusion probabilistic models</span>. A diffusion probabilistic model is a <span class="hl-method">parameterized Markov chain trained using variational inference</span> to produce samples matching the data after finite time. Transitions of this chain are learned to reverse a diffusion process, which is a Markov chain that gradually adds noise to the data in the opposite direction of sampling until signal is destroyed. When the diffusion consists of small amounts of Gaussian noise, it is sufficient to set the sampling chain transitions to conditional Gaussians too, allowing for a particularly simple neural network parameterization.</p>
+      </div>
+      <div class="col-translation">
+        <p>本文推进了扩散概率模型的研究。扩散概率模型是一条用变分推断训练的参数化马尔可夫链，能在有限步后生成与数据匹配的样本。该链的转移被训练用于「逆转」一个扩散过程——扩散过程本身是一条马尔可夫链，沿与采样相反的方向逐步向数据加入噪声，直至信号被破坏殆尽。当扩散每步只加入少量高斯噪声时，将采样链的转移也设为条件高斯分布便已足够，这使得神经网络的参数化格外简单。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #6f42c1;">
+          <span class="tag">定义方法</span>
+          <h4>段落功能</h4>
+          <p>给出扩散模型的操作性定义：正向加噪 + 反向去噪的马尔可夫链 + 变分推断训练。</p>
+          <h4>逻辑角色</h4>
+          <p>从背景过渡到本文技术对象，为后文数学形式化铺路。</p>
+          <h4>论证技巧 / 潜在漏洞</h4>
+          <p>技巧：用「热力学启发」与「高斯条件」降低陌生感。漏洞：「小噪声足够用高斯」是直觉性断言，严格性留到 §2 Background。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <p>Diffusion models are straightforward to define and efficient to train, but <span class="hl-counter">to the best of our knowledge, there has been no demonstration that they are capable of generating high quality samples</span>. We show that <span class="hl-thesis">diffusion models actually are capable of generating high quality samples, sometimes better than the published results on other types of generative models</span>. In addition, we show that a certain parameterization of diffusion models reveals an equivalence with denoising score matching over multiple noise levels during training and with annealed Langevin dynamics during sampling. We obtained our best sample quality results using this parameterization, so we consider this equivalence to be one of our primary contributions.</p>
+      </div>
+      <div class="col-translation">
+        <p>扩散模型易于定义、训练高效，但据我们所知，此前尚无工作证明它们能够生成高质量样本。我们证明扩散模型确实能生成高质量样本，有时甚至优于其他类型生成模型已发表的结果。此外，我们表明扩散模型的某种特定参数化，揭示了它在训练时与「多噪声层级上的去噪分数匹配」、在采样时与「退火 Langevin 动力学」之间的等价关系。我们正是用这种参数化取得了最佳样本质量，因此将这一等价关系视为本文的主要贡献之一。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #ffc107;">
+          <span class="tag">提出论点</span>
+          <h4>段落功能</h4>
+          <p>明确指出研究空白（尚无高质量样本实证），并宣告本文将填补该空白。</p>
+          <h4>逻辑角色</h4>
+          <p>全文核心论点首次完整陈述：扩散模型不仅可行，且可超越其他生成模型；理论等价性是第二贡献。</p>
+          <h4>论证技巧 / 潜在漏洞</h4>
+          <p>技巧：「to the best of our knowledge」限定措辞，避免绝对化。漏洞：「sometimes better」较模糊，具体边界依赖实验节指标选取（IS/FID vs NLL，见 §4 Table 1）。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <p><span class="hl-counter">Despite their sample quality, our models do not have competitive log likelihoods compared to other likelihood-based models</span> (our models do, however, have log likelihoods better than the large estimates annealed importance sampling has been reported to produce for energy based models and score matching). We find that the majority of our models' lossless codelengths are consumed to describe imperceptible image details. We present a more refined analysis of this phenomenon in the language of lossy compression, and we show that the sampling procedure of diffusion models is a type of progressive decoding that resembles autoregressive decoding along a bit ordering that vastly generalizes what is normally possible with autoregressive models.</p>
+      </div>
+      <div class="col-translation">
+        <p>尽管样本质量出色，我们的模型在对数似然上却不及其他基于似然的模型（不过，我们模型的对数似然仍优于此前用退火重要性采样为能量模型和分数匹配所报告的那些偏大估计值）。我们发现，模型的无损码长大部分被用来描述人眼无法察觉的图像细节。我们用有损压缩的语言对这一现象给出更精细的分析，并表明扩散模型的采样过程是一种渐进式解码——它类似于沿某种比特顺序进行的自回归解码，而这种顺序远比自回归模型通常所能实现的更为一般化。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #198754;">
+          <span class="tag">让步处理</span>
+          <h4>段落功能</h4>
+          <p>主动承认 NLL 劣势，并将此「缺陷」重新框架为 rate-distortion / 渐进解码的理论洞察。</p>
+          <h4>逻辑角色</h4>
+          <p>预判审稿人攻击点（似然不够好），用概念重构化解矛盾，强化「样本质量 vs 码长」双轨叙事。</p>
+          <h4>论证技巧 / 潜在漏洞</h4>
+          <p>技巧：经典 rhetorical move——承认弱点后立即提供替代评价维度。漏洞：将「不可感知细节」等同于浪费码长，缺乏人眼感知实验的严格证明，更多是解释性叙事。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="background">2. Background</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>Diffusion models are latent variable models of the form $p_\theta(x_0) := \int p_\theta(x_{0:T})\,dx_{1:T}$, where $x_1,\dots,x_T$ are latents of the same dimensionality as the data $x_0 \sim q(x_0)$. The joint distribution $p_\theta(x_{0:T})$ is called the <span class="hl-concept">reverse process</span>, and it is defined as a Markov chain with learned Gaussian transitions starting at $p(x_T) = \mathcal{N}(x_T; \mathbf{0}, \mathbf{I})$.</p>
+        <p>What distinguishes diffusion models is that the approximate posterior $q(x_{1:T}\mid x_0)$, called the <span class="hl-concept">forward process</span> or diffusion process, is fixed to a Markov chain that gradually adds Gaussian noise according to a variance schedule $\beta_1,\dots,\beta_T$.</p>
+      </div>
+      <div class="col-translation">
+        <p>扩散模型是形如 $p_\theta(x_0) := \int p_\theta(x_{0:T})\,dx_{1:T}$ 的潜变量模型，其中 $x_1,\dots,x_T$ 是与数据 $x_0 \sim q(x_0)$ 同维度的潜变量。联合分布 $p_\theta(x_{0:T})$ 称为「反向过程」，它被定义为一条具有可学习高斯转移、起始于 $p(x_T) = \mathcal{N}(x_T; \mathbf{0}, \mathbf{I})$ 的马尔可夫链。</p>
+        <p>扩散模型的独特之处在于：其近似后验 $q(x_{1:T}\mid x_0)$（称为「正向过程」或扩散过程）被固定为一条马尔可夫链，按方差调度 $\beta_1,\dots,\beta_T$ 逐步加入高斯噪声。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #6f42c1;">
+          <span class="tag">形式化定义</span>
+          <h4>段落功能</h4>
+          <p>用概率图模型语言严格定义正向/反向过程，建立全文数学符号体系（见底部符号表）。</p>
+          <h4>逻辑角色</h4>
+          <p>为变分下界推导和后续 $\epsilon$-参数化提供形式基础；属于「论据基础设施」。</p>
+          <h4>论证技巧 / 潜在漏洞</h4>
+          <p>技巧：强调 $q$ 固定、只有 $p_\theta$ 可学习——与 VAE 的可学习后验形成对比（Related Work 再展开）。无重大漏洞。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <p>Training is performed by optimizing the usual <span class="hl-method">variational bound on negative log likelihood</span>. A notable property of the forward process is that it admits sampling $x_t$ at an arbitrary timestep $t$ in closed form: using $\alpha_t := 1-\beta_t$ and $\bar\alpha_t := \prod_{s=1}^{t}\alpha_s$, we have $q(x_t\mid x_0) = \mathcal{N}(x_t; \sqrt{\bar\alpha_t}\,x_0, (1-\bar\alpha_t)\mathbf{I})$. Efficient training is therefore possible by optimizing random terms of $L$ with stochastic gradient descent. Further improvements come from variance reduction by rewriting $L$ as a sum of KL divergences between tractable Gaussian posteriors.</p>
+      </div>
+      <div class="col-translation">
+        <p>训练通过优化常见的「负对数似然变分下界」来完成。正向过程的一个重要性质是：它允许以闭式形式在任意时间步 $t$ 直接采样 $x_t$——记 $\alpha_t := 1-\beta_t$、$\bar\alpha_t := \prod_{s=1}^{t}\alpha_s$，则 $q(x_t\mid x_0) = \mathcal{N}(x_t; \sqrt{\bar\alpha_t}\,x_0, (1-\bar\alpha_t)\mathbf{I})$。因此可以用随机梯度下降优化 $L$ 的随机项，从而实现高效训练。进一步的改进来自方差缩减——将 $L$ 改写为若干可解析的高斯后验之间的 KL 散度之和。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #6f42c1;">
+          <span class="tag">方法论说明</span>
+          <h4>段落功能</h4>
+          <p>说明训练目标来源（ELBO）及关键工程性质：任意 $t$ 闭式采样、KL 可解析计算。</p>
+          <h4>逻辑角色</h4>
+          <p>连接「理论模型」与「可训练算法」，为 §3 的参数化选择论证「为何这样设计」。</p>
+          <h4>论证技巧 / 潜在漏洞</h4>
+          <p>技巧：突出 closed-form 是相比一般 latent model 的计算优势。漏洞：未讨论 $T$ 很大时的训练方差与计算成本（实验节设 $T=1000$）。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="method">3. Diffusion Models and Denoising Autoencoders</h2>
+
+    <div class="figure-row">
+      <h3>原文 Figure 2：本文采用的有向图模型</h3>
+      <figure>
+        <img src="assets/ddpm/fig2_pgm.png" alt="DDPM Figure 2：有向图模型，展示正向加噪过程 q 与反向去噪过程 p_theta">
+        <figcaption>图 2（原文 p.3）：从右到左是固定的正向扩散过程 $q(x_t\mid x_{t-1})$，逐步把图像 $x_0$ 加噪至纯噪声 $x_T$；从左到右是可学习的反向过程 $p_\theta(x_{t-1}\mid x_t)$，逐步去噪还原。本文训练的正是这条反向马尔可夫链。</figcaption>
+      </figure>
+    </div>
+
+    <div class="figure-row">
+      <h3>方法数据流：训练 vs 采样（自绘流程图）</h3>
+      <figure>
+        <pre class="mermaid">
+flowchart LR
+  subgraph TRAIN[训练阶段 Algorithm 1]
+    direction LR
+    x0["x0 ~ q(x0)<br/>真实图像"] --> addn["闭式加噪<br/>xt = √at·x0 + √(1−at)·eps"]
+    tt["t ~ Uniform(1..T)"] --> addn
+    eps["eps ~ N(0, I)"] --> addn
+    addn --> net["eps_theta(xt, t)<br/>U-Net"]
+    eps --> loss["L_simple = ‖eps − eps_theta‖²<br/>梯度下降"]
+    net --> loss
+  end
+  subgraph SAMPLE[采样阶段 Algorithm 2]
+    direction LR
+    xT["xT ~ N(0, I)"] --> step["xt-1 = 1/√at·(xt − (1−at)/√(1−at_bar)·eps_theta(xt,t)) + sigma·z<br/>t = T → 1"]
+    step --> step
+    step --> out["x0 生成图像"]
+  end
+        </pre>
+        <figcaption>左：训练时随机抽 $t$、加噪、让网络回归噪声 $\epsilon$；右：采样时从纯噪声逐步去噪 $T$ 步还原图像。对应原文 Algorithm 1 / 2（图中 at=$\alpha_t$、at_bar=$\bar\alpha_t$，受 Mermaid 标签限制用纯文本表示）。</figcaption>
+      </figure>
+    </div>
+
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>We establish a new explicit connection between diffusion models and <span class="hl-concept">denoising score matching</span> that leads to a simplified, weighted variational bound objective. We propose predicting the noise <span class="hl-method">$\epsilon$</span> rather than the posterior mean $\tilde\mu$, motivated by the analysis of $L_t$. With fixed isotropic variance $\sigma_t^2 \mathbf{I}$, the reverse mean can be expressed in terms of $\epsilon$, linking training to multi-scale denoising.</p>
+      </div>
+      <div class="col-translation">
+        <p>我们在扩散模型与「去噪分数匹配」之间建立了一种新的显式联系，由此导出一个简化的加权变分下界目标。受对 $L_t$ 的分析启发，我们提出预测噪声 $\epsilon$，而非预测后验均值 $\tilde\mu$。在采用固定的各向同性方差 $\sigma_t^2 \mathbf{I}$ 时，反向过程的均值可以用 $\epsilon$ 表示，从而把训练与多尺度去噪联系起来。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #6f42c1;">
+          <span class="tag">核心方法</span>
+          <div class="analysis-detail">
+            <h4>方法动机</h4>
+            <p>背景节已把 ELBO 拆成逐项 KL（$L_T$、$L_{t-1}$、$L_0$）。最朴素的做法是让网络 $\mu_\theta$ 直接预测前向后验均值 $\tilde\mu_t$。本文的关键洞察（§3.2）：对 $L_{t-1}$ 做重参数化后，等价于让网络预测「当初加进去的噪声 $\epsilon$」，这把目标变成了多噪声尺度上的去噪分数匹配。</p>
+          </div>
+          <div class="analysis-detail">
+            <h4>公式拆解（$\epsilon$-参数化，式(11)）</h4>
+            <p>采样均值改写为 $$\mu_\theta(x_t,t) = \frac{1}{\sqrt{\alpha_t}}\Big(x_t - \frac{\beta_t}{\sqrt{1-\bar\alpha_t}}\,\epsilon_\theta(x_t,t)\Big).$$</p>
+            <p>符号：$\alpha_t = 1-\beta_t$；$\bar\alpha_t = \prod_{s=1}^{t}\alpha_s$（累积保留比例）；$\epsilon_\theta$ 是预测噪声的 U-Net；$\sigma_t^2$ 取 $\beta_t$ 或 $\tilde\beta_t$（固定不学习）。网络输入 $x_t$ 与时间步 $t$，输出与图像同维的噪声估计。</p>
+          </div>
+          <div class="analysis-detail">
+            <h4>设计取舍</h4>
+            <p>三种可选参数化：预测 $\tilde\mu$（基线）、预测 $x_0$（早期实验样本差，弃用）、预测 $\epsilon$（本文）。$\epsilon$-预测让损失退化为简洁的 MSE，且与 NCSN 的去噪分数匹配 + 退火 Langevin 采样在形式上统一。</p>
+          </div>
+          <div class="analysis-detail">
+            <h4>论证技巧 / 潜在漏洞</h4>
+            <p>技巧：设计选择锚定在 $L_{t-1}$ 的代数变形，而非纯工程试错，理论说服力强。漏洞：等价性依赖「$\sigma_t$ 固定、$\beta_t$ 很小」等设定；$\epsilon$-预测优越性最终仍靠消融（§4 Table 2）兜底，而非纯理论证明。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <p>We found it beneficial to sample quality to train on the following variant of the variational bound: <span class="hl-method">$L_\text{simple}(\theta) := \mathbb{E}_{t,x_0,\epsilon}\big[\lVert \epsilon - \epsilon_\theta(\sqrt{\bar\alpha_t}\,x_0 + \sqrt{1-\bar\alpha_t}\,\epsilon,\, t)\rVert^2\big]$</span>, where $t$ is uniform between $1$ and $T$. Since our simplified objective discards the weighting in the true bound, it is a weighted variational bound that emphasizes different aspects of reconstruction. Our diffusion process setup causes the simplified objective to down-weight loss terms corresponding to small $t$, so the network can focus on more difficult denoising tasks at larger $t$.</p>
+      </div>
+      <div class="col-translation">
+        <p>我们发现，在以下变分下界的变体上训练有利于样本质量：$L_\text{simple}(\theta) := \mathbb{E}_{t,x_0,\epsilon}\big[\lVert \epsilon - \epsilon_\theta(\sqrt{\bar\alpha_t}\,x_0 + \sqrt{1-\bar\alpha_t}\,\epsilon,\, t)\rVert^2\big]$，其中 $t$ 在 $1$ 到 $T$ 之间均匀采样。由于该简化目标丢弃了真实下界中的权重，它实际上是一个加权变分下界，强调重建的不同方面。我们的扩散过程设置使该简化目标对应小 $t$ 的损失项被降权，从而让网络能专注于更大 $t$ 时更困难的去噪任务。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #6f42c1;">
+          <span class="tag">训练目标</span>
+          <div class="analysis-detail">
+            <h4>Loss 公式与各项含义（式(14)）</h4>
+            <p>$$L_\text{simple}(\theta) = \mathbb{E}_{t,x_0,\epsilon}\Big[\big\lVert \epsilon - \epsilon_\theta(\sqrt{\bar\alpha_t}\,x_0 + \sqrt{1-\bar\alpha_t}\,\epsilon,\, t)\big\rVert^2\Big].$$</p>
+            <p>即：对真实图像 $x_0$ 按时间步 $t$ 闭式加噪得到 $x_t$，让网络回归当初加入的标准高斯噪声 $\epsilon$，取 L2。$t$ 在 $1..T$ 均匀采样。</p>
+          </div>
+          <div class="analysis-detail">
+            <h4>与完整 ELBO 的关系</h4>
+            <p>$L_\text{simple}$ 丢弃了严格变分下界中每项的权重 $\dfrac{\beta_t^2}{2\sigma_t^2 \alpha_t (1-\bar\alpha_t)}$，等价于「对小 $t$（噪声小、任务易）降权」。$t=1$ 项对应离散解码器 $L_0$，$t&gt;1$ 项对应去噪分数匹配的无权重版。</p>
+          </div>
+          <div class="analysis-detail">
+            <h4>论证技巧 / 潜在漏洞</h4>
+            <p>技巧：承认 $L_\text{simple}$ 非严格 ELBO，却赋予其「课程学习」式直觉（聚焦大 $t$ 难样本）。漏洞：降权方案缺乏理论最优性证明，纯靠实证 IS/FID 提升支撑（见 §4 消融）。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="experiments">4. Experiments</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>We set <span class="hl-method">$T = 1000$</span> for all experiments. We set the forward process variances to constants increasing linearly from $\beta_1 = 10^{-4}$ to $\beta_T = 0.02$. To represent the reverse process, we use a <span class="hl-method">U-Net backbone</span> similar to an unmasked PixelCNN++ with group normalization. Parameters are shared across time, specified using Transformer sinusoidal position embedding. We use self-attention at the 16×16 feature map resolution.</p>
+      </div>
+      <div class="col-translation">
+        <p>所有实验中我们设 $T = 1000$。正向过程的方差设为从 $\beta_1 = 10^{-4}$ 线性增至 $\beta_T = 0.02$ 的常数。为表示反向过程，我们使用类似于无掩码 PixelCNN++ 的 U-Net 主干，并在全网采用组归一化（group normalization）。参数在各时间步间共享，时间步通过 Transformer 正弦位置编码输入网络。我们在 16×16 的特征图分辨率上使用自注意力。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #0d6efd;">
+          <span class="tag">实验细节</span>
+          <ul class="exp-detail">
+            <li><strong>数据集与划分：</strong>CIFAR10（无条件，32×32；标准 50k 训练 / 10k 测试）；CelebA-HQ 256²；LSUN Bedroom / Cat / Church 256²。生成建模沿用各数据集原始划分，无单独验证集——以训练过程中最小 FID 处报告指标（§4）。</li>
+            <li><strong>预处理：</strong>像素整数 $\{0,\dots,255\}$ 线性缩放到 $[-1, 1]$；训练用随机水平翻转（附录 B）。</li>
+            <li><strong>训练 Loss：</strong>$L_\text{simple} = \mathbb{E}[\lVert \epsilon - \epsilon_\theta(x_t, t)\rVert^2]$（式(14)，见方法节）。</li>
+            <li><strong>训练策略：</strong>Adam，lr $2\times10^{-4}$（256² 降至 $2\times10^{-5}$）；batch 128（CIFAR10）/ 64（大图）；EMA 衰减 0.9999（未 sweep，附录 B）；CIFAR10 dropout 0.1；$T=1000$，$\beta$ 线性 $10^{-4}\to0.02$。</li>
+            <li><strong>架构：</strong>PixelCNN++ 风格 U-Net（Wide ResNet），group norm，16×16 自注意力，正弦时间嵌入（附录 B）。</li>
+            <li><strong>算力（§E）：</strong>TPU v3-8（≈8×V100）。CIFAR10 batch 128 时 21 步/秒，至 800k 步约 10.6 小时；采样 256 张约 17 秒。其余数据集训练步数论文未逐一列出。</li>
+            <li><strong>评测：</strong>IS↑、FID↓ 均在 50000 个样本上计算；NLL↓ 以 bits/dim 计（Table 1）。</li>
+            <li><strong>论点↔证据映射：</strong>本节超参直接服务于 Intro 主张「高质量 + 训练高效」；其有效性由 Table 1（绝对指标）与 Table 2（消融）共同支撑。</li>
+            <li><strong>统计严谨性：</strong>IS 报告 split 标准差（如 $9.46\pm0.11$，Table 1）；FID 为单值、无多次训练运行的方差，差异显著性未做统计检验。</li>
+          </ul>
+          <h4>论证技巧 / 潜在漏洞</h4>
+          <p>技巧：$T=1000$ 与先前工作对齐、超参基本不 sweep，弱化「调参取胜」质疑。漏洞：架构借鉴 PixelCNN++/U-Net，未完全隔离「架构红利」与「扩散框架红利」；无独立验证集，按最小 FID 选点略有「在测试指标上挑最优」之嫌（属生成建模惯例）。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <p>On CIFAR10, with our <span class="hl-evidence">FID score of 3.17</span>, our unconditional model achieves better sample quality than most models in the literature, including class conditional models. Our <span class="hl-evidence">Inception score is 9.46 ± 0.11</span>. We find that training on the true variational bound yields better codelengths than training on the simplified objective, as expected, but <span class="hl-thesis">the latter yields the best sample quality</span>.</p>
+      </div>
+      <div class="col-translation">
+        <p>在 CIFAR10 上，我们的无条件模型取得 3.17 的 FID 分数，样本质量优于文献中大多数模型，甚至包括类别条件模型。我们的 Inception 分数为 9.46 ± 0.11。我们发现，在真实变分下界上训练能获得比简化目标更好的码长（如预期所料），但后者却带来最佳的样本质量。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #0d6efd;">
+          <span class="tag">指标对比</span>
+          <p>CIFAR10 无条件生成（Table 1；指标方向：IS↑、FID↓、NLL↓ bits/dim）：</p>
+          <table class="exp-table">
+            <thead><tr><th>模型</th><th>IS↑</th><th>FID↓</th><th>NLL↓</th></tr></thead>
+            <tbody>
+              <tr><td>Gated PixelCNN</td><td>4.60</td><td>65.93</td><td>3.03</td></tr>
+              <tr><td>NCSN</td><td>8.87 ± 0.12</td><td>25.32</td><td>—</td></tr>
+              <tr><td>SNGAN-DDLS</td><td>9.09 ± 0.10</td><td>15.42</td><td>—</td></tr>
+              <tr><td>StyleGAN2+ADA（无条件）</td><td>9.74 ± 0.05</td><td>3.26</td><td>—</td></tr>
+              <tr class="is-ours"><td>本文 ($L_\text{simple}$)</td><td>9.46 ± 0.11</td><td>3.17</td><td>≤3.75</td></tr>
+              <tr><td>本文 ($L$, 固定各向同性 $\Sigma$)</td><td>7.67 ± 0.13</td><td>13.51</td><td>≤3.70</td></tr>
+            </tbody>
+          </table>
+          <p>LSUN 256² FID：Church 7.89、Bedroom 4.90（与 ProgressiveGAN 相近，Fig 3/4）。</p>
+          <h4>解读（论点↔证据）</h4>
+          <p>FID 3.17 优于绝大多数模型（含类别条件模型），甚至略胜无条件 StyleGAN2+ADA 的 3.26——直接支撑 Intro「有时优于已发表结果」主张。但出现张力：完整 $L$ 训练 NLL 更好（≤3.70）却样本差（FID 13.51）；$L_\text{simple}$ 样本最好却 NLL 略差——印证「码长 vs 样本质量」不一致。</p>
+          <h4>统计严谨性 / 指标局限</h4>
+          <p>IS 含 ±std，FID 为单次运行单值，未报多 seed 方差。FID/IS 依赖 ImageNet 预训练 Inception 特征，对样本数与实现敏感；本文 FID 相对<strong>训练集</strong>计算（测试集 FID=5.24，§4），跨论文对比须确认协议一致；与最强<strong>类别条件</strong> StyleGAN2+ADA 的 2.67 仍有差距。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <p>In ablation studies, we find that predicting $\tilde\mu$ works well only when trained on the true variational bound. Learning reverse process variances leads to <span class="hl-evidence">unstable training and poorer sample quality</span>. Predicting $\epsilon$ performs approximately as well as predicting $\tilde\mu$ under the true bound, but <span class="hl-evidence">much better when trained with $L_\text{simple}$ (IS 9.46 / FID 3.17 vs. baselines)</span>.</p>
+      </div>
+      <div class="col-translation">
+        <p>在消融实验中，我们发现预测 $\tilde\mu$ 仅在用真实变分下界训练时才表现良好。学习反向过程的方差会导致训练不稳定、样本质量更差。预测 $\epsilon$ 在真实下界下与预测 $\tilde\mu$ 表现相当，但在用 $L_\text{simple}$ 训练时则明显更好（IS 9.46 / FID 3.17，优于各基线）。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #0d6efd;">
+          <span class="tag">消融实验</span>
+          <p>CIFAR10 上「参数化 × 训练目标」消融（Table 2；—=训练不稳定/样本超出有效范围）：</p>
+          <table class="exp-table">
+            <thead><tr><th>参数化 / 目标</th><th>IS↑</th><th>FID↓</th></tr></thead>
+            <tbody>
+              <tr><td>$\tilde\mu$ 预测, $L$ 学习对角 $\Sigma$</td><td>7.28 ± 0.10</td><td>23.69</td></tr>
+              <tr><td>$\tilde\mu$ 预测, $L$ 固定各向同性 $\Sigma$</td><td>8.06 ± 0.09</td><td>13.22</td></tr>
+              <tr><td>$\tilde\mu$ 预测, $\lVert\tilde\mu-\tilde\mu_\theta\rVert^2$</td><td>—</td><td>—</td></tr>
+              <tr><td>$\epsilon$ 预测, $L$ 学习对角 $\Sigma$</td><td>—</td><td>—</td></tr>
+              <tr><td>$\epsilon$ 预测, $L$ 固定各向同性 $\Sigma$</td><td>7.67 ± 0.13</td><td>13.51</td></tr>
+              <tr class="is-ours"><td>$\epsilon$ 预测, $L_\text{simple}$（本文）</td><td>9.46 ± 0.11</td><td>3.17</td></tr>
+            </tbody>
+          </table>
+          <h4>结论</h4>
+          <p>三点：① 预测 $\tilde\mu$ 仅在真实变分下界下可用，配简化 MSE 则崩；② 学习反向方差导致训练不稳定、质量更差，故本文固定方差；③ $\epsilon$-预测在真实下界下与 $\tilde\mu$ 相当，但在 $L_\text{simple}$ 下大幅领先（FID 13.51→3.17）——即「$\epsilon$-预测 + $L_\text{simple}$」组合才是性能跃升关键，直接支撑 §3 的核心设计主张。</p>
+          <h4>论证技巧 / 潜在漏洞</h4>
+          <p>技巧：诚实报告失败配置（空白项），且消融正交地拆开「参数化」与「目标权重」两个变量。漏洞：消融仅在 CIFAR10 上做，LSUN/CelebA-HQ 结论主要靠定性样本图，跨数据集稳健性证据偏弱。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="conclusion">5. Conclusion</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>We have presented <span class="hl-thesis">high quality image samples using diffusion models</span>, and we have found connections among diffusion models and variational inference for training Markov chains, denoising score matching and annealed Langevin dynamics, autoregressive models, and progressive lossy compression. Since diffusion models seem to have <span class="hl-thesis">excellent inductive biases for image data</span>, we look forward to investigating their utility in other data modalities and as components in other types of generative models and machine learning systems.</p>
+      </div>
+      <div class="col-translation">
+        <p>我们展示了用扩散模型生成的高质量图像样本，并发现了扩散模型与多个方向之间的联系：用于训练马尔可夫链的变分推断、去噪分数匹配与退火 Langevin 动力学、自回归模型，以及渐进式有损压缩。由于扩散模型似乎对图像数据具有出色的归纳偏置，我们期待进一步探索它们在其他数据模态中的作用，以及作为其他类型生成模型和机器学习系统组件的潜力。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #ffc107;">
+          <span class="tag">总结</span>
+          <h4>段落功能</h4>
+          <p>收束全文贡献，并指向未来工作。</p>
+          <h4>逻辑角色</h4>
+          <p>论证链终点——将实验证据上升为领域级结论与研究方向。</p>
+          <h4>论证技巧 / 潜在漏洞</h4>
+          <p>技巧：结论重复多重连接（VI / score matching / 自回归 / 压缩），强化理论厚度。漏洞：「excellent inductive biases」偏断言，跨模态外推尚未验证。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="summary" id="notation">
+      <h2>符号速查表</h2>
+      <table class="notation">
+        <thead><tr><th>符号</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td>$x_0$</td><td>真实数据（图像），$x_0 \sim q(x_0)$</td></tr>
+          <tr><td>$x_t$</td><td>第 $t$ 步加噪后的隐变量（与 $x_0$ 同维）</td></tr>
+          <tr><td>$x_T$</td><td>纯噪声，$p(x_T)=\mathcal{N}(0,\mathbf{I})$</td></tr>
+          <tr><td>$q(x_t\mid x_{t-1})$</td><td>固定的正向加噪过程（扩散过程）</td></tr>
+          <tr><td>$p_\theta(x_{t-1}\mid x_t)$</td><td>可学习的反向去噪过程</td></tr>
+          <tr><td>$\beta_t$</td><td>第 $t$ 步噪声方差调度（$10^{-4}\to0.02$ 线性）</td></tr>
+          <tr><td>$\alpha_t$</td><td>$1-\beta_t$，单步信号保留比例</td></tr>
+          <tr><td>$\bar\alpha_t$</td><td>$\prod_{s=1}^{t}\alpha_s$，累积信号保留比例</td></tr>
+          <tr><td>$\epsilon$</td><td>加噪时采样的标准高斯噪声 $\mathcal{N}(0,\mathbf{I})$</td></tr>
+          <tr><td>$\epsilon_\theta(x_t,t)$</td><td>预测噪声的网络（U-Net），本文核心参数化</td></tr>
+          <tr><td>$\tilde\mu_t$</td><td>正向后验均值（被 $\epsilon$-参数化替代的预测目标）</td></tr>
+          <tr><td>$\sigma_t^2$</td><td>反向过程方差，固定为 $\beta_t$ 或 $\tilde\beta_t$（不学习）</td></tr>
+          <tr><td>$L_\text{simple}$</td><td>简化加权目标 $\mathbb{E}[\lVert\epsilon-\epsilon_\theta\rVert^2]$</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="summary" id="overview">
+      <h2>论证结构总览</h2>
+      <div class="skeleton">
+        问题（扩散模型尚无高质量样本实证） → 论点（$\epsilon$-参数化 + $L_\text{simple}$ 可达 SOTA 级样本质量，且与 score matching 等价） → 证据（CIFAR10 FID 3.17 / IS 9.46；消融 Table 2；LSUN 定性样本） → 反驳/让步（NLL 不如自回归模型；重解释为 rate-distortion 与渐进解码） → 结论（扩散模型是图像生成的有效范式，值得推广）
+      </div>
+      <h4>核心主张（一句话）</h4>
+      <p>通过将扩散模型参数化为噪声预测并采用简化加权目标训练，可以在保持训练简洁性的同时生成媲美甚至超越当时主流生成模型的图像样本，且该框架与多尺度去噪 score matching 在理论上等价。</p>
+      <div class="strength"><strong>论证最强处：</strong>$\epsilon$-预测与 $L_\text{simple}$ 的选择不仅有代数推导支撑，还有系统消融（Table 2）闭环验证；同时主动讨论 NLL 劣势并给出 rate-distortion 解释，学术诚实度高。</div>
+      <div class="weakness"><strong>论证最弱处：</strong>「样本质量优于其他模型」部分依赖 FID/IS 指标且训练集 FID 与最强类别条件 GAN 仍有差距；跨数据集、跨模态的外推主要基于归纳偏置直觉，缺乏统一理论保证。</div>
+      <p style="margin-top:1rem;font-size:0.85rem;color:var(--muted);">来源：<a href="https://arxiv.org/pdf/2006.11239.pdf">arXiv:2006.11239</a>（指标见 §4 Table 1/2，超参见附录 B/E） · 生成工具：paper-logic-reading skill（三栏版）</p>
+    </section>
+
+    <section class="summary faq" id="faq">
+      <h2>🧩 结构化十问（AI 解构）</h2>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.75rem;">让 AI 当助教，从十个角度提取论文骨架。答案据论文与原文 LaTeX 源回答，未说明处标注「论文未说明」。</p>
+
+      <details open>
+        <summary>Q1 · 论文试图解决什么问题？</summary>
+        <div class="answer">证明扩散概率模型能够生成<strong>高质量</strong>图像样本，并给出一套简洁、训练高效的实现方案。此前扩散模型「易定义、训练高效」，但尚无工作证明其样本质量可与 GAN 等主流模型比肩（§1）。</div>
+      </details>
+      <details>
+        <summary>Q2 · 这是否是一个新问题？</summary>
+        <div class="answer">框架本身不新——扩散模型由 Sohl-Dickstein et al. (2015) 提出。但「扩散模型能否达到高质量样本」这一具体问题此前未被解决，本文首次给出肯定的实证答案（§1）。</div>
+      </details>
+      <details>
+        <summary>Q3 · 要验证什么科学假设？</summary>
+        <div class="answer">假设：通过特定参数化（让网络预测噪声 $\epsilon$）配合简化加权目标 $L_\text{simple}$，扩散模型可达到甚至超越当时主流生成模型的样本质量；且该训练在形式上等价于多噪声尺度上的去噪分数匹配、采样等价于退火 Langevin 动力学（§1, §3）。</div>
+      </details>
+      <details>
+        <summary>Q4 · 有哪些相关研究？如何归类？值得关注的研究者？</summary>
+        <div class="answer">
+          <ul>
+            <li><strong>扩散 / 非平衡热力学：</strong>Sohl-Dickstein et al. 2015（开山之作）</li>
+            <li><strong>分数匹配 + Langevin：</strong>Song &amp; Ermon（NCSN / NCSNv2）</li>
+            <li><strong>其他生成范式：</strong>GAN、VAE、自回归（PixelCNN++）、流模型、能量模型（EBM）</li>
+          </ul>
+          值得关注：本文作者 Jonathan Ho、Ajay Jain、Pieter Abbeel（UC Berkeley）；分数生成方向的 Yang Song、Stefano Ermon。
+        </div>
+      </details>
+      <details>
+        <summary>Q5 · 解决方案的关键是什么？</summary>
+        <div class="answer">$\epsilon$-参数化：网络预测「加进去的噪声」而非后验均值 $\tilde\mu$，使反向均值可写成 $\mu_\theta=\frac{1}{\sqrt{\alpha_t}}(x_t-\frac{\beta_t}{\sqrt{1-\bar\alpha_t}}\epsilon_\theta)$（式11）；再配简化目标 $L_\text{simple}=\mathbb{E}\lVert\epsilon-\epsilon_\theta\rVert^2$（式14），损失退化为干净的 MSE（§3.2）。</div>
+      </details>
+      <details>
+        <summary>Q6 · 实验是如何设计的？</summary>
+        <div class="answer">所有实验 $T=1000$、$\beta$ 从 $10^{-4}$ 线性增至 $0.02$、U-Net 主干。用 IS/FID 评样本质量、bits/dim 评 NLL；并做「参数化 × 训练目标」正交消融（Table 2），以及 rate-distortion / 渐进解码分析（§4）。</div>
+      </details>
+      <details>
+        <summary>Q7 · 用什么数据集评估？代码开源吗？</summary>
+        <div class="answer">CIFAR10（无条件，32²）、CelebA-HQ 256²、LSUN Bedroom/Cat/Church 256²。代码已开源：<a href="https://github.com/hojonathanho/diffusion" target="_blank" rel="noopener">github.com/hojonathanho/diffusion</a>（摘要给出）。</div>
+      </details>
+      <details>
+        <summary>Q8 · 实验结果是否很好支持了假设？</summary>
+        <div class="answer">基本支持。CIFAR10 FID 3.17（SOTA 级）、IS 9.46±0.11 印证样本质量；消融 Table 2 证明「$\epsilon$-预测 + $L_\text{simple}$」是性能跃升关键。<strong>但有保留</strong>：NLL 不占优、跨数据集结论多靠定性样本、FID 相对训练集计算，「超越」有边界（§4）。</div>
+      </details>
+      <details>
+        <summary>Q9 · 这篇论文到底有什么贡献？</summary>
+        <div class="answer">① 首次实证扩散模型可高质量生成图像；② 建立「扩散模型 ↔ 去噪分数匹配 / 退火 Langevin」的显式等价（作者视为主要贡献之一）；③ 用 rate-distortion / 渐进有损解码重新解释采样过程（§1, §5）。</div>
+      </details>
+      <details>
+        <summary>Q10 · 下一步可以做什么？</summary>
+        <div class="answer">作者展望：其他数据模态、作为更大生成系统的组件（§5）。本文补充延伸：加速采样（$T=1000$ 太慢，后续 DDIM 解决）、提升似然、条件生成、理论上探究高斯假设与 $\beta$ 调度的最优性。<span style="color:var(--muted)">（标注：作者展望 + 本文批判性补充）</span></div>
+      </details>
+    </section>
+
+    <section class="summary deepdive" id="deepdive">
+      <h2>🔬 深挖追问</h2>
+
+      <div class="block">
+        <h4>第一性原理 · 本质</h4>
+        <p>把「一步到位生成复杂图像分布」这个几乎不可解的难题，拆解为「许多步各自简单的高斯去噪」——<strong>以时间换难度</strong>，用一条马尔可夫链把单步的难映射，变成一长串可学习的小步。</p>
+      </div>
+      <div class="block">
+        <h4>第一性原理 · 哲学基础</h4>
+        <p>「渐进可逆」对「一步生成」：热力学中「扩散 → 趋于平衡（无序）」的自发过程，被反向利用为「从纯无序中逐步重建有序」。核心信念是过程可逆、信息可被逐步注入与移除。</p>
+      </div>
+      <div class="block">
+        <h4>第一性原理 · 数学基础</h4>
+        <p>变分推断与证据下界（ELBO）、马尔可夫链、高斯重参数化技巧、（去噪）分数匹配与 Langevin 动力学、以及把 ELBO 分解为可解析高斯后验间的 KL 散度。</p>
+      </div>
+      <div class="block crit">
+        <h4>批判性思维 · 我们还没问的根本问题（盲区）</h4>
+        <ul>
+          <li><strong>采样效率：</strong>$T=1000$ 步、单图采样需秒级，论文未追问「能否大幅减步」——这是最大实用瓶颈（后续 DDIM/DPM-Solver 才回应）。</li>
+          <li><strong>高斯假设的根本性：</strong>为何每步高斯就「足够」？$\beta$ 线性调度为何接近最优？缺乏理论最优性证明。</li>
+          <li><strong>码长叙事：</strong>「无损码长大多用于不可感知细节」缺人类感知实验佐证，更像解释性叙事而非证据。</li>
+          <li><strong>泛化外推：</strong>「对图像有出色归纳偏置」未在音频/文本等模态验证；跨分辨率稳健性证据偏弱。</li>
+          <li><strong>对比公平性：</strong>FID 相对训练集计算、与条件 GAN 协议不同，「超越主流模型」存在边界。</li>
+          <li><strong>成本与可复现：</strong>大模型训练算力/能耗、随机种子带来的方差未充分报告。</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral', flowchart: { htmlLabels: true } });</script>
+  <script>
+    // 锚点跳转偏移 = 固定头部高度，避免标题被遮挡（头部高度随图例换行变化）
+    function syncScrollPad() {
+      var head = document.querySelector('.sticky-head');
+      if (head) document.documentElement.style.scrollPaddingTop = (head.offsetHeight + 8) + 'px';
+    }
+    window.addEventListener('load', syncScrollPad);
+    window.addEventListener('resize', syncScrollPad);
+    syncScrollPad();
+  </script>
+</body>
+</html>

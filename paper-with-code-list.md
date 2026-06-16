@@ -1,6 +1,6 @@
 # Paper-with-Code-List
 
-[Awesome](https://awesome.re) CV AIGC VLM LLM
+[![Awesome](https://awesome.re/badge.svg)](https://awesome.re) ![CV](https://img.shields.io/badge/CV-Computer%20Vision-blue) ![AIGC](https://img.shields.io/badge/AIGC-Generative%20AI-orange) ![VLM](https://img.shields.io/badge/VLM-Vision--Language-purple) ![LLM](https://img.shields.io/badge/LLM-Large%20Language%20Model-green)
 
 There are paper with code for CV / AIGC / LLM / VLM.
 

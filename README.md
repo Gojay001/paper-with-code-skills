@@ -1,6 +1,6 @@
 # Paper-with-Code Skills
 
-[Awesome](https://awesome.re) Skills Papers Reading
+[![Awesome](https://awesome.re/badge.svg)](https://awesome.re) ![Skills](https://img.shields.io/badge/Cursor-Skills-blue) ![Papers](https://img.shields.io/badge/Deep%20Learning-Papers-green) ![Reading](https://img.shields.io/badge/Paper-Reading-orange)
 
 一个把**论文整理**与**论文精读**流程沉淀为 Cursor / Claude Skills 的仓库。它既维护一份按领域分类的「论文 + 代码」清单，又能把任意论文转换成三栏批注的精读 HTML，让「收集 → 整理 → 精读」形成闭环。
 

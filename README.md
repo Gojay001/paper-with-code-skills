@@ -120,3 +120,8 @@ The default example list currently covers:
 - **AIGC:** GAN / VAE / Diffusion / applications (Face Editing, Face Swapping)
 - **LLM · VLM:** Transformer / ViT / VLM
 - **CV:** Backbone / Detection / Segmentation / Tracking / Few-Shot / 3D Face / SOD / Optimization / Survey
+
+## Acknowledgments
+
+1. [Zhihu answer](https://www.zhihu.com/question/619529118/answer/1982578041122202372)
+2. [Zhihu column article](https://zhuanlan.zhihu.com/p/2022000601618288748)

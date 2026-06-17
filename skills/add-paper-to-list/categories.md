@@ -26,6 +26,8 @@
 | 用户可能说的 | 列表章节 | 锚点 |
 |-------------|-------------|------|
 | Transformer / Attention | Attention or Transformer | `#Attention-or-Transformer` |
+| PLM / 预训练语言模型 / BERT / T5 / GPT-2 / GLM | Pre-trained Language Model | `#Pre-trained-Language-Model` |
+| LLM / 大语言模型 / GPT / OpenAI / Claude / Google / Gemini / PaLM / Gemma / Qwen / DeepSeek / ByteDance / Seed / LLaMA / GLM-4 / ChatGLM | Large Language Model | `#Large-Language-Model` |
 | ViT / Vision Transformer | Vision Transformer | `#Vision-Transformer` |
 | VLM / 视觉语言模型 / CLIP | VLM | `#VLM` |
 

@@ -16,7 +16,9 @@ There are paper with code for CV / AIGC / LLM / VLM.
 - **LLM / VLM** (Large Language Model / Vision-Language Model)
   - [Transformer](#Attention-or-Transformer)
   - [ViT](#Vision-Transformer)
-  - [VLM](#VLM)
+  - [PLM](#Pre-trained-Language-Model)
+  - [LLM](#Large-Language-Model)
+  - [VLM](#Vision-Language-Model)
 - **CV** (Computer Vision)
   - [Backbone](#Backbone)
   - [Optimization](#Optimization)
@@ -139,6 +141,55 @@ There are paper with code for CV / AIGC / LLM / VLM.
 | Non-local   | [Non-local Neural Networks](https://arxiv.org/abs/1711.07971)                              | arXiv(2017) / CVPR(2018) | [Caffe](https://github.com/facebookresearch/video-nonlocal-net) |
 
 
+## Pre-trained Language Model
+
+
+| Title     | Paper                                                                                                                                                              | Conf                     | Code                                                                                  |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------ | ------------------------------------------------------------------------------------- |
+| BERT      | [BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding](https://arxiv.org/abs/1810.04805)                                              | arXiv(2018) / NAACL(2019) | [TensorFlow](https://github.com/google-research/bert)                                 |
+| GPT       | [Improving Language Understanding by Generative Pre-Training](https://cdn.openai.com/research-covers/language-unsupervised/language_understanding_paper.pdf)       | OpenAI(2018)             | [TensorFlow](https://github.com/openai/finetune-transformer-lm)                       |
+| T5        | [Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer](https://arxiv.org/abs/1910.10683)                                              | arXiv(2019) / JMLR(2020) | [TensorFlow](https://github.com/google-research/text-to-text-transfer-transformer)    |
+| GPT-2     | [Language Models are Unsupervised Multitask Learners](https://cdn.openai.com/better-language-models/language_models_are_unsupervised_multitask_learners.pdf)        | OpenAI(2019)             | [PyTorch](https://github.com/openai/gpt-2)                                            |
+| GLM       | [GLM: General Language Model Pretraining with Autoregressive Blank Infilling](https://arxiv.org/abs/2103.10360)                                                    | arXiv(2021) / ACL(2022)  | [PyTorch](https://github.com/THUDM/GLM)                                               |
+| GLM-130B  | [GLM-130B: An Open Bilingual Pre-trained Model](https://arxiv.org/abs/2210.02414)                                                                                  | arXiv(2022) / ICLR(2023) | [PyTorch](https://github.com/THUDM/GLM-130B)                                         |
+
+
+## Large Language Model
+
+
+| Title            | Paper                                                                                                                                                              | Conf                          | Code                                                                                              |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------- | ------------------------------------------------------------------------------------------------- |
+| GPT-3            | [Language Models are Few-Shot Learners](https://arxiv.org/abs/2005.14165)                                                                                          | arXiv(2020) / NeurIPS(2020)   | [code]                                                                                            |
+| LLaMA            | [LLaMA: Open and Efficient Foundation Language Models](https://arxiv.org/abs/2302.13971)                                                                           | arXiv(2023)                   | [PyTorch](https://github.com/meta-llama/llama)                                                    |
+| GPT-4            | [GPT-4 Technical Report](https://arxiv.org/abs/2303.08774)                                                                                                         | arXiv(2023)                   | [code]                                                                                            |
+| LLaMA 2          | [Llama 2: Open Foundation and Fine-Tuned Chat Models](https://arxiv.org/abs/2307.09288)                                                                            | arXiv(2023)                   | [PyTorch](https://github.com/meta-llama/llama)                                                    |
+| Qwen             | [Qwen Technical Report](https://arxiv.org/abs/2309.16609)                                                                                                          | arXiv(2023)                   | [PyTorch](https://github.com/QwenLM/Qwen)                                                        |
+| Gemini           | [Gemini: A Family of Highly Capable Multimodal Models](https://arxiv.org/abs/2312.11805)                                                                             | arXiv(2023)                   | [code]                                                                                            |
+| DeepSeek LLM     | [DeepSeek LLM: Scaling Open-Source Language Models with Longtermism](https://arxiv.org/abs/2401.02954)                                                             | arXiv(2024)                   | [PyTorch](https://github.com/deepseek-ai/DeepSeek-LLM)                                            |
+| Gemma            | [Gemma: Open Models Based on Gemini Research and Technology](https://arxiv.org/abs/2403.08295)                                                                     | arXiv(2024)                   | [PyTorch](https://github.com/google/gemma_pytorch)                                                |
+| DeepSeek-V2      | [DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model](https://arxiv.org/abs/2405.04434)                                             | arXiv(2024)                   | [PyTorch](https://github.com/deepseek-ai/DeepSeek-V2)                                             |
+| GLM-4            | [ChatGLM: A Family of Large Language Models from GLM-130B to GLM-4 All Tools](https://arxiv.org/abs/2406.12793)                                                  | arXiv(2024)                   | [PyTorch](https://github.com/THUDM/GLM-4)                                                         |
+| Qwen2            | [Qwen2 Technical Report](https://arxiv.org/abs/2407.10671)                                                                                                         | arXiv(2024)                   | [PyTorch](https://github.com/QwenLM/Qwen2)                                                        |
+| LLaMA 3          | [The Llama 3 Herd of Models](https://arxiv.org/abs/2407.21783)                                                                                                     | arXiv(2024)                   | [PyTorch](https://github.com/meta-llama/llama3)                                                   |
+| Claude 3         | [The Claude 3 Model Family: Opus, Sonnet, Haiku](https://docs.anthropic.com/en/resources/claude-3-model-card)                                                      | Anthropic(2024)               | [code]                                                                                            |
+| Qwen2.5          | [Qwen2.5 Technical Report](https://arxiv.org/abs/2412.15115)                                                                                                         | arXiv(2024)                   | [PyTorch](https://github.com/QwenLM/Qwen2.5)                                                      |
+| GPT-o1               | [OpenAI o1 System Card](https://arxiv.org/abs/2412.16720)                                                                                                          | arXiv(2024)                   | [code]                                                                                            |
+| DeepSeek-V3      | [DeepSeek-V3 Technical Report](https://arxiv.org/abs/2412.19437)                                                                                                   | arXiv(2024)                   | [PyTorch](https://github.com/deepseek-ai/DeepSeek-V3)                                             |
+| DeepSeek-R1      | [DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via Reinforcement Learning](https://arxiv.org/abs/2501.12948)                                            | arXiv(2025)                   | [PyTorch](https://github.com/deepseek-ai/DeepSeek-R1)                                             |
+| LLaMA 4          | [The Llama 4 Herd: The Beginning of a New Era of Natively Multimodal AI Innovation](https://github.com/meta-llama/llama-models/blob/main/models/llama4/MODEL_CARD.md) | Meta(2025)                    | [PyTorch](https://github.com/meta-llama/llama-models)                                              |
+| Qwen3            | [Qwen3 Technical Report](https://arxiv.org/abs/2505.09388)                                                                                                         | arXiv(2025)                   | [PyTorch](https://github.com/QwenLM/Qwen3)                                                        |
+| Claude 4         | [System Card: Claude Opus 4 & Claude Sonnet 4](https://www.anthropic.com/claude-4-model-card)                                                                      | Anthropic(2025)               | [code]                                                                                            |
+| Gemini 2.5       | [Gemini 2.5: Pushing the Frontier with Advanced Reasoning, Multimodality, Long Context, and Next Generation Agentic Capabilities](https://arxiv.org/abs/2507.06261) | arXiv(2025)                   | [code]                                                                                            |
+| Kimi K2          | [Kimi K2: Open Agentic Intelligence](https://arxiv.org/abs/2507.20534)                                                                                             | arXiv(2025)                   | [PyTorch](https://github.com/MoonshotAI/Kimi-K2)                                                  |
+| GLM-4.5          | [GLM-4.5: Agentic, Reasoning, and Coding (ARC) Foundation Models](https://arxiv.org/abs/2508.06471)                                                                | arXiv(2025)                   | [PyTorch](https://github.com/zai-org/GLM-4.5)                                                     |
+| Gemini 3         | [Gemini 3 Pro Model Card](https://storage.googleapis.com/deepmind-media/Model-Cards/Gemini-3-Pro-Model-Card.pdf)                                                   | Google DeepMind(2025)         | [code]                                                                                            |
+| GPT-5            | [GPT-5 System Card](https://arxiv.org/abs/2601.03267)                                                                                                              | arXiv(2025)                   | [code]                                                                                            |
+| GLM-4.7          | [GLM-4.7: Advancing Coding Capability](https://z.ai/blog/glm-4.7)                                                                                                  | Z.ai(2025)                    | [PyTorch](https://huggingface.co/zai-org/GLM-4.7)                                                 |
+| GLM-5            | [GLM-5: from Vibe Coding to Agentic Engineering](https://arxiv.org/abs/2602.15763)                                                                                 | arXiv(2026)                   | [PyTorch](https://github.com/zai-org/GLM-5)                                                       |
+| Qwen3.5          | [Qwen3.5: Towards Native Multimodal Agents](https://qwen.ai/blog?id=qwen3.5)                                                                                       | Qwen(2026)                    | [PyTorch](https://github.com/QwenLM/Qwen3.6)                                                      |
+| DeepSeek-V4      | [DeepSeek-V4: Towards Highly Efficient Million-Token Context Intelligence](https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/blob/main/DeepSeek_V4.pdf)         | DeepSeek(2026)                | [Hugging Face](https://huggingface.co/collections/deepseek-ai/deepseek-v4)                        |
+
+
 ## Vision Transformer
 
 
@@ -159,7 +210,7 @@ There are paper with code for CV / AIGC / LLM / VLM.
 
 > More implementation for ViTs can be found in [vit-pytorch](https://github.com/lucidrains/vit-pytorch).
 
-## VLM
+## Vision Language Model
 
 
 | Title         | Paper                                                                                                                                        | Conf                     | Code                                                 |

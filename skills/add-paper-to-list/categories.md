@@ -14,40 +14,40 @@
 
 | 用户可能说的 | 列表章节 | 锚点 |
 |-------------|-------------|------|
-| GAN | Generative Adversarial Network | `#Generative-Adversarial-Network` |
-| VAE | Variational Auto-Encoder | `#Variational-Auto-Encoder` |
-| Diffusion / 扩散 | Diffusion Model | `#Diffusion-Model` |
-| AIGC 应用 | AIGC-Applications | `#AIGC-Applications` |
-| 人脸编辑 / Face Editing | AIGC-Applications → Face Editing | `#Face-Editing` |
-| 换脸 / Face Swapping | AIGC-Applications → Face Swapping | `#Face-Swapping` |
+| GAN | Generative Adversarial Network | `#generative-adversarial-network` |
+| VAE | Variational Auto-Encoder | `#variational-auto-encoder` |
+| Diffusion / 扩散 | Diffusion Model | `#diffusion-model` |
+| AIGC 应用 | AIGC-Applications | `#aigc-applications` |
+| 人脸编辑 / Face Editing | AIGC-Applications → Face Editing | `#face-editing` |
+| 换脸 / Face Swapping | AIGC-Applications → Face Swapping | `#face-swapping` |
 
 ## LLM / VLM 子分类
 
 | 用户可能说的 | 列表章节 | 锚点 |
 |-------------|-------------|------|
-| Transformer / Attention | Attention or Transformer | `#Attention-or-Transformer` |
-| PLM / 预训练语言模型 / BERT / T5 / GPT-2 / GLM | Pre-trained Language Model | `#Pre-trained-Language-Model` |
-| LLM / 大语言模型 / GPT / OpenAI / Claude / Google / Gemini / PaLM / Gemma / Qwen / DeepSeek / ByteDance / Seed / LLaMA / GLM-4 / ChatGLM | Large Language Model | `#Large-Language-Model` |
-| ViT / Vision Transformer | Vision Transformer | `#Vision-Transformer` |
-| VLM / 视觉语言模型 / CLIP | VLM | `#VLM` |
+| Transformer / Attention | Attention or Transformer | `#attention-or-transformer` |
+| PLM / 预训练语言模型 / BERT / T5 / GPT-2 / GLM | Pre-trained Language Model | `#pre-trained-language-model` |
+| LLM / 大语言模型 / GPT / OpenAI / Claude / Google / Gemini / PaLM / Gemma / Qwen / DeepSeek / ByteDance / Seed / LLaMA / GLM-4 / ChatGLM | Large Language Model | `#large-language-model` |
+| ViT / Vision Transformer | Vision Transformer | `#vision-transformer` |
+| VLM / 视觉语言模型 / CLIP | Vision Language Model | `#vision-language-model` |
 
 ## CV 子分类
 
 | 用户可能说的 | 列表章节 | 锚点 |
 |-------------|-------------|------|
-| Backbone / 分类网络 | Backbone | `#Backbone` |
-| Detection / 检测 | Object Detection | `#Object-Detection` |
-| Segmentation / 分割 | Object Segmentation | `#Object-Segmentation` |
-| Tracking / 跟踪 | Object Tracking | `#Object-Tracking` |
-| MOT / 多目标跟踪 | Object Tracking → Multiple Object Tracking | `#Multiple-Object-Tracking` |
-| VOT / 单目标跟踪 | Object Tracking → Visual Object Tracking | `#Visual-Object-Tracking` |
-| FSS / 少样本分割 | Few-Shot Segmentation | `#Few-Shot-Segmentation` |
-| FSL / 少样本学习 | Few-Shot Learning | `#Few-Shot-Learning` |
-| 3D Face / 三维人脸 | 3D Face Reconstruction and Facial Animation | `#3D-Face-Reconstruction-and-Facial-Animation` |
-| SOD / 显著性检测 | Salient Object Detection | `#Salient-Object-Detection` |
-| 3D Detection | 3D Object Detection | `#3D-Object-Detection` |
-| Optimization / 优化 | Optimization | `#Optimization` |
-| Survey / 综述 | Survey | `#Survey` |
+| Backbone / 分类网络 | Backbone | `#backbone` |
+| Detection / 检测 | Object Detection | `#object-detection` |
+| Segmentation / 分割 | Object Segmentation | `#object-segmentation` |
+| Tracking / 跟踪 | Object Tracking | `#object-tracking` |
+| MOT / 多目标跟踪 | Object Tracking → Multiple Object Tracking | `#multiple-object-tracking` |
+| VOT / 单目标跟踪 | Object Tracking → Visual Object Tracking | `#visual-object-tracking` |
+| FSS / 少样本分割 | Few-Shot Segmentation | `#few-shot-segmentation` |
+| FSL / 少样本学习 | Few-Shot Learning | `#few-shot-learning` |
+| 3D Face / 三维人脸 | 3D Face Reconstruction and Facial Animation | `#3d-face-reconstruction-and-facial-animation` |
+| SOD / 显著性检测 | Salient Object Detection | `#salient-object-detection` |
+| 3D Detection | 3D Object Detection | `#3d-object-detection` |
+| Optimization / 优化 | Optimization | `#optimization` |
+| Survey / 综述 | Survey | `#survey` |
 
 ## 分类选择原则
 

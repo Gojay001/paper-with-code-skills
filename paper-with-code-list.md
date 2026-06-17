@@ -7,33 +7,33 @@ There are paper with code for CV / AIGC / LLM / VLM.
 [Updating...]
 
 - **AIGC** (AI Generated Content)
-  - [GAN](#Generative-Adversarial-Network)
-  - [VAE](#Variational-Auto-Encoder)
-  - [Diffusion](#Diffusion-Model)
-  - [Applications](#AIGC-Applications)
-    - [Face Editing](#Face-Editing)
-    - [Face Swapping](#Face-Swapping)
+  - [GAN](#generative-adversarial-network)
+  - [VAE](#variational-auto-encoder)
+  - [Diffusion](#diffusion-model)
+  - [Applications](#aigc-applications)
+    - [Face Editing](#face-editing)
+    - [Face Swapping](#face-swapping)
 - **LLM / VLM** (Large Language Model / Vision-Language Model)
-  - [Transformer](#Attention-or-Transformer)
-  - [ViT](#Vision-Transformer)
-  - [PLM](#Pre-trained-Language-Model)
-  - [LLM](#Large-Language-Model)
-  - [VLM](#Vision-Language-Model)
+  - [Transformer](#attention-or-transformer)
+  - [ViT](#vision-transformer)
+  - [PLM](#pre-trained-language-model)
+  - [LLM](#large-language-model)
+  - [VLM](#vision-language-model)
 - **CV** (Computer Vision)
-  - [Backbone](#Backbone)
-  - [Optimization](#Optimization)
-  - [Detection](#Object-Detection)
-  - [Segmentation](#Object-Segmentation)
-  - [Tracking](#Object-Tracking)
-    - [MOT](#Multiple-Object-Tracking)
-    - [VOT](#Visual-Object-Tracking)
-  - [FSS](#Few-Shot-Segmentation)
-  - [FSL](#Few-Shot-Learning)
-  - [3D-Face](#3D-Face-Reconstruction-and-Facial-Animation)
+  - [Backbone](#backbone)
+  - [Optimization](#optimization)
+  - [Detection](#object-detection)
+  - [Segmentation](#object-segmentation)
+  - [Tracking](#object-tracking)
+    - [MOT](#multiple-object-tracking)
+    - [VOT](#visual-object-tracking)
+  - [FSS](#few-shot-segmentation)
+  - [FSL](#few-shot-learning)
+  - [3D-Face](#3d-face-reconstruction-and-facial-animation)
   - Others
-    - [Detection-3D](#3D-Object-Detection)
-    - [RGBD-SOT](#Salient-Object-Detection)
-  - [Survey](#Survey)
+    - [Detection-3D](#3d-object-detection)
+    - [RGBD-SOT](#salient-object-detection)
+  - [Survey](#survey)
 
 ## Generative Adversarial Network
 
@@ -141,6 +141,26 @@ There are paper with code for CV / AIGC / LLM / VLM.
 | Non-local   | [Non-local Neural Networks](https://arxiv.org/abs/1711.07971)                              | arXiv(2017) / CVPR(2018) | [Caffe](https://github.com/facebookresearch/video-nonlocal-net) |
 
 
+## Vision Transformer
+
+
+| Title                                                                | Paper                                                                                                          | Conf                     | Code                                                        |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------ | ----------------------------------------------------------- |
+| [Image Transformer](https://gojay.top/2020/05/15/Image-Transformer/) | [Image Transformer](https://arxiv.org/abs/1802.05751)                                                          | ICML(2018)               | [code]                                                      |
+| ViT                                                                  | [An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale](https://arxiv.org/abs/2010.11929) | arXiv(2020) / ICLR(2021) | [PyTorch](https://github.com/lucidrains/vit-pytorch)        |
+| Swin Transformer                                                     | [Swin Transformer: Hierarchical Vision Transformer using Shifted Windows](https://arxiv.org/abs/2103.14030)    | ICCV(2021)               | [PyTorch](https://github.com/microsoft/Swin-Transformer)    |
+| DINO                                                                 | [Emerging Properties in Self-Supervised Vision Transformers](https://arxiv.org/abs/2104.14294)                 | ICCV(2021)               | [PyTorch](https://github.com/facebookresearch/dino)         |
+| ResT                                                                 | [ResT: An Efficient Transformer for Visual Recognition](http://arxiv.org/abs/2105.13677)                       | NIPS(2021)               | [PyTorch](https://github.com/wofmanaf/ResT)                 |
+| HAT-Net                                                              | [Vision Transformers with Hierarchical Attention](http://arxiv.org/abs/2106.03180)                             | arXiv(2021)              | [PyTorch](https://github.com/yun-liu/HAT-Net)               |
+| Shuffle-T                                                            | [Shuffle Transformer: Rethinking Spatial Shuffle for Vision Transformer](http://arxiv.org/abs/2106.03650)      | arXiv(2021)              | [PyTorch](https://github.com/mulinmeng/Shuffle-Transformer) |
+| Swinv2                                                               | [Swin Transformer V2: Scaling Up Capacity and Resolution](https://arxiv.org/abs/2111.09883)                    | arXiv(2021) / CVPR(2022) | [PyTorch](https://github.com/microsoft/Swin-Transformer)    |
+| DINOv2                                                               | [DINOv2: Learning Robust Visual Features without Supervision](https://arxiv.org/abs/2304.07193)                | arXiv(2023)              | [PyTorch](https://github.com/facebookresearch/dinov2)       |
+| DINOv3                                                               | [DINOv3](https://arxiv.org/abs/2508.10104)                                                                     | arXiv(2025)              | [PyTorch](https://github.com/facebookresearch/dinov3)       |
+| LAST-ViT                                                             | [Vision Transformers Need More Than Registers](https://arxiv.org/abs/2602.22394)                               | arXiv(2026)              | [PyTorch](https://github.com/ChengShiest/LAST-ViT)          |
+
+
+> More implementation for ViTs can be found in [vit-pytorch](https://github.com/lucidrains/vit-pytorch).
+
 ## Pre-trained Language Model
 
 
@@ -189,26 +209,6 @@ There are paper with code for CV / AIGC / LLM / VLM.
 | Qwen3.5          | [Qwen3.5: Towards Native Multimodal Agents](https://qwen.ai/blog?id=qwen3.5)                                                                                       | Qwen(2026)                    | [PyTorch](https://github.com/QwenLM/Qwen3.6)                                                      |
 | DeepSeek-V4      | [DeepSeek-V4: Towards Highly Efficient Million-Token Context Intelligence](https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro/blob/main/DeepSeek_V4.pdf)         | DeepSeek(2026)                | [Hugging Face](https://huggingface.co/collections/deepseek-ai/deepseek-v4)                        |
 
-
-## Vision Transformer
-
-
-| Title                                                                | Paper                                                                                                          | Conf                     | Code                                                        |
-| -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ------------------------ | ----------------------------------------------------------- |
-| [Image Transformer](https://gojay.top/2020/05/15/Image-Transformer/) | [Image Transformer](https://arxiv.org/abs/1802.05751)                                                          | ICML(2018)               | [code]                                                      |
-| ViT                                                                  | [An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale](https://arxiv.org/abs/2010.11929) | arXiv(2020) / ICLR(2021) | [PyTorch](https://github.com/lucidrains/vit-pytorch)        |
-| Swin Transformer                                                     | [Swin Transformer: Hierarchical Vision Transformer using Shifted Windows](https://arxiv.org/abs/2103.14030)    | ICCV(2021)               | [PyTorch](https://github.com/microsoft/Swin-Transformer)    |
-| DINO                                                                 | [Emerging Properties in Self-Supervised Vision Transformers](https://arxiv.org/abs/2104.14294)                 | ICCV(2021)               | [PyTorch](https://github.com/facebookresearch/dino)         |
-| ResT                                                                 | [ResT: An Efficient Transformer for Visual Recognition](http://arxiv.org/abs/2105.13677)                       | NIPS(2021)               | [PyTorch](https://github.com/wofmanaf/ResT)                 |
-| HAT-Net                                                              | [Vision Transformers with Hierarchical Attention](http://arxiv.org/abs/2106.03180)                             | arXiv(2021)              | [PyTorch](https://github.com/yun-liu/HAT-Net)               |
-| Shuffle-T                                                            | [Shuffle Transformer: Rethinking Spatial Shuffle for Vision Transformer](http://arxiv.org/abs/2106.03650)      | arXiv(2021)              | [PyTorch](https://github.com/mulinmeng/Shuffle-Transformer) |
-| Swinv2                                                               | [Swin Transformer V2: Scaling Up Capacity and Resolution](https://arxiv.org/abs/2111.09883)                    | arXiv(2021) / CVPR(2022) | [PyTorch](https://github.com/microsoft/Swin-Transformer)    |
-| DINOv2                                                               | [DINOv2: Learning Robust Visual Features without Supervision](https://arxiv.org/abs/2304.07193)                | arXiv(2023)              | [PyTorch](https://github.com/facebookresearch/dinov2)       |
-| DINOv3                                                               | [DINOv3](https://arxiv.org/abs/2508.10104)                                                                     | arXiv(2025)              | [PyTorch](https://github.com/facebookresearch/dinov3)       |
-| LAST-ViT                                                             | [Vision Transformers Need More Than Registers](https://arxiv.org/abs/2602.22394)                               | arXiv(2026)              | [PyTorch](https://github.com/ChengShiest/LAST-ViT)          |
-
-
-> More implementation for ViTs can be found in [vit-pytorch](https://github.com/lucidrains/vit-pytorch).
 
 ## Vision Language Model
 

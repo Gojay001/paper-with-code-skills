@@ -4,7 +4,9 @@
 
 [![Awesome](https://awesome.re/badge.svg)](https://awesome.re) ![Skills](https://img.shields.io/badge/Cursor-Skills-blue) ![Papers](https://img.shields.io/badge/Deep%20Learning-Papers-green) ![Reading](https://img.shields.io/badge/Paper-Reading-orange)
 
-A repository that turns **paper curation** and **deep paper reading** into reusable Agent Skills for **Cursor**, **Claude Code**, and **Codex**. It maintains a domain-sorted paper-with-code list and can turn any paper into a triple-column annotated reading HTML — closing the loop from collect → organize → read deeply.
+A repository that turns **paper curation** and **deep paper reading** into reusable Agent Skills for **Cursor**, **Claude Code**, and **Codex**. It maintains a categorized paper-with-code list and can turn any paper into a triple-column annotated reading HTML — closing the loop from collect → organize → read deeply.
+
+The skills are **domain-agnostic**: they work for any research field. The categories shipped in [`paper-with-code-list.md`](paper-with-code-list.md) merely reflect the author's own directions and are only a starting point — **you define your own taxonomy** (see [Paper List & Custom Categories](#paper-list--custom-categories)).
 
 ## What This Repo Does
 
@@ -29,7 +31,7 @@ Describe what you want in natural language; the matching skill is loaded automat
 paper-with-code-skills/
 ├── README.md                       # This file (English)
 ├── README.zh-CN.md                 # Chinese README
-├── paper-with-code-list.md         # Paper list (AIGC / LLM·VLM / CV; Title|Paper|Conf|Code)
+├── paper-with-code-list.md         # Paper list (example taxonomy; Title|Paper|Conf|Code)
 ├── paper-reading/                  # Deep-reading HTML output
 │   ├── ddpm.html                   # DDPM triple-column example
 │   └── assets/{slug}/              # Images per reading
@@ -103,9 +105,17 @@ Convert the list row’s `abs` URL to `pdf`, read, and write [`paper-reading/ddp
 
 Open the HTML in a browser to read the triple-column notes.
 
-## Paper List
+## Paper List & Custom Categories
 
-Full categorized paper-with-code list: [`paper-with-code-list.md`](paper-with-code-list.md)
+The skills do not hard-code any taxonomy. The list shipped here reflects the **author's own research directions** and is only an example — treat it as a template and replace it with whatever fields you care about (robotics, NLP, systems, bioinformatics, …).
+
+Three ways to make the categories your own:
+
+1. **Edit the list directly** — change the section headings (`##` / `###`) and the table of contents in [`paper-with-code-list.md`](paper-with-code-list.md); start fresh by emptying it.
+2. **Edit the mapping** — update [`categories.md`](skills/add-paper-to-list/categories.md), which maps user phrasing → list section → anchor, so the `add-paper-to-list` skill routes papers the way you expect.
+3. **Just tell the agent** — specify the target category when adding a paper, or ask it to create a new category; the skill creates the section and updates the TOC for you.
+
+The default example list currently covers:
 
 - **AIGC:** GAN / VAE / Diffusion / applications (Face Editing, Face Swapping)
 - **LLM · VLM:** Transformer / ViT / VLM

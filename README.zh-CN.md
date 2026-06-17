@@ -4,7 +4,9 @@
 
 [![Awesome](https://awesome.re/badge.svg)](https://awesome.re) ![Skills](https://img.shields.io/badge/Cursor-Skills-blue) ![Papers](https://img.shields.io/badge/Deep%20Learning-Papers-green) ![Reading](https://img.shields.io/badge/Paper-Reading-orange)
 
-一个把**论文整理**与**论文精读**流程沉淀为 **Cursor / Claude Code / Codex** 通用 Agent Skills 的仓库。它既维护一份按领域分类的「论文 + 代码」清单，又能把任意论文转换成三栏批注的精读 HTML，让「收集 → 整理 → 精读」形成闭环。
+一个把**论文整理**与**论文精读**流程沉淀为 **Cursor / Claude Code / Codex** 通用 Agent Skills 的仓库。它既维护一份分类的「论文 + 代码」清单，又能把任意论文转换成三栏批注的精读 HTML，让「收集 → 整理 → 精读」形成闭环。
+
+这两个 Skill 与具体领域**无关**，适用于任何研究方向。[`paper-with-code-list.md`](paper-with-code-list.md) 中现有的分类只是**作者本人的研究方向**，仅作起点示例——**分类体系由你自行定义**（见[论文清单与自定义分类](#论文清单与自定义分类)）。
 
 ## 这个仓库做什么
 
@@ -29,7 +31,7 @@
 paper-with-code-skills/
 ├── README.md                       # 英文说明
 ├── README.zh-CN.md                 # 本文件：中文说明
-├── paper-with-code-list.md         # 论文清单（按 AIGC / LLM·VLM / CV 分类，Title|Paper|Conf|Code）
+├── paper-with-code-list.md         # 论文清单（示例分类，Title|Paper|Conf|Code）
 ├── paper-reading/                  # 精读 HTML 输出目录
 │   ├── ddpm.html                   # DDPM 三栏精读示例
 │   └── assets/{slug}/              # 各篇精读用到的图片资源
@@ -103,9 +105,17 @@ paper-with-code-skills/
 
 在浏览器中打开该 HTML 即可阅读三栏批注。
 
-## 论文清单
+## 论文清单与自定义分类
 
-完整的「论文 + 代码」分类清单见 [`paper-with-code-list.md`](paper-with-code-list.md)，涵盖：
+Skill 本身**不绑定任何分类体系**。仓库内现有清单只是**作者自己的研究方向**，仅为示例——请把它当作模板，替换成你关心的任意领域（机器人、NLP、系统、生物信息……）。
+
+三种方式让分类为你所用：
+
+1. **直接改清单**——修改 [`paper-with-code-list.md`](paper-with-code-list.md) 的章节标题（`##` / `###`）与目录；想从零开始可直接清空。
+2. **改映射表**——更新 [`categories.md`](skills/add-paper-to-list/categories.md)（用户措辞 → 清单章节 → 锚点的映射），让 `add-paper-to-list` 按你的预期归类。
+3. **直接告诉 agent**——添加论文时指定目标分类，或要求新建分类；Skill 会自动建立章节并更新目录。
+
+默认示例清单当前涵盖：
 
 - **AIGC**：GAN / VAE / Diffusion / 应用（Face Editing、Face Swapping）
 - **LLM · VLM**：Transformer / ViT / VLM

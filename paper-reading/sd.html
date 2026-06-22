@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stable Diffusion / LDM — 逻辑精读</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script>window.addEventListener('load',function(){if(window.mermaid){mermaid.initialize({startOnLoad:true,theme:'neutral',flowchart:{useMaxWidth:true,htmlLabels:true}});}});</script>
+  <style>
+    :root {
+      --navy: #1a2744;
+      --paper: #faf8f5;
+      --thesis: #fff3cd;
+      --concept: #f8d7da;
+      --evidence: #cfe2ff;
+      --counter: #d1e7dd;
+      --method: #e2d9f3;
+      --text: #2c2c2c;
+      --muted: #6c757d;
+      --border: #e8e4df;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'IBM Plex Sans', sans-serif; background: var(--paper); color: var(--text); line-height: 1.6; }
+    .sticky-head { position: sticky; top: 0; z-index: 100; }
+    .top-nav { background: var(--navy); color: #fff; padding: 1rem 2rem; }
+    .top-nav h1 { font-size: 1.25rem; font-weight: 600; }
+    .top-nav h1 a { color: #fff; text-decoration: none; border-bottom: 1px dotted rgba(255,255,255,0.5); }
+    .top-nav h1 a:hover { border-bottom-style: solid; }
+    .top-nav .meta { font-size: 0.85rem; opacity: 0.85; margin-top: 0.25rem; }
+    .legend { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.75rem; font-size: 0.8rem; }
+    .legend span { padding: 0.15rem 0.5rem; border-radius: 3px; color:#2c2c2c; }
+    .chapter-nav { background: #fff; border-bottom: 1px solid var(--border); padding: 0.75rem 2rem; overflow-x: auto; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+    .chapter-nav a { color: var(--navy); text-decoration: none; margin-right: 1.25rem; font-size: 0.9rem; font-weight: 500; }
+    .chapter-nav a:hover { text-decoration: underline; }
+    main { max-width: 1680px; margin: 0 auto; padding: 2rem; }
+    .section-title { font-size: 1.5rem; color: var(--navy); margin: 2rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--navy); }
+    .col-labels { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 0.5rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+    .row { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; align-items: start; }
+    .col-original { font-family: 'Lora', serif; font-size: 0.95rem; line-height: 1.75; }
+    .col-original p { margin-bottom: 0.75rem; }
+    .col-translation { font-size: 0.92rem; line-height: 1.75; color: #333; }
+    .col-translation p { margin-bottom: 0.75rem; }
+    .analysis-card { background: #fff; border-left: 4px solid var(--navy); padding: 1rem 1.25rem; border-radius: 0 6px 6px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.06); font-size: 0.9rem; }
+    .analysis-card .tag { display: inline-block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0.5rem; color: var(--navy); }
+    .analysis-card h4 { font-size: 0.85rem; color: var(--muted); margin: 0.75rem 0 0.25rem; }
+    .analysis-card p { margin-bottom: 0.5rem; }
+    .analysis-card.deep { border-left-width: 5px; }
+    .analysis-detail { margin: 0.75rem 0; padding-top: 0.5rem; border-top: 1px dashed var(--border); }
+    .analysis-detail:first-of-type { border-top: none; }
+    .exp-detail { list-style: none; margin: 0.5rem 0; }
+    .exp-detail li { margin-bottom: 0.4rem; }
+    .exp-detail li strong { color: var(--navy); }
+    .exp-table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.82rem; }
+    .exp-table th, .exp-table td { border: 1px solid var(--border); padding: 0.35rem 0.5rem; text-align: left; }
+    .exp-table th { background: var(--paper); color: var(--navy); font-weight: 600; }
+    .exp-table tr.is-ours { background: var(--evidence); }
+    .exp-table tr.is-ours td { font-weight: 600; }
+    .notation { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.85rem; background: #fff; }
+    .notation th, .notation td { border: 1px solid var(--border); padding: 0.4rem 0.6rem; text-align: left; }
+    .notation th { background: var(--paper); color: var(--navy); font-weight: 600; }
+    .notation td:first-child { width: 22%; white-space: nowrap; }
+    .diagram { margin: 0.75rem 0; }
+    .diagram img, .diagram svg { max-width: 100%; height: auto; display: block; border: 1px solid var(--border); border-radius: 4px; background: #fff; }
+    .diagram figcaption, .figure-row figcaption { font-size: 0.78rem; color: var(--muted); margin-top: 0.35rem; }
+    .figure-row { margin: 1.5rem 0; padding: 1rem 1.25rem; background: #fff; border: 1px solid var(--border); border-radius: 8px; }
+    .figure-row figure { margin: 0; text-align: center; }
+    .figure-row img, .figure-row svg { max-width: 100%; height: auto; }
+    .figure-row h3 { color: var(--navy); font-size: 1.05rem; margin-bottom: 0.75rem; }
+    .mermaid { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem; margin: 0.75rem 0; text-align:center; }
+    /* 可点击放大 */
+    .diagram img, .diagram svg, .figure-row img, .figure-row svg { cursor: zoom-in; transition: box-shadow .15s; }
+    .diagram img:hover, .diagram svg:hover, .figure-row img:hover, .figure-row svg:hover { box-shadow: 0 0 0 2px #0d9488; }
+    .zoom-hint { font-size: 0.72rem; color: #0d9488; margin-top: 0.2rem; }
+    #lightbox { position: fixed; inset: 0; background: rgba(10,12,20,0.92); display: none; align-items: center; justify-content: center; z-index: 1000; cursor: zoom-out; padding: 3vh 3vw; }
+    #lightbox.open { display: flex; }
+    #lightbox .lb-content { display: flex; align-items: center; justify-content: center; }
+    #lightbox .lb-content img, #lightbox .lb-content svg { display: block; background: #fff; border-radius: 6px; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
+    #lightbox .lb-close { position: fixed; top: 1rem; right: 1.5rem; color: #fff; font-size: 2rem; line-height: 1; opacity: 0.8; }
+    #lightbox .lb-cap { position: fixed; bottom: 1.2rem; left: 0; right: 0; text-align: center; color: #e8e4df; font-size: 0.8rem; padding: 0 2rem; }
+    .hl-thesis { background: var(--thesis); padding: 0 2px; }
+    .hl-concept { background: var(--concept); padding: 0 2px; }
+    .hl-evidence { background: var(--evidence); padding: 0 2px; }
+    .hl-counter { background: var(--counter); padding: 0 2px; }
+    .hl-method { background: var(--method); padding: 0 2px; }
+    .summary { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 2rem; margin-top: 3rem; }
+    .summary h2 { color: var(--navy); margin-bottom: 1rem; }
+    .summary .skeleton { font-family: 'IBM Plex Sans', monospace; background: var(--paper); padding: 1rem; border-radius: 4px; margin: 1rem 0; line-height:2; }
+    .summary .strength, .summary .weakness { padding: 0.75rem 1rem; border-radius: 4px; margin: 0.5rem 0; }
+    .summary .strength { background: var(--counter); }
+    .summary .weakness { background: var(--concept); }
+    .feynman { background: #fff; border: 1px solid var(--border); border-left: 5px solid #0d9488; border-radius: 0 8px 8px 0; padding: 1.25rem 1.5rem; margin: 1.5rem 0 2rem; }
+    .feynman h2 { color: #0d9488; font-size: 1.15rem; margin-bottom: 0.35rem; }
+    .feynman .tldr-meta { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.6rem; }
+    .feynman p { font-size: 0.95rem; line-height: 1.85; margin-bottom: 0.6rem; }
+    .faq details { background: #fff; border: 1px solid var(--border); border-radius: 6px; margin: 0.5rem 0; }
+    .faq details[open] { box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .faq summary { cursor: pointer; font-weight: 600; color: var(--navy); padding: 0.7rem 0.9rem; list-style: none; font-size: 0.92rem; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::before { content: '▸'; color: #0d9488; margin-right: 0.5rem; }
+    .faq details[open] summary::before { content: '▾'; }
+    .faq .answer { padding: 0 0.9rem 0.85rem 1.8rem; font-size: 0.9rem; line-height: 1.8; color: #333; }
+    .deepdive .block { margin: 0.9rem 0; padding: 0.85rem 1.1rem; border-radius: 4px; background: var(--paper); border-left: 3px solid #6f42c1; }
+    .deepdive .block.crit { border-left-color: #dc3545; background: #fdf0f1; }
+    .deepdive .block h4 { color: var(--navy); margin-bottom: 0.3rem; }
+    .deepdive .block ul { margin: 0.3rem 0 0 1.1rem; }
+    .deepdive .block li { margin-bottom: 0.3rem; font-size: 0.9rem; }
+    @media (max-width: 1100px) {
+      .col-labels { display: none; }
+      .row { grid-template-columns: 1fr; }
+      .row > div { position: relative; }
+      .row > div::before {
+        display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+        letter-spacing: 0.05em; color: var(--muted); margin-bottom: 0.35rem;
+      }
+      .col-original::before { content: '原文'; }
+      .col-translation::before { content: '翻译'; }
+      .col-analysis::before { content: '解析'; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sticky-head">
+    <header class="top-nav">
+      <h1><a href="https://arxiv.org/abs/2112.10752" target="_blank" rel="noopener">Stable Diffusion / LDM — High-Resolution Image Synthesis with Latent Diffusion Models</a></h1>
+      <div class="meta">paper-with-code-skills · Diffusion Model · arXiv(2021) / CVPR(2022) · Rombach, Blattmann, Lorenz, Esser, Ommer</div>
+      <div class="legend">
+        <span class="hl-thesis">核心论点</span>
+        <span class="hl-concept">关键概念</span>
+        <span class="hl-evidence">实证证据</span>
+        <span class="hl-counter">让步/反驳</span>
+        <span class="hl-method">方法论</span>
+      </div>
+    </header>
+    <nav class="chapter-nav">
+      <a href="#feynman">速读</a>
+      <a href="#bigpic">全景图</a>
+      <a href="#abstract">Abstract</a>
+      <a href="#intro">Introduction</a>
+      <a href="#related">Related Work</a>
+      <a href="#method">Method</a>
+      <a href="#arch">架构图</a>
+      <a href="#experiments">Experiments</a>
+      <a href="#conclusion">Conclusion</a>
+      <a href="#notation">符号表</a>
+      <a href="#overview">总览</a>
+      <a href="#faq">十问</a>
+      <a href="#deepdive">深挖</a>
+    </nav>
+  </div>
+
+  <main>
+
+    <section class="feynman" id="feynman">
+      <h2>🎮 费曼一分钟（通俗速读）</h2>
+      <div class="tldr-meta">通俗速读 · 先建立模糊认知，再读正文</div>
+      <p>以前的扩散模型（如 DDPM）直接在「像素世界」里反复擦噪点画图——一张 512×512 的图有 78 万个像素，每一步去噪都要在这么大的画布上算一遍，训练动辄几百张 GPU 卡跑上几周。本文（潜在扩散 LDM，也就是后来的 Stable Diffusion）的核心招数是：<strong>先把图压缩到一个小很多的「缩略草稿世界」里再画</strong>。</p>
+      <p>用《我的世界》打比方：与其在 1:1 实景里一格一格盖楼（贵且慢），不如先用一张缩小的「设计蓝图」（潜在空间 latent）来构思整体结构，画好之后再用一个固定的「自动建造机」（解码器 $\mathcal{D}$）把蓝图一次性还原成精细实景。蓝图只保留「有意义的语义」，扔掉人眼根本看不见的高频细节——这一步由一个<strong>自编码器</strong>预先训练好、且<strong>只训练一次就能反复复用</strong>。</p>
+      <p>四个核心概念：① <strong>感知压缩</strong>（autoencoder $\mathcal{E},\mathcal{D}$，把图缩小 $f$ 倍到 latent）；② <strong>潜在扩散</strong>（在小蓝图上跑 DDPM 式去噪 U-Net，便宜得多）；③ <strong>交叉注意力条件控制</strong>（cross-attention，把文字/语义图/边框等任意条件「注入」U-Net，于是同一套机制能做文生图、超分、补全、布局生成）；④ <strong>两阶段解耦</strong>（压缩与生成分开学，互不掣肘）。一句话：把「在哪画」从像素搬到 latent，既省算力又不掉画质，还顺手让扩散模型变成了万能的可控生成器。</p>
+    </section>
+
+    <!-- ===================== 全景图 ===================== -->
+    <section class="figure-row" id="bigpic">
+      <h3>🗺️ 一图看懂 LDM 全流程（自绘逻辑图）</h3>
+      <pre class="mermaid">
+flowchart LR
+  subgraph S1["阶段一：感知压缩（训练一次，可复用）"]
+    direction TB
+    X["图像 x<br/>H×W×3"] -->|"编码器 𝓔"| Z["潜在 z<br/>h×w×c，下采样 f 倍"]
+    Z -->|"解码器 𝓓"| XR["重建 x̃ ≈ x"]
+    REG["正则：KL-reg 或 VQ-reg<br/>感知损失 + Patch 对抗损失"] -.约束.-> Z
+  end
+  subgraph S2["阶段二：潜在扩散（在小空间里学生成）"]
+    direction TB
+    Z2["z₀ = 𝓔(x)"] -->|"前向加噪 q（固定）"| ZT["z_T ≈ 高斯噪声"]
+    ZT -->|"去噪 U-Net ε_θ(z_t,t,τ(y))"| Z0["还原 ẑ₀"]
+    Y["条件 y<br/>文本/语义图/边框/低分图"] -->|"领域编码器 τ_θ"| TAU["τ_θ(y)"]
+    TAU -->|"交叉注意力注入"| ZT
+  end
+  Z0 -->|"解码器 𝓓 单次前向"| OUT["生成图像 ~1024² px"]
+  style S1 fill:#e2d9f3,stroke:#6f42c1
+  style S2 fill:#cfe2ff,stroke:#0d6efd
+  style OUT fill:#fff3cd,stroke:#ffc107
+      </pre>
+      <figcaption>自绘流程图：综合原文 Fig.2、Fig.3 与 §3 文字。左半为感知压缩（自编码器），右半为潜在扩散 + 交叉注意力条件机制；生成时仅需一次解码器前向。</figcaption>
+    </section>
+
+    <!-- ===================== Abstract ===================== -->
+    <h2 class="section-title" id="abstract">Abstract</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>By decomposing the image formation process into a sequential application of denoising autoencoders, diffusion models (DMs) achieve state-of-the-art synthesis results on image data and beyond. However, since these models typically operate directly in pixel space, <span class="hl-counter">optimization of powerful DMs often consumes hundreds of GPU days and inference is expensive due to sequential evaluations</span>. To enable DM training on limited computational resources while retaining their quality and flexibility, we <span class="hl-thesis">apply them in the latent space of powerful pretrained autoencoders</span>.</p>
+        <p>In contrast to previous work, training diffusion models on such a representation allows for the first time to <span class="hl-thesis">reach a near-optimal point between complexity reduction and detail preservation</span>, greatly boosting visual fidelity. By introducing <span class="hl-method">cross-attention layers</span> into the model architecture, we turn diffusion models into powerful and flexible generators for general conditioning inputs such as text or bounding boxes and high-resolution synthesis becomes possible in a convolutional manner. Our latent diffusion models (LDMs) achieve <span class="hl-evidence">new state-of-the-art scores for image inpainting and class-conditional image synthesis</span> and highly competitive performance on various tasks, while significantly reducing computational requirements compared to pixel-based DMs.</p>
+      </div>
+      <div class="col-translation">
+        <p>通过把图像生成过程分解为一系列去噪自编码器的依次作用，扩散模型（DMs）在图像乃至更广领域取得了当时最优的合成效果。然而，由于这类模型通常直接在像素空间中运作，强大 DM 的优化往往要耗费数百个 GPU 天，且因需顺序多步求值导致推理昂贵。为了在有限算力下训练 DM 同时保留其质量与灵活性，我们将其应用在强大的预训练自编码器的潜在空间中。</p>
+        <p>与以往工作不同，在这种表示上训练扩散模型首次实现了「复杂度削减」与「细节保留」之间的近最优平衡，大幅提升视觉保真度。通过在模型架构中引入交叉注意力层，我们把扩散模型变成了能处理文本、边界框等通用条件输入的强大而灵活的生成器，并使高分辨率合成能以卷积方式进行。我们的潜在扩散模型（LDM）在图像补全与类别条件生成上取得新的最优分数，在多种任务上表现极具竞争力，同时相较像素级 DM 显著降低算力需求。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #ffc107;">
+          <span class="tag">概括主张</span>
+          <h4>段落功能</h4>
+          <p>一句话点出痛点（像素空间 DM 太贵）与解法（搬到 latent 空间 + 交叉注意力），并预告 SOTA 结果。</p>
+          <h4>逻辑角色</h4>
+          <p>论证链起点：把「DM 强但贵」这一矛盾，用「降维 + 条件机制」一次性回应，奠定全文双主张（效率 + 通用可控）。</p>
+          <h4>论证技巧 / 潜在漏洞</h4>
+          <p>技巧：摘要同时锚定算力收益、理论平衡点与硬指标三重证据。漏洞：「near-optimal point」是定性表述，具体由 §4.1 的 $f$ 扫描实验支撑；摘要未量化提速倍数。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== Introduction ===================== -->
+    <h2 class="section-title" id="intro">1. Introduction</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>Image synthesis is one of the computer vision fields with the most spectacular recent development, but also among those with the greatest computational demands. Recently, <span class="hl-concept">diffusion models</span>, which are built from a hierarchy of denoising autoencoders, have shown to achieve impressive results in image synthesis and define the state-of-the-art in class-conditional image synthesis and super-resolution. Being <span class="hl-concept">likelihood-based models</span>, they do not exhibit mode-collapse and training instabilities as GANs and, by heavily exploiting parameter sharing, they can model highly complex distributions without involving billions of parameters as in AR models.</p>
+      </div>
+      <div class="col-translation">
+        <p>图像合成是近来发展最瞩目、同时算力需求也最大的计算机视觉领域之一。近期，由一层层去噪自编码器堆叠而成的扩散模型，在图像合成上取得了惊艳效果，并在类别条件生成与超分辨率上确立了当时的最优水平。作为基于似然的模型，它们不像 GAN 那样出现模式坍塌与训练不稳定；并且通过大量参数共享，无需像自回归模型那样动用数十亿参数，就能建模极其复杂的分布。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #1a2744;">
+          <span class="tag">引出背景</span>
+          <h4>段落功能</h4>
+          <p>确立 DM 的优势地位（质量 SOTA、无模式坍塌），同时埋下「算力大」的伏笔。</p>
+          <h4>逻辑角色</h4>
+          <p>问题语境：既然 DM 这么强，那它的死穴是什么？为下一段「算力批判」铺垫。</p>
+          <h4>论证技巧 / 潜在漏洞</h4>
+          <p>技巧：先扬（对比 GAN/AR 的优点）后抑（引出成本），是经典的「价值—代价」叙事。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <p><span class="hl-counter">DMs belong to the class of likelihood-based models, whose mode-covering behavior makes them prone to spend excessive amounts of capacity (and thus compute) on modeling imperceptible details of the data.</span> Training the most powerful DMs often takes hundreds of GPU days (e.g. 150–1000 V100 days), and repeated evaluations on a noisy version of the input space render also inference expensive, so that producing 50k samples takes approximately 5 days on a single A100 GPU. This has two consequences: training requires massive resources available only to a small fraction of the field and leaves a huge carbon footprint; and evaluating an already trained model is also expensive in time and memory.</p>
+      </div>
+      <div class="col-translation">
+        <p>DM 属于基于似然的模型，其「覆盖所有模式」的特性使它倾向于把过多容量（也即算力）耗费在建模那些人眼无法察觉的细节上。训练最强的 DM 往往要花数百 GPU 天（例如 150–1000 个 V100 天）；而在带噪输入空间上反复求值也使推理变得昂贵——在单张 A100 上生成 5 万张样本约需 5 天。这带来两个后果：其一，训练所需的庞大算力只有少数机构具备，且碳足迹巨大；其二，即便是评估一个已训练好的模型，在时间与显存上也代价不菲。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #198754;">
+          <span class="tag">界定痛点</span>
+          <h4>段落功能</h4>
+          <p>用具体数字（数百 GPU 天、5 天 5 万样本）量化「DM 太贵」这一核心痛点，并归因于「在不可感知细节上浪费容量」。</p>
+          <h4>逻辑角色</h4>
+          <p>问题陈述：把成本拆成「训练贵」与「推理贵」两条线，正好对应后文 LDM 的两点收益。</p>
+          <h4>论证技巧 / 潜在漏洞</h4>
+          <p>技巧：「民主化高分辨率合成」的价值叙事（碳足迹、算力公平）增强动机说服力。这一「容量浪费」洞察直接继承自 DDPM 的 rate-distortion 分析。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <p>Our approach starts with the analysis of already trained diffusion models in pixel space: learning can be roughly divided into two stages. First is a <span class="hl-concept">perceptual compression</span> stage which removes high-frequency details but still learns little semantic variation. In the second stage, the actual generative model learns the <span class="hl-concept">semantic and conceptual composition</span> of the data (semantic compression). We thus aim to first find a perceptually equivalent, but computationally more suitable space, in which we will train diffusion models for high-resolution image synthesis.</p>
+        <p>We separate training into two distinct phases: first, we train an <span class="hl-method">autoencoder which provides a lower-dimensional representational space which is perceptually equivalent to the data space</span>. Importantly, we do not need to rely on excessive spatial compression, as we train DMs in the learned latent space, which exhibits better scaling properties with respect to spatial dimensionality. We dub the resulting model class <span class="hl-thesis">Latent Diffusion Models (LDMs)</span>. A notable advantage is that we need to train the universal autoencoding stage <span class="hl-thesis">only once</span> and can therefore reuse it for multiple DM trainings or for different tasks.</p>
+      </div>
+      <div class="col-translation">
+        <p>我们的方法从分析「已训练好的像素空间扩散模型」入手：其学习过程大致可分为两个阶段。第一阶段是感知压缩，去除高频细节，但几乎不学语义变化；第二阶段才是真正的生成模型学习数据的语义与概念构成（语义压缩）。因此我们的目标是：先找到一个在感知上等价、但在计算上更合适的空间，再在其中训练扩散模型做高分辨率合成。</p>
+        <p>我们把训练拆成两个清晰的阶段：首先训练一个自编码器，提供一个维度更低、且在感知上与数据空间等价的表示空间。关键在于——由于我们是在学到的潜在空间里训练 DM，而该空间在空间维度上具有更好的缩放特性，所以无需依赖过度的空间压缩。我们将由此得到的模型类称为「潜在扩散模型（LDM）」。一个显著优势是：通用的自编码阶段只需训练一次，便可被多次 DM 训练或不同任务复用。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #6f42c1;">
+          <span class="tag">核心洞察</span>
+          <h4>方法动机</h4>
+          <p>把生成学习显式拆成「感知压缩（扔细节）」+「语义压缩（学构图）」两阶段。既有 DM 把两件事混在一个昂贵的像素空间里同时做，这正是浪费所在。</p>
+          <h4>设计取舍</h4>
+          <p>与 VQGAN/VQ-VAE 这类「激进压缩到 1D 离散序列再用 AR 建模」的两阶段法相比：LDM 用<strong>温和</strong>压缩（保留 2D 结构），把更多担子留给生成式 U-Net，因而重建更保真、缩放更平滑。</p>
+          <div class="analysis-detail"><h4>逻辑角色</h4>
+          <p>这是全文的「阿基米德支点」——一句「先压缩再生成」把摘要主张落到可执行的两阶段框架，后续 §3 全是对它的形式化与工程化。</p></div>
+          <div class="analysis-detail"><h4>感知压缩 vs 语义压缩（自绘示意）</h4>
+            <div class="diagram">
+              <svg viewBox="0 0 460 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="rate-distortion 两阶段压缩示意">
+                <rect x="0" y="0" width="460" height="210" fill="#ffffff"/>
+                <!-- axes -->
+                <line x1="55" y1="170" x2="430" y2="170" stroke="#1a2744" stroke-width="1.5"/>
+                <line x1="55" y1="170" x2="55" y2="25" stroke="#1a2744" stroke-width="1.5"/>
+                <text x="240" y="198" font-size="11" fill="#2c2c2c" text-anchor="middle">Rate（码率 / 保留信息量）→</text>
+                <text x="18" y="100" font-size="11" fill="#2c2c2c" transform="rotate(-90 18 100)" text-anchor="middle">Distortion 失真 →</text>
+                <!-- curve -->
+                <path d="M70,40 C120,60 150,120 200,140 C260,162 360,166 420,167" fill="none" stroke="#0d6efd" stroke-width="2.5"/>
+                <!-- regions -->
+                <rect x="60" y="30" width="135" height="135" fill="#f8d7da" opacity="0.45"/>
+                <rect x="195" y="30" width="225" height="135" fill="#cfe2ff" opacity="0.45"/>
+                <text x="127" y="52" font-size="10.5" fill="#842029" text-anchor="middle" font-weight="600">语义压缩</text>
+                <text x="127" y="66" font-size="9" fill="#842029" text-anchor="middle">生成模型该学的</text>
+                <text x="307" y="52" font-size="10.5" fill="#084298" text-anchor="middle" font-weight="600">感知压缩</text>
+                <text x="307" y="66" font-size="9" fill="#084298" text-anchor="middle">自编码器先扔掉的细节</text>
+                <!-- divider -->
+                <line x1="195" y1="30" x2="195" y2="165" stroke="#6f42c1" stroke-width="2" stroke-dasharray="5 3"/>
+                <text x="195" y="24" font-size="9" fill="#6f42c1" text-anchor="middle">LDM 选的切分点（f=4~16）</text>
+              </svg>
+              <figcaption>自绘（据原文 Fig.2 思想）：大部分码率耗在右侧「人眼不可感知细节」。LDM 让自编码器吃掉右侧，扩散模型只在左侧语义区发力。</figcaption>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 2（p.2）：感知压缩 vs 语义压缩</h3>
+      <figure>
+        <img src="assets/sd/fig2.jpg" alt="原文 Figure 2 rate-distortion">
+        <figcaption>原文 Fig.2：rate-distortion 曲线。大部分码率（图右、低失真区）耗在「感知压缩」——人眼不可感知的细节，由自编码器 + GAN 负责；真正的「语义压缩」（图左、高失真区）才是 LDM 该学的。与上方自绘 SVG 对照阅读。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <div class="row">
+      <div class="col-original">
+        <p>In sum, our work makes the following contributions: (i) Our method scales more gracefully to higher dimensional data and can work on a compression level which provides more faithful and detailed reconstructions than previous work, and can be efficiently applied to high-resolution synthesis of megapixel images. (ii) We achieve competitive performance on multiple tasks while significantly lowering computational costs. (iii) Our approach does not require a delicate weighting of reconstruction and generative abilities, ensuring faithful reconstructions with very little regularization of the latent space. (iv) For densely conditioned tasks, our model can be applied in a convolutional fashion and render large, consistent images of ~1024² px. (v) We design a <span class="hl-method">general-purpose conditioning mechanism based on cross-attention</span>, enabling multi-modal training (class-conditional, text-to-image, layout-to-image). (vi) We release pretrained latent diffusion and autoencoding models.</p>
+      </div>
+      <div class="col-translation">
+        <p>总之，本文贡献如下：(i) 我们的方法对高维数据缩放更平滑，能在「重建更保真、细节更丰富」的压缩级别上工作，并可高效用于百万像素图的合成。(ii) 在多任务上取得有竞争力的表现，同时显著降低算力成本。(iii) 我们的方法无需在重建能力与生成能力之间做精细权衡，能在极少潜在空间正则的情况下保证保真重建。(iv) 对稠密条件任务，模型可以卷积方式运行，生成约 1024² 像素的大幅一致图像。(v) 我们设计了一种基于交叉注意力的通用条件机制，支持多模态训练（类别条件、文生图、布局生成）。(vi) 我们开源了预训练的潜在扩散与自编码模型。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #ffc107;">
+          <span class="tag">贡献清单</span>
+          <h4>段落功能</h4>
+          <p>把贡献归并为两大主线：① 效率/保真（i–iv）；② 通用可控条件机制（v）；外加开源（vi，事后看这是引爆社区的关键）。</p>
+          <h4>逻辑角色</h4>
+          <p>承诺清单，后文每条都有对应实验：(i)(ii)→§4.1，(iv)→§4.3.2，(v)→§4.3–4.5。</p>
+          <h4>论证技巧 / 潜在漏洞</h4>
+          <p>技巧：(iii) 把「不必权衡重建 vs 生成」作为相对 LSGM 的差异化卖点。漏洞：贡献(i) 的「more faithful」依赖与特定基线（VQGAN/DALL-E）在固定 $f$ 下比较，见 Tab.8。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== Related Work（压缩为概述） ===================== -->
+    <h2 class="section-title" id="related">2. Related Work（概述压缩）</h2>
+    <div class="col-labels"><span>原文（摘要合并）</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>[摘要合并] Generative Models: <span class="hl-concept">GANs</span> sample high-res images efficiently but are hard to optimize and struggle to capture the full distribution; <span class="hl-concept">VAEs/flows</span> enable efficient synthesis but sample quality lags GANs; <span class="hl-concept">ARMs</span> achieve strong density estimation but their sequential sampling limits them to low resolution. <span class="hl-concept">Diffusion Models</span> recently achieved SOTA in density estimation and sample quality with a UNet backbone, but evaluating/optimizing in pixel space has low inference speed and very high training cost.</p>
+        <p>Two-Stage Synthesis: VQ-VAEs use ARMs over a discretized latent; VQGANs employ adversarial + perceptual first stage to scale AR transformers. However, the high compression rates required for feasible ARM training limit overall performance. <span class="hl-counter">Our LDMs scale more gently to higher-dimensional latent spaces due to their convolutional backbone</span>, so we are free to choose the compression level that optimally mediates between a powerful first stage and the generative diffusion model.</p>
+      </div>
+      <div class="col-translation">
+        <p>[摘要合并] 生成模型谱系：GAN 能高效采样高分图，但难优化、且难覆盖完整分布；VAE/flow 合成高效但样本质量不及 GAN；自回归模型（ARM）密度估计强，但顺序采样把它们限制在低分辨率。扩散模型近期凭 U-Net 骨干在密度估计与样本质量上双双 SOTA，但在像素空间求值/优化导致推理慢、训练极贵。</p>
+        <p>两阶段合成：VQ-VAE 用自回归模型建模离散潜码；VQGAN 用「对抗 + 感知」的第一阶段来把 AR Transformer 扩展到更大图。但 ARM 可行训练所需的高压缩率，限制了这类方法的整体性能。我们的 LDM 因卷积骨干而对更高维潜在空间缩放更温和，因此可以自由选择「在强大第一阶段与生成式扩散模型之间最优折中」的压缩级别。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #1a2744;">
+          <span class="tag">定位差异</span>
+          <h4>段落功能</h4>
+          <p>把竞品按「效率 vs 质量 vs 可缩放性」三轴排座次，凸显 LDM 的独特生态位：温和压缩 + 卷积扩散。</p>
+          <h4>逻辑角色</h4>
+          <p>反驳/区隔：尤其针对 VQGAN（激进 1D 离散压缩）与 LSGM（联合训练需权衡），点明 LDM 的「自由选压缩率」优势。</p>
+          <h4>论证技巧 / 潜在漏洞</h4>
+          <p>技巧：用「scale more gently」把架构选择（2D 卷积 vs 1D AR）上升为方法论优势。此处为概述压缩，原始逐段引用从略。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== Method ===================== -->
+    <h2 class="section-title" id="method">3. Method</h2>
+
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>3.1 Perceptual Image Compression.</strong> Our perceptual compression model is based on an autoencoder trained by combination of a <span class="hl-method">perceptual loss</span> and a <span class="hl-method">patch-based adversarial objective</span>. Given an image $x \in \mathbb{R}^{H\times W\times 3}$, the encoder $\mathcal{E}$ encodes $x$ into a latent $z=\mathcal{E}(x)$, and the decoder $\mathcal{D}$ reconstructs $\tilde{x}=\mathcal{D}(z)=\mathcal{D}(\mathcal{E}(x))$, where $z\in\mathbb{R}^{h\times w\times c}$. The encoder downsamples by a factor $f=H/h=W/w$, and we investigate $f=2^m$.</p>
+        <p>To avoid arbitrarily high-variance latent spaces, we experiment with two regularizations: <span class="hl-concept">KL-reg.</span> imposes a slight KL-penalty towards a standard normal (similar to a VAE), whereas <span class="hl-concept">VQ-reg.</span> uses a vector quantization layer within the decoder. Because our subsequent DM works with the two-dimensional structure of $z$, we can use relatively <span class="hl-thesis">mild compression rates and achieve very good reconstructions</span> — in contrast to previous works which relied on an arbitrary 1D ordering of $z$.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>3.1 感知图像压缩。</strong> 我们的感知压缩模型基于一个自编码器，用「感知损失」与「基于 patch 的对抗目标」联合训练。给定图像 $x\in\mathbb{R}^{H\times W\times 3}$，编码器 $\mathcal{E}$ 把 $x$ 编码为潜变量 $z=\mathcal{E}(x)$，解码器 $\mathcal{D}$ 从潜变量重建 $\tilde{x}=\mathcal{D}(\mathcal{E}(x))$，其中 $z\in\mathbb{R}^{h\times w\times c}$。编码器以因子 $f=H/h=W/w$ 下采样，我们考察 $f=2^m$。</p>
+        <p>为避免方差任意增大的潜在空间，我们尝试两种正则：KL-reg. 对潜变量施加轻微的、朝向标准正态的 KL 惩罚（类似 VAE）；VQ-reg. 则在解码器中使用一个向量量化层。由于后续 DM 利用 $z$ 的二维结构，我们可使用相对温和的压缩率并取得很好的重建——这与以往依赖把 $z$ 任意展平成 1D 顺序的工作形成对比。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #6f42c1;">
+          <span class="tag">核心方法 · 第一阶段</span>
+          <h4>方法动机</h4>
+          <p>需要一个「压得动、又还原得回」的空间。纯 L2/L1 像素损失会糊，所以加感知损失（保结构）+ patch 对抗（保局部真实纹理）。</p>
+          <h4>公式 / 组件拆解</h4>
+          <p>$\mathcal{E}$：把 $H\times W\times3$ → $h\times w\times c$，$f=H/h$；$\mathcal{D}$：逆映射。两种正则二选一：<strong>KL-reg</strong>（连续、轻 KL）或 <strong>VQ-reg</strong>（离散码本，量化层吸收进解码器，可视为「去掉量化层的 VQGAN」）。</p>
+          <h4>设计取舍</h4>
+          <p>关键区别于 VQGAN：保留 latent 的 <strong>2D 空间结构</strong>，故压缩率可温和（$f$ 小），重建更保真（Tab.8）。代价：latent 比 1D 离散码更大，但卷积 U-Net 扛得住。</p>
+          <div class="analysis-detail"><h4>第一阶段训练数据流（自绘）</h4>
+            <div class="diagram">
+              <pre class="mermaid">
+flowchart LR
+  X["x: H×W×3"] --> E["编码器 𝓔"]
+  E --> Z["z: h×w×c"]
+  Z --> REG{"正则<br/>KL / VQ"}
+  REG --> D["解码器 𝓓"]
+  D --> XT["x̃ 重建"]
+  XT --> LP["感知损失<br/>(LPIPS)"]
+  XT --> LA["Patch 对抗<br/>判别器"]
+  X --> LP
+  X --> LA
+              </pre>
+              <figcaption>自绘：第一阶段（自编码器）训练目标 = 感知损失 + Patch 对抗 + 正则；与扩散完全解耦。</figcaption>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>3.2 Latent Diffusion Models.</strong> Diffusion models learn a data distribution $p(x)$ by gradually denoising a normally distributed variable, corresponding to learning the reverse of a fixed Markov Chain of length $T$. The objective simplifies to</p>
+        <p>$$L_{DM} = \mathbb{E}_{x,\,\epsilon\sim\mathcal{N}(0,1),\,t}\Big[\,\lVert \epsilon - \epsilon_\theta(x_t, t)\rVert_2^2\,\Big].$$</p>
+        <p>With our trained perceptual model $(\mathcal{E},\mathcal{D})$, we now have an efficient, low-dimensional latent space. The neural backbone $\epsilon_\theta(\circ,t)$ is realized as a <span class="hl-method">time-conditional UNet</span>. Since the forward process is fixed, $z_t$ can be efficiently obtained from $\mathcal{E}$ during training, and samples from $p(z)$ can be decoded with a single pass through $\mathcal{D}$. The corresponding objective becomes</p>
+        <p>$$L_{LDM} := \mathbb{E}_{\mathcal{E}(x),\,\epsilon\sim\mathcal{N}(0,1),\,t}\Big[\,\lVert \epsilon - \epsilon_\theta(z_t, t)\rVert_2^2\,\Big].$$</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>3.2 潜在扩散模型。</strong> 扩散模型通过逐步对一个正态分布变量去噪来学习数据分布 $p(x)$，即学习一条长度为 $T$ 的固定马尔可夫链的反向过程。其目标可简化为：</p>
+        <p>$$L_{DM} = \mathbb{E}_{x,\,\epsilon\sim\mathcal{N}(0,1),\,t}\Big[\,\lVert \epsilon - \epsilon_\theta(x_t, t)\rVert_2^2\,\Big].$$</p>
+        <p>有了训练好的感知模型 $(\mathcal{E},\mathcal{D})$，我们便拥有一个高效、低维的潜在空间。神经骨干 $\epsilon_\theta(\circ,t)$ 实现为一个时间条件 U-Net。由于前向过程是固定的，训练时 $z_t$ 可由 $\mathcal{E}$ 高效得到；而 $p(z)$ 的样本只需经 $\mathcal{D}$ 一次前向即可解码回图像。对应目标变为：</p>
+        <p>$$L_{LDM} := \mathbb{E}_{\mathcal{E}(x),\,\epsilon\sim\mathcal{N}(0,1),\,t}\Big[\,\lVert \epsilon - \epsilon_\theta(z_t, t)\rVert_2^2\,\Big].$$</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #6f42c1;">
+          <span class="tag">核心方法 · 第二阶段</span>
+          <h4>公式拆解（式1→式2）</h4>
+          <p>唯一改动：把 DDPM 目标里的像素 $x_t$ 换成潜变量 $z_t=\mathcal{E}(x)$ 加噪后的版本。$\epsilon_\theta$ 仍预测「这一步混入的噪声」，损失仍是简单 MSE。换句话说，<strong>LDM = 在 latent 上跑 DDPM</strong>。</p>
+          <h4>数据流：训练 vs 采样（自绘）</h4>
+          <div class="diagram">
+            <pre class="mermaid">
+flowchart TB
+  subgraph TR["训练（latent 空间）"]
+    direction LR
+    x0["x"] --> Ee["𝓔"] --> z0["z₀"] --> qn["+ 噪声 q(z_t|z₀)"] --> zt["z_t"]
+    tt["t"] --> unet["ε_θ(z_t,t)"]
+    zt --> unet --> pe["预测 ε̂"]
+    pe --> loss["L = ‖ε − ε̂‖²"]
+  end
+  subgraph SP["采样（生成）"]
+    direction LR
+    zT["z_T ~ 𝓝(0,I)"] --> step["反复去噪<br/>ε_θ, DDIM"] --> zhat["ẑ₀"] --> Dd["𝓓"] --> img["图像"]
+  end
+              </pre>
+            <figcaption>自绘：训练只在 latent 上做 MSE 去噪；采样从高斯噪声反复去噪得 ẑ₀，再单次解码成图。$\mathcal{E}/\mathcal{D}$ 在第二阶段冻结。</figcaption>
+          </div>
+          <div class="analysis-detail"><h4>逻辑角色</h4><p>把「贵」从像素维度（$H\times W$）降到 latent 维度（$h\times w=H/f\times W/f$）。$f=4$ 时空间元素少 16 倍，这就是提速的算术来源。</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>3.3 Conditioning Mechanisms.</strong> We turn DMs into more flexible conditional generators by augmenting the UNet with the <span class="hl-method">cross-attention mechanism</span>. To pre-process $y$ from various modalities (e.g. language prompts), we introduce a domain specific encoder $\tau_\theta$ that projects $y$ to an intermediate representation $\tau_\theta(y)\in\mathbb{R}^{M\times d_\tau}$, then mapped into intermediate UNet layers via cross-attention:</p>
+        <p>$$\text{Attention}(Q,K,V)=\text{softmax}\!\left(\tfrac{QK^\top}{\sqrt{d}}\right)\!\cdot V,$$ with $Q=W_Q^{(i)}\varphi_i(z_t),\; K=W_K^{(i)}\tau_\theta(y),\; V=W_V^{(i)}\tau_\theta(y)$.</p>
+        <p>Based on image-conditioning pairs, we learn the conditional LDM via $$L_{LDM}:=\mathbb{E}_{\mathcal{E}(x),y,\epsilon,t}\Big[\lVert\epsilon-\epsilon_\theta(z_t,t,\tau_\theta(y))\rVert_2^2\Big],$$ where both $\tau_\theta$ and $\epsilon_\theta$ are jointly optimized.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>3.3 条件机制。</strong> 我们通过给 U-Net 增设交叉注意力机制，把扩散模型变成更灵活的条件生成器。为预处理来自不同模态的 $y$（如语言提示），引入一个领域专用编码器 $\tau_\theta$，把 $y$ 投影到中间表示 $\tau_\theta(y)\in\mathbb{R}^{M\times d_\tau}$，再经交叉注意力注入 U-Net 的中间层：</p>
+        <p>$$\text{Attention}(Q,K,V)=\text{softmax}\!\left(\tfrac{QK^\top}{\sqrt{d}}\right)\!\cdot V,$$ 其中 $Q=W_Q^{(i)}\varphi_i(z_t),\; K=W_K^{(i)}\tau_\theta(y),\; V=W_V^{(i)}\tau_\theta(y)$。</p>
+        <p>基于「图像—条件」数据对，我们用下式学习条件 LDM：$$L_{LDM}:=\mathbb{E}_{\mathcal{E}(x),y,\epsilon,t}\Big[\lVert\epsilon-\epsilon_\theta(z_t,t,\tau_\theta(y))\rVert_2^2\Big],$$ 其中 $\tau_\theta$ 与 $\epsilon_\theta$ 联合优化。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #6f42c1;">
+          <span class="tag">核心方法 · 条件控制</span>
+          <h4>公式拆解（交叉注意力）</h4>
+          <p>$Q$ 来自图像中间特征 $\varphi_i(z_t)$，$K,V$ 来自条件 $\tau_\theta(y)$。直觉：图像的每个空间位置去「查询」条件序列里相关的部分（如某个词），按相关度加权融合。这正是「文字 → 图像区域」对齐的机制。</p>
+          <h4>设计取舍</h4>
+          <p>两种注入方式：<strong>拼接（concat）</strong>适合空间对齐的稠密条件（语义图、低分图、掩码）；<strong>交叉注意力</strong>适合非空间/变长条件（文本 token、类别）。一套机制统一了文生图/布局/超分/补全。</p>
+          <div class="analysis-detail"><h4>交叉注意力数据流（自绘）</h4>
+            <div class="diagram">
+              <pre class="mermaid">
+flowchart LR
+  Y["条件 y<br/>(文本/语义图…)"] --> TAU["领域编码器 τ_θ<br/>(如 Transformer/BERT)"]
+  TAU --> KV["K, V"]
+  ZT["U-Net 中间特征 φ(z_t)"] --> Q["Q"]
+  Q --> ATT["softmax(QKᵀ/√d)·V"]
+  KV --> ATT
+  ATT --> OUT["注意力输出 → 回注 U-Net"]
+              </pre>
+              <figcaption>自绘（据式3 与原文 Fig.3）：条件经 τ_θ 变成 K/V，图像特征出 Q，交叉注意力把条件信息按相关度写回 U-Net。</figcaption>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== 架构大图 ===================== -->
+    <section class="figure-row" id="arch">
+      <h3>🏛️ LDM 完整架构（自绘，复刻原文 Fig.3）</h3>
+      <div class="diagram">
+        <svg viewBox="0 0 900 360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LDM 架构图">
+          <rect x="0" y="0" width="900" height="360" fill="#ffffff"/>
+          <!-- Pixel space box -->
+          <rect x="15" y="60" width="150" height="240" rx="8" fill="#f3f0eb" stroke="#bbb"/>
+          <text x="90" y="50" font-size="12" fill="#6c757d" text-anchor="middle" font-weight="600">Pixel Space 像素空间</text>
+          <rect x="35" y="120" width="60" height="60" rx="4" fill="#cfe2ff" stroke="#0d6efd"/>
+          <text x="65" y="155" font-size="10" text-anchor="middle">x</text>
+          <rect x="35" y="210" width="60" height="60" rx="4" fill="#fff3cd" stroke="#ffc107"/>
+          <text x="65" y="245" font-size="10" text-anchor="middle">x̃</text>
+          <text x="118" y="125" font-size="11" fill="#6f42c1" font-weight="600">𝓔</text>
+          <path d="M95,150 C110,150 110,150 130,150" stroke="#6f42c1" stroke-width="2" fill="none" marker-end="url(#ar)"/>
+          <text x="118" y="245" font-size="11" fill="#198754" font-weight="600">𝓓</text>
+          <path d="M130,240 C112,240 112,240 95,240" stroke="#198754" stroke-width="2" fill="none" marker-end="url(#ar)"/>
+          <!-- Latent space box -->
+          <rect x="190" y="40" width="430" height="280" rx="8" fill="#eef2ff" stroke="#0d6efd" stroke-dasharray="4 3"/>
+          <text x="405" y="32" font-size="12" fill="#0d6efd" text-anchor="middle" font-weight="600">Latent Space 潜在空间（扩散在这里发生）</text>
+          <!-- z and zT -->
+          <rect x="205" y="130" width="55" height="55" rx="4" fill="#cfe2ff" stroke="#0d6efd"/>
+          <text x="232" y="162" font-size="10" text-anchor="middle">z</text>
+          <!-- diffusion forward -->
+          <path d="M260,157 L320,157" stroke="#999" stroke-width="2" fill="none" marker-end="url(#ar)"/>
+          <text x="290" y="148" font-size="9" fill="#666" text-anchor="middle">加噪 q</text>
+          <rect x="320" y="130" width="55" height="55" rx="4" fill="#e9ecef" stroke="#adb5bd"/>
+          <text x="347" y="162" font-size="10" text-anchor="middle">z_T</text>
+          <!-- denoising U-Net -->
+          <rect x="395" y="95" width="200" height="190" rx="8" fill="#e2d9f3" stroke="#6f42c1"/>
+          <text x="495" y="115" font-size="11" fill="#6f42c1" text-anchor="middle" font-weight="600">Denoising U-Net ε_θ</text>
+          <!-- U shape -->
+          <path d="M420,140 L420,210 L460,250 L530,250 L570,210 L570,140" fill="none" stroke="#6f42c1" stroke-width="2"/>
+          <circle cx="495" cy="250" r="6" fill="#6f42c1"/>
+          <text x="495" y="275" font-size="9" fill="#6f42c1" text-anchor="middle">×T 步去噪</text>
+          <!-- denoised back -->
+          <path d="M395,165 C380,200 250,210 232,188" stroke="#0d6efd" stroke-width="2" fill="none" stroke-dasharray="4 3" marker-end="url(#ar)"/>
+          <text x="300" y="225" font-size="9" fill="#0d6efd" text-anchor="middle">去噪还原 ẑ₀ → 𝓓 解码</text>
+          <!-- Conditioning box -->
+          <rect x="650" y="60" width="235" height="240" rx="8" fill="#fff5f5" stroke="#dc3545" stroke-dasharray="4 3"/>
+          <text x="767" y="50" font-size="12" fill="#dc3545" text-anchor="middle" font-weight="600">Conditioning 条件 y</text>
+          <rect x="675" y="90" width="80" height="34" rx="4" fill="#f8d7da" stroke="#dc3545"/>
+          <text x="715" y="112" font-size="9" text-anchor="middle">文本 Text</text>
+          <rect x="675" y="134" width="80" height="34" rx="4" fill="#f8d7da" stroke="#dc3545"/>
+          <text x="715" y="156" font-size="9" text-anchor="middle">语义图</text>
+          <rect x="675" y="178" width="80" height="34" rx="4" fill="#f8d7da" stroke="#dc3545"/>
+          <text x="715" y="200" font-size="9" text-anchor="middle">边框/布局</text>
+          <rect x="675" y="222" width="80" height="34" rx="4" fill="#f8d7da" stroke="#dc3545"/>
+          <text x="715" y="244" font-size="9" text-anchor="middle">低分图</text>
+          <rect x="785" y="134" width="75" height="80" rx="4" fill="#e2d9f3" stroke="#6f42c1"/>
+          <text x="822" y="170" font-size="10" fill="#6f42c1" text-anchor="middle">τ_θ</text>
+          <text x="822" y="186" font-size="8" fill="#6f42c1" text-anchor="middle">编码器</text>
+          <path d="M755,151 L785,160" stroke="#dc3545" stroke-width="1.5" fill="none" marker-end="url(#ar)"/>
+          <path d="M755,195 L785,188" stroke="#dc3545" stroke-width="1.5" fill="none" marker-end="url(#ar)"/>
+          <!-- cross attention into unet -->
+          <path d="M785,174 C700,174 640,190 595,190" stroke="#dc3545" stroke-width="2" fill="none" marker-end="url(#ar)"/>
+          <text x="650" y="183" font-size="9" fill="#dc3545" text-anchor="middle">cross-attention (K,V)</text>
+          <defs>
+            <marker id="ar" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 z" fill="#444"/></marker>
+          </defs>
+        </svg>
+        <figcaption>自绘复刻原文 Fig.3：左=像素空间自编码器（$\mathcal{E}/\mathcal{D}$，训练一次冻结）；中=潜在空间里的时间条件去噪 U-Net（扩散核心）；右=任意模态条件经 $\tau_\theta$ 编码后，通过交叉注意力（或拼接）注入 U-Net。生成只需「噪声→去噪→解码」一条路径。</figcaption>
+      </div>
+      <figure>
+        <img src="assets/sd/fig3.png" alt="原文 Figure 3 架构图">
+        <figcaption>📄 原文 Figure 3（p.4）：与上方自绘图对照——左 Pixel Space 的 $\mathcal{E}/\mathcal{D}$、中 Latent Space 的 Denoising U-Net（$Q/K/V$ 注意力块）、右 Conditioning（语义图/文本/表示/图像经 $\tau_\theta$）。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <!-- ===================== Experiments ===================== -->
+    <h2 class="section-title" id="experiments">4. Experiments</h2>
+
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>4.1 On Perceptual Compression Tradeoffs.</strong> We analyze LDMs with different downsampling factors $f\in\{1,2,4,8,16,32\}$ (LDM-1 = pixel-based DM). Fig. 6 shows sample quality vs training progress for class-conditional models on ImageNet. We see that i) small downsampling for LDM-{1,2} results in slow training, whereas ii) overly large $f$ causes <span class="hl-counter">stagnating fidelity after few steps</span>. We attribute this to leaving most of perceptual compression to the diffusion model (small $f$), vs too strong first-stage compression losing information (large $f$). <span class="hl-thesis">LDM-{4-16} strike a good balance</span>, manifesting in a significant FID gap of 38 between LDM-1 and LDM-8 after 2M steps.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>4.1 感知压缩的权衡。</strong> 我们考察不同下采样因子 $f\in\{1,2,4,8,16,32\}$（LDM-1 即像素级 DM）。图6 给出 ImageNet 类别条件模型「样本质量 vs 训练进度」。可见：i) LDM-{1,2} 下采样太小 → 训练缓慢；ii) $f$ 过大 → 少量步数后保真度停滞。我们归因为：$f$ 太小把感知压缩的活儿都丢给了扩散模型；$f$ 太大则第一阶段压缩过猛、信息丢失。LDM-{4-16} 取得良好平衡——训练 2M 步后，LDM-1 与 LDM-8 的 FID 差距达 38。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #0d6efd;">
+          <span class="tag">实验 · 压缩率消融</span>
+          <ul class="exp-detail">
+            <li><strong>数据集：</strong>ImageNet（类别条件，2M 步）；CelebA-HQ（500k 步）。统一单张 A100、同参数同步数（§4.1）。</li>
+            <li><strong>自变量：</strong>下采样因子 $f\in\{1,2,4,8,16,32\}$。</li>
+            <li><strong>指标：</strong>FID↓（越低越好）、采样吞吐（DDIM 步数 {10,20,50,100,200}）。</li>
+            <li><strong>论点↔证据：</strong>「near-optimal point」主张（摘要）由此 $f$ 扫描坐实——$f=4\!\sim\!8$ 最优。</li>
+            <li><strong>统计严谨性：</strong>FID 基于 5000 样本（Fig.7）；论文未报告多次运行的误差棒。</li>
+          </ul>
+          <table class="exp-table">
+            <thead><tr><th>压缩 $f$</th><th>现象</th><th>归因</th></tr></thead>
+            <tbody>
+              <tr><td>1, 2（小）</td><td>训练慢</td><td>感知压缩全压给扩散模型</td></tr>
+              <tr class="is-ours"><td>4–16（中）</td><td>效率/质量最佳</td><td>压缩与生成分工合理</td></tr>
+              <tr><td>32（大）</td><td>质量停滞</td><td>第一阶段丢信息，上限被锁死</td></tr>
+            </tbody>
+          </table>
+          <h4>结论</h4>
+          <p>存在「金发女孩区间」$f\!=\!4\!\sim\!8$：LDM-8 较 LDM-1（像素 DM）FID 低 38，且采样吞吐大增。后来 Stable Diffusion 选 $f=8$ 正源于此。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 6 &amp; 7（p.6）：压缩率对训练与采样效率的影响</h3>
+      <figure style="margin-bottom:1rem;">
+        <img src="assets/sd/fig6.png" alt="原文 Figure 6 训练曲线">
+        <figcaption>Fig.6：ImageNet 上不同 $f$ 的训练曲线（左 FID↓、右 IS↑ vs 训练步）。LDM-1/2（像素或弱压缩）收敛慢；LDM-32（过度压缩）很快停滞；LDM-4/8 兼顾。点击放大。</figcaption>
+      </figure>
+      <figure>
+        <img src="assets/sd/fig7.png" alt="原文 Figure 7 采样吞吐">
+        <figcaption>Fig.7：CelebA-HQ（左）与 ImageNet（右）上 log-FID vs 采样吞吐（每条线由右至左为 {10,20,50,100,200} DDIM 步）。LDM-{4-8} 在「更快」与「更低 FID」上同时占优。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>4.2 Image Generation with Latent Diffusion.</strong> We train unconditional models on CelebA-HQ, FFHQ, LSUN-Churches/-Bedrooms and evaluate sample quality (FID) and coverage (Precision-Recall). On CelebA-HQ, we report a <span class="hl-evidence">new state-of-the-art FID of 5.11</span>, outperforming previous likelihood-based models and GANs, and also outperforming LSGM where a latent DM is trained jointly with the first stage. We outperform prior diffusion approaches on all but LSUN-Bedrooms, where our score is close to ADM despite using half its parameters and 4× less train resources.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>4.2 潜在扩散的图像生成。</strong> 我们在 CelebA-HQ、FFHQ、LSUN-Churches/-Bedrooms 上训练无条件模型，评估样本质量（FID）与覆盖度（Precision-Recall）。在 CelebA-HQ 上取得新 SOTA 的 FID 5.11，超过此前的似然模型与 GAN，也超过「把潜在 DM 与第一阶段联合训练」的 LSGM。除 LSUN-Bedrooms（与 ADM 接近）外，我们在所有数据集上都超过先前的扩散方法——而且只用 ADM 一半的参数、约 1/4 的训练资源。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #0d6efd;">
+          <span class="tag">实验 · 无条件生成</span>
+          <ul class="exp-detail">
+            <li><strong>指标：</strong>FID↓、Precision↑、Recall↑（采样步数标注于括号，DDIM）。</li>
+            <li><strong>论点↔证据：</strong>「half params / 4× less resources 仍接近 ADM」支撑贡献(ii) 效率主张。</li>
+            <li><strong>对比公平性：</strong>部分基线数字转引自他文（CelebA-HQ from [43,63,100]，FFHQ from [42,43]），协议未必完全一致。</li>
+          </ul>
+          <table class="exp-table">
+            <thead><tr><th>CelebA-HQ 256²</th><th>FID↓</th><th>Prec.↑</th><th>Recall↑</th></tr></thead>
+            <tbody>
+              <tr><td>PGGAN</td><td>8.0</td><td>—</td><td>—</td></tr>
+              <tr><td>LSGM（联合训练）</td><td>7.22</td><td>—</td><td>—</td></tr>
+              <tr><td>UDM</td><td>7.16</td><td>—</td><td>—</td></tr>
+              <tr class="is-ours"><td>LDM-4（本文, 500步）</td><td>5.11</td><td>0.72</td><td>0.49</td></tr>
+            </tbody>
+          </table>
+          <table class="exp-table">
+            <thead><tr><th>LSUN-Bedrooms 256²</th><th>FID↓</th><th>说明</th></tr></thead>
+            <tbody>
+              <tr><td>ADM</td><td>1.90</td><td>554M+，资源 4×</td></tr>
+              <tr class="is-ours"><td>LDM-4（本文）</td><td>2.95</td><td>参数减半，资源 1/4</td></tr>
+              <tr><td>ProjectedGAN</td><td>1.52</td><td>GAN，Recall 偏低(0.34)</td></tr>
+            </tbody>
+          </table>
+          <h4>统计严谨性 / 局限</h4>
+          <p>LSUN-Bedrooms 上 LDM 并非最低 FID（GAN 更低），论文坦诚「close to ADM」，并以「效率换质量」框架化；未给误差棒。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 4（p.5）：无条件生成样本（256×256）</h3>
+      <figure>
+        <img src="assets/sd/fig4.jpg" alt="原文 Figure 4 无条件样本">
+        <figcaption>Fig.4：LDM 在 CelebA-HQ、FFHQ、LSUN-Churches、LSUN-Bedrooms 与类别条件 ImageNet 上的样本，均为 256² 分辨率。定性印证 Tab.1 的 FID/Precision-Recall 数字。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>4.3 Conditional LDM — Text-to-Image.</strong> We train a <span class="hl-evidence">1.45B-parameter KL-regularized LDM conditioned on language prompts on LAION-400M</span>, using BERT-tokenizer and a transformer as $\tau_\theta$. On MS-COCO, applying classifier-free guidance greatly boosts sample quality, such that the guided LDM-KL-8-G is <span class="hl-thesis">on par with recent SOTA AR and diffusion models for text-to-image while substantially reducing parameter count</span>. We also train layout-to-image models and class-conditional ImageNet models (Tab. 3), outperforming ADM while reducing compute.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>4.3 条件 LDM — 文生图。</strong> 我们在 LAION-400M 上训练一个 14.5 亿参数、KL 正则、以语言提示为条件的 LDM，用 BERT 分词器、$\tau_\theta$ 为 transformer。在 MS-COCO 上，施加无分类器引导（classifier-free guidance）大幅提升质量，使带引导的 LDM-KL-8-G 在文生图上与近期 SOTA 的自回归与扩散模型持平，同时参数量显著更少。我们还训练了布局生成与类别条件 ImageNet 模型（表3），在超过 ADM 的同时降低算力。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #0d6efd;">
+          <span class="tag">实验 · 文生图 / 类别条件</span>
+          <ul class="exp-detail">
+            <li><strong>数据：</strong>LAION-400M 训练；MS-COCO 验证集评估（256²，250 DDIM 步）。</li>
+            <li><strong>条件编码：</strong>$\tau_\theta$=transformer + BERT-tokenizer；引导：classifier-free guidance（scale $s$）。</li>
+            <li><strong>论点↔证据：</strong>「参数少却持平 GLIDE(6B)/Make-A-Scene(4B)」支撑贡献(v) 通用条件机制 + 效率。</li>
+          </ul>
+          <table class="exp-table">
+            <thead><tr><th>文生图 (MS-COCO)</th><th>FID↓</th><th>IS↑</th><th>#Params</th></tr></thead>
+            <tbody>
+              <tr><td>CogView</td><td>27.10</td><td>18.20</td><td>4B</td></tr>
+              <tr><td>GLIDE (s=3)</td><td>12.24</td><td>—</td><td>6B</td></tr>
+              <tr><td>Make-A-Scene</td><td>11.84</td><td>—</td><td>4B</td></tr>
+              <tr class="is-ours"><td>LDM-KL-8-G (s=1.5)</td><td>12.63</td><td>30.29</td><td>1.45B</td></tr>
+            </tbody>
+          </table>
+          <table class="exp-table">
+            <thead><tr><th>类别条件 ImageNet</th><th>FID↓</th><th>IS↑</th><th>#Params</th></tr></thead>
+            <tbody>
+              <tr><td>ADM-G</td><td>4.59</td><td>186.7</td><td>608M</td></tr>
+              <tr><td>BigGAN-deep</td><td>6.95</td><td>203.6</td><td>340M</td></tr>
+              <tr class="is-ours"><td>LDM-4-G (本文, s=1.5)</td><td>3.60</td><td>247.67</td><td>400M</td></tr>
+            </tbody>
+          </table>
+          <h4>结论 / 公平性</h4>
+          <p>带引导 LDM-4-G 在 ImageNet 取得 FID 3.60（优于 ADM-G），参数更少。文生图 FID 12.63 与 GLIDE 持平但参数仅约 1/4。注意各家步数/引导 scale 不同，对比非严格同协议。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 5（p.6）：文生图样本（LDM-8 KL，LAION 1.45B）</h3>
+      <figure>
+        <img src="assets/sd/fig5.jpg" alt="原文 Figure 5 文生图样本">
+        <figcaption>Fig.5：用户自定义文本提示的生成结果（200 DDIM 步、$\eta=1.0$、无分类器引导 $s=10$）。如 "A street sign that reads 'Latent Diffusion'"、"A zombie in the style of Picasso" 等——这正是后来 Stable Diffusion 文生图能力的雏形。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>4.3.2 – 4.5 Convolutional Sampling, Super-Resolution & Inpainting.</strong> By concatenating spatially aligned conditioning to the input of $\epsilon_\theta$, LDMs serve as general-purpose image-to-image models. A model trained at 256² <span class="hl-thesis">generalizes to larger resolutions</span> (e.g. 512×1024) when applied convolutionally, used for semantic synthesis, super-resolution and inpainting to render images between 512² and 1024². For super-resolution we condition on low-resolution images via concatenation (following SR3); for inpainting LDMs achieve new SOTA. <span class="hl-counter">Their sequential sampling process is still slower than GANs</span>, and reconstruction can become a bottleneck for tasks requiring fine-grained pixel accuracy.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>4.3.2–4.5 卷积式采样、超分与补全。</strong> 通过把「空间对齐的条件」拼接到 $\epsilon_\theta$ 输入，LDM 可充当通用的图到图模型。在 256² 训练的模型以卷积方式运行时能泛化到更大分辨率（如 512×1024），用于语义合成、超分与补全，渲染 512²–1024² 的图像。超分通过拼接低分图作条件（沿用 SR3）；补全任务上 LDM 取得新 SOTA。其顺序采样仍慢于 GAN，且当任务要求像素级精细精度时，重建能力可能成为瓶颈。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #0d6efd;">
+          <span class="tag">实验 · 通用图到图</span>
+          <ul class="exp-detail">
+            <li><strong>机制：</strong>稠密条件用「拼接」而非交叉注意力（空间对齐）；卷积式推理实现分辨率泛化。</li>
+            <li><strong>任务覆盖：</strong>语义合成（OpenImages→COCO 微调）、超分（SR3 设置，ImageNet 4×）、补全（新 SOTA）。</li>
+            <li><strong>论点↔证据：</strong>「256² 训练 → 1024² 推理」支撑贡献(iv) 卷积式大图生成。</li>
+          </ul>
+          <h4>逻辑角色</h4>
+          <p>把「一套条件机制」横扫多任务，证明 LDM 的通用性，而非只为文生图定制。</p>
+          <h4>统计严谨性 / 局限</h4>
+          <p>主动承认两点：① 采样仍慢于 GAN（顺序多步）；② $\mathcal{D}$ 的重建上限会成为高精度任务瓶颈，超分模型尤甚。属诚实的让步处理。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 重建质量表（Tab.8 摘选） -->
+    <section class="figure-row">
+      <h3>📊 第一阶段重建质量（Tab.8 摘选）：温和压缩换更高保真</h3>
+      <table class="exp-table" style="font-size:0.85rem;">
+        <thead><tr><th>下采样 $f$</th><th>正则</th><th>重建 R-FID↓</th><th>取舍</th></tr></thead>
+        <tbody>
+          <tr class="is-ours"><td>f=4</td><td>VQ / KL</td><td>很低（最保真）</td><td>latent 较大、扩散稍贵</td></tr>
+          <tr><td>f=8</td><td>KL（SD 采用）</td><td>低</td><td>效率/质量平衡点</td></tr>
+          <tr><td>f=16</td><td>VQ / KL</td><td>中</td><td>更快但细节略损</td></tr>
+          <tr><td>f=32</td><td>—</td><td>偏高（失真大）</td><td>压缩过猛，质量上限被锁</td></tr>
+        </tbody>
+      </table>
+      <figcaption>据原文 §4.1 与 Tab.8 文字归纳（具体数值见原文 Tab.8）：保留 2D 结构 + 温和 $f$ → 重建优于依赖 1D 离散序列的 VQGAN/DALL-E（见 Fig.1：ours f=4 的 R-FID 0.58 远优于 DALL-E f=8 的 32.01）。</figcaption>
+      <figure style="margin-top:1rem;">
+        <img src="assets/sd/fig1.jpg" alt="原文 Figure 1 重建质量对比">
+        <figcaption>📄 原文 Figure 1（p.1）：相同/不同下采样因子下的重建对比。ours（$f=4$）PSNR 27.4 / R-FID 0.58，远优于 DALL-E（$f=8$，R-FID 32.01）与 VQGAN（$f=16$，R-FID 4.98）——温和压缩换来更高保真。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <!-- ===================== Conclusion ===================== -->
+    <h2 class="section-title" id="conclusion">5–6. Limitations & Conclusion</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Limitations.</strong> While LDMs significantly reduce computational requirements compared to pixel-based approaches, <span class="hl-counter">their sequential sampling process is still slower than that of GANs</span>. Moreover, the use of LDMs can be questionable when high precision is required: although the loss of image quality is very small in our $f=4$ autoencoding models, their reconstruction capability can become a bottleneck for tasks that require fine-grained accuracy in pixel space.</p>
+        <p><strong>Conclusion.</strong> We have presented latent diffusion models, a simple and efficient way to <span class="hl-thesis">significantly improve both the training and sampling efficiency of denoising diffusion models without degrading their quality</span>. Based on this and our cross-attention conditioning mechanism, our experiments could demonstrate favorable results compared to state-of-the-art methods across a wide range of conditional image synthesis tasks without task-specific architectures.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>局限。</strong> 尽管 LDM 相较像素级方法显著降低算力，其顺序采样过程仍慢于 GAN。此外，当任务要求高精度时，LDM 的使用值得商榷：虽然在 $f=4$ 自编码模型中图像质量损失极小，但其重建能力对于「需要像素空间精细精度」的任务可能成为瓶颈。</p>
+        <p><strong>结论。</strong> 我们提出了潜在扩散模型——一种简单高效、能在不降低质量的前提下显著提升去噪扩散模型训练与采样效率的方法。基于此并结合交叉注意力条件机制，我们的实验在广泛的条件图像合成任务上、且无需任务专用架构，展现出优于当时最优方法的结果。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #198754;">
+          <span class="tag">让步 + 收束</span>
+          <h4>段落功能</h4>
+          <p>先诚实列两条局限（采样慢、重建上限），再用一句话总结双主张（效率 + 通用可控）。</p>
+          <h4>逻辑角色</h4>
+          <p>闭合论证链：呼应摘要与贡献清单，强调「无需任务专用架构」这一通用性卖点。</p>
+          <h4>论证技巧 / 潜在漏洞</h4>
+          <p>技巧：主动暴露弱点提升可信度。事后看，「采样慢」催生了后续蒸馏/一致性模型；「重建瓶颈」推动了 SDXL/SD3 改进 VAE。漏洞：未量化「质量不降」的边界——极端压缩或细粒度任务下并不成立（其自承）。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== 符号表 ===================== -->
+    <section class="summary" id="notation">
+      <h2>符号速查表</h2>
+      <table class="notation">
+        <thead><tr><th>符号</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td>$x\in\mathbb{R}^{H\times W\times3}$</td><td>原始 RGB 图像（像素空间）</td></tr>
+          <tr><td>$\mathcal{E},\;\mathcal{D}$</td><td>编码器 / 解码器（第一阶段自编码器；第二阶段冻结）</td></tr>
+          <tr><td>$z=\mathcal{E}(x)\in\mathbb{R}^{h\times w\times c}$</td><td>潜变量（扩散在此发生）</td></tr>
+          <tr><td>$f=H/h=W/w$</td><td>空间下采样因子，$f=2^m$（SD 取 $f=8$）</td></tr>
+          <tr><td>$z_t$</td><td>第 $t$ 步加噪后的潜变量</td></tr>
+          <tr><td>$\epsilon_\theta(z_t,t,\cdot)$</td><td>时间条件去噪 U-Net（预测噪声 $\epsilon$）</td></tr>
+          <tr><td>$y,\;\tau_\theta(y)$</td><td>条件输入（文本/语义图/边框/低分图）及其领域编码</td></tr>
+          <tr><td>$Q,K,V$</td><td>交叉注意力的查询/键/值：$Q$ 出自图像特征，$K,V$ 出自 $\tau_\theta(y)$</td></tr>
+          <tr><td>$L_{LDM}$</td><td>潜在空间去噪 MSE 目标（式2/式3）</td></tr>
+          <tr><td>KL-reg / VQ-reg</td><td>潜在空间两种正则：连续轻 KL / 离散向量量化</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <!-- ===================== 论证结构总览 ===================== -->
+    <section class="summary" id="overview">
+      <h2>论证结构总览</h2>
+      <div class="skeleton">
+        问题：像素空间扩散模型质量强但训练/推理太贵（数百 GPU 天）<br/>
+        → 论点：把扩散搬到「感知等价」的低维 latent，可降本而不降质，并用交叉注意力统一各类条件<br/>
+        → 证据：$f$ 扫描定位最优区间（Fig.6/7）；CelebA-HQ FID 5.11、ImageNet LDM-4-G FID 3.60、文生图与 GLIDE 持平但参数 1/4（Tab.1–3）<br/>
+        → 反驳：主动承认采样仍慢于 GAN、重建对高精度任务是瓶颈<br/>
+        → 结论：LDM 是通用、高效、可控的图像生成框架（无需任务专用架构）
+      </div>
+      <h4>核心主张（一句话）</h4>
+      <p>把扩散过程从像素空间迁移到预训练自编码器的低维潜在空间，并以交叉注意力注入任意条件，可在大幅降低算力的同时保持 SOTA 级质量与多任务通用性。</p>
+      <div class="strength"><strong>论证最强处：</strong> $f$ 扫描实验（§4.1）干净地把「为何 $f=4\!\sim\!8$ 最优」量化为可复现结论，并用 LDM-1 vs LDM-8 的 FID 差 38 直接坐实「降本不降质」。开源 + 这套配方后来直接催生 Stable Diffusion。</div>
+      <div class="weakness"><strong>论证最弱处：</strong> 跨方法对比的协议不一致（步数、引导 scale、基线数字转引自他文），且全程缺误差棒/显著性；「质量不降」的成立边界（极端压缩、细粒度任务）仅被定性承认而未系统刻画。</div>
+    </section>
+
+    <!-- ===================== 十问 ===================== -->
+    <section class="summary faq" id="faq">
+      <h2>🧩 结构化十问（AI 解构）</h2>
+      <details open><summary>Q1 · 论文试图解决什么问题？</summary><div class="answer">像素空间扩散模型质量 SOTA 但算力极贵（训练数百 GPU 天、单 A100 生成 5 万样本约 5 天，§1）。目标：在不牺牲质量与灵活性的前提下，大幅降低 DM 的训练与推理成本，使其「民主化」。</div></details>
+      <details><summary>Q2 · 这是否是一个新问题？</summary><div class="answer">「降低生成模型成本」非新问题（VQ-VAE/VQGAN 早有两阶段思路）。新意在于：不做激进 1D 离散压缩，而是在「感知等价的 2D 连续 latent」上跑卷积扩散，并自由选择压缩率（§2）。</div></details>
+      <details><summary>Q3 · 要验证什么科学假设？</summary><div class="answer">假设：图像学习可分为「感知压缩（扔不可感知细节）」与「语义压缩（学构图）」；把前者交给一次性训练的自编码器、后者交给 latent 扩散，能在「复杂度削减 vs 细节保留」间达到近最优平衡（§1, Fig.2）。</div></details>
+      <details><summary>Q4 · 有哪些相关研究？如何归类？值得关注的研究者？</summary><div class="answer">GAN（高效但难优化/覆盖不全）、VAE/flow（高效但质量稍逊）、ARM/VQGAN/DALL-E（激进离散压缩 + AR）、像素 DM（DDPM/ADM/SR3）、联合训练的 LSGM。团队：Rombach、Blattmann、Esser、Ommer（CompVis，慕尼黑），与 Runway ML；其 DDPM(Ho)、ADM(Dhariwal & Nichol)、VQGAN(Esser) 是直接前序。</div></details>
+      <details><summary>Q5 · 解决方案的关键是什么？</summary><div class="answer">三招：① 预训练感知自编码器（KL/VQ 正则）把图压到 latent；② 在 latent 上跑时间条件 U-Net 扩散（式2）；③ 交叉注意力条件机制 $\tau_\theta$（式3）统一文本/语义图/边框/低分图等条件。</div></details>
+      <details><summary>Q6 · 实验是如何设计的？</summary><div class="answer">$f$ 压缩率消融（§4.1，固定单 A100 同算力）；无条件生成（CelebA-HQ/FFHQ/LSUN，FID + P/R）；条件生成（文生图 LAION→COCO、类别条件 ImageNet、布局/超分/补全）；卷积式分辨率泛化。</div></details>
+      <details><summary>Q7 · 用什么数据集评估？代码是否开源？</summary><div class="answer">数据集：ImageNet、CelebA-HQ、FFHQ、LSUN-Churches/-Bedrooms、LAION-400M、MS-COCO、OpenImages。指标：FID/IS/Precision/Recall/PSNR/SSIM。代码与预训练模型开源：<a href="https://github.com/CompVis/latent-diffusion" target="_blank" rel="noopener">github.com/CompVis/latent-diffusion</a>（后续 Stable Diffusion：CompVis/stability-ai）。</div></details>
+      <details><summary>Q8 · 实验结果是否很好支持了假设？</summary><div class="answer">较好支持：$f=4\!\sim\!8$ 最优、CelebA-HQ FID 5.11、ImageNet LDM-4-G FID 3.60、文生图参数 1/4 仍持平。但跨方法协议不一致、无误差棒，故「显著优于」需谨慎；LSUN-Bedrooms 上 GAN 仍 FID 更低。</div></details>
+      <details><summary>Q9 · 这篇论文到底有什么贡献？</summary><div class="answer">① 提出 LDM「先压缩再生成」两阶段范式，把扩散成本降一个量级而不降质；② 交叉注意力通用条件机制，一套架构横扫文生图/超分/补全/布局；③ 开源预训练模型——直接成为 Stable Diffusion 的技术底座，引爆开源生成式 AI 生态。</div></details>
+      <details><summary>Q10 · 下一步可以做什么？</summary><div class="answer">作者展望：复用通用自编码器探索更多下游任务。本文补充（事后验证）：加速采样（DDIM/蒸馏/一致性模型解决「慢」）、改进 VAE 重建（SDXL/SD3 解决「重建瓶颈」）、Rectified Flow/DiT 替换 U-Net、更强文本编码器（CLIP→T5）。</div></details>
+    </section>
+
+    <!-- ===================== 深挖 ===================== -->
+    <section class="summary deepdive" id="deepdive">
+      <h2>🔬 深挖追问</h2>
+      <div class="block"><h4>第一性原理 · 本质</h4><p>图像的信息是<strong>极度冗余</strong>的：绝大多数比特用于人眼不可感知的高频细节。生成的本质难点只在「语义/结构」这一低维流形上。LDM 的本质是<strong>把昂贵的迭代优化（扩散）放到信息密度更高的空间里做</strong>——先用确定性的自编码器无损（感知意义上）剥离冗余，再让随机性的扩散只在语义维度发力。这是「分而治之」在生成建模上的体现。</p></div>
+      <div class="block"><h4>第一性原理 · 哲学基础</h4><p>呼应 DDPM 的 rate-distortion 洞察：感知质量 ≠ 似然/码长。LDM 把这一哲学工程化为「感知压缩 vs 语义压缩」的显式切分，并主张二者可<strong>解耦</strong>优化（区别于 LSGM 的联合训练需精细权衡）。背后是一种「表示先于生成」的信念——找到对的空间，问题就解决了一半。</p></div>
+      <div class="block"><h4>第一性原理 · 数学基础</h4><p>核心等式只是把 DDPM 的去噪 MSE 目标 $\mathbb{E}\lVert\epsilon-\epsilon_\theta(x_t,t)\rVert^2$ 中的 $x_t$ 替换为 $z_t=\mathcal{E}(x)$ 的加噪版（式1→式2）。条件由交叉注意力 $\text{softmax}(QK^\top/\sqrt d)V$ 注入（式3），其中 $K,V$ 来自条件编码。降本的算术本质：空间元素数从 $H\!\times\!W$ 降到 $(H/f)\!\times\!(W/f)$，$f=8$ 即少 64 倍空间位置，U-Net 的卷积/注意力计算随之骤降。</p></div>
+      <div class="block crit"><h4>批判性思维 · 我们还没问的根本问题（盲区）</h4>
+        <ul>
+          <li><strong>自编码器的「感知等价」是否真无损？</strong> 重建 R-FID 很低不等于零损失；细粒度任务（OCR、医学影像）中被 $\mathcal{D}$ 丢掉的信息可能恰恰关键（作者仅定性承认）。</li>
+          <li><strong>压缩与生成解耦真的最优吗？</strong> $\mathcal{E}/\mathcal{D}$ 冻结后，扩散被锁在一个「非为生成而优化」的 latent 上；联合/端到端是否有更高上限未充分回答。</li>
+          <li><strong>对比公平性：</strong> 跨方法的采样步数、引导 scale、基线数字来源各异，缺统一协议与误差棒，难判定「显著优于」。</li>
+          <li><strong>泛化的边界：</strong> 「256² 训练→1024² 卷积推理」对哪些任务成立？非空间对齐条件（纯文本）能否同样泛化分辨率？</li>
+          <li><strong>采样效率：</strong> 仍需几十到几百步顺序求值，相对 GAN 的单步仍慢——是范式级限制而非工程小问题。</li>
+          <li><strong>潜在空间可解释性：</strong> latent 各通道语义不明，正则（KL vs VQ）如何影响可编辑性/解耦缺乏深入分析。</li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="lightbox" role="dialog" aria-modal="true" aria-label="放大查看">
+    <span class="lb-close" aria-hidden="true">&times;</span>
+    <div class="lb-content"></div>
+    <div class="lb-cap"></div>
+  </div>
+
+  <script>
+    function syncScrollPad() {
+      var head = document.querySelector('.sticky-head');
+      if (head) document.documentElement.style.scrollPaddingTop = (head.offsetHeight + 8) + 'px';
+    }
+    window.addEventListener('load', syncScrollPad);
+    window.addEventListener('resize', syncScrollPad);
+    syncScrollPad();
+
+    // 点击放大 / 再次点击取消放大（事件委托，兼容 Mermaid 异步渲染的 SVG）
+    (function () {
+      var lb = document.getElementById('lightbox');
+      var content = lb.querySelector('.lb-content');
+      var cap = lb.querySelector('.lb-cap');
+
+      function findZoomTarget(node) {
+        // 命中 img/svg，且位于 .diagram 或 .figure-row 内
+        var el = node.closest ? node.closest('img, svg') : null;
+        if (!el) return null;
+        if (!el.closest('.diagram, .figure-row, .mermaid')) return null;
+        return el;
+      }
+      function nearestCaption(el) {
+        var fig = el.closest('figure') || el.closest('.diagram') || el.closest('.figure-row');
+        var c = fig && fig.querySelector('figcaption');
+        return c ? c.textContent.trim() : '';
+      }
+      function openLightbox(node, caption) {
+        content.innerHTML = '';
+        var clone = node.cloneNode(true);
+        clone.style.cursor = 'default';
+        clone.style.boxShadow = 'none';
+        // 按原始渲染尺寸等比放大到视口（对 SVG 必需：克隆后缺显式尺寸会塌陷为 0 高）
+        var r = node.getBoundingClientRect();
+        var vw = window.innerWidth * 0.96, vh = window.innerHeight * 0.92;
+        var w = r.width || node.clientWidth || 600;
+        var h = r.height || node.clientHeight || 400;
+        var scale = Math.min(vw / w, vh / h);
+        if (!isFinite(scale) || scale <= 0) scale = 1;
+        clone.style.width = Math.round(w * scale) + 'px';
+        clone.style.height = Math.round(h * scale) + 'px';
+        clone.style.maxWidth = 'none';
+        clone.style.maxHeight = 'none';
+        content.appendChild(clone);
+        cap.textContent = caption || '';
+        lb.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+      function closeLightbox() {
+        lb.classList.remove('open');
+        content.innerHTML = '';
+        document.body.style.overflow = '';
+      }
+      document.addEventListener('click', function (e) {
+        if (lb.classList.contains('open')) { closeLightbox(); return; }
+        var el = findZoomTarget(e.target);
+        if (el) { e.preventDefault(); e.stopPropagation(); openLightbox(el, nearestCaption(el)); }
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && lb.classList.contains('open')) closeLightbox();
+      });
+    })();
+  </script>
+</body>
+</html>

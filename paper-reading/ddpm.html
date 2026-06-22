@@ -75,6 +75,15 @@
     .figure-row figcaption { font-size: 0.82rem; color: var(--muted); margin-top: 0.5rem; }
     .figure-row h3 { color: var(--navy); font-size: 1rem; margin-bottom: 0.75rem; }
     .mermaid { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem; margin: 0.5rem 0; text-align: center; }
+    /* 可点击放大 */
+    .diagram img, .diagram svg, .figure-row img, .figure-row svg { cursor: zoom-in; transition: box-shadow .15s; }
+    .diagram img:hover, .diagram svg:hover, .figure-row img:hover, .figure-row svg:hover { box-shadow: 0 0 0 2px #0d9488; }
+    #lightbox { position: fixed; inset: 0; background: rgba(10,12,20,0.92); display: none; align-items: center; justify-content: center; z-index: 1000; cursor: zoom-out; padding: 3vh 3vw; }
+    #lightbox.open { display: flex; }
+    #lightbox .lb-content { display: flex; align-items: center; justify-content: center; }
+    #lightbox .lb-content img, #lightbox .lb-content svg { display: block; background: #fff; border-radius: 6px; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
+    #lightbox .lb-close { position: fixed; top: 1rem; right: 1.5rem; color: #fff; font-size: 2rem; line-height: 1; opacity: 0.8; }
+    #lightbox .lb-cap { position: fixed; bottom: 1.2rem; left: 0; right: 0; text-align: center; color: #e8e4df; font-size: 0.8rem; padding: 0 2rem; }
     .hl-thesis { background: var(--thesis); padding: 0 2px; }
     .hl-concept { background: var(--concept); padding: 0 2px; }
     .hl-evidence { background: var(--evidence); padding: 0 2px; }
@@ -309,7 +318,7 @@
       <h3>原文 Figure 2：本文采用的有向图模型</h3>
       <figure>
         <img src="assets/ddpm/fig2_pgm.png" alt="DDPM Figure 2：有向图模型，展示正向加噪过程 q 与反向去噪过程 p_theta">
-        <figcaption>图 2（原文 p.3）：从右到左是固定的正向扩散过程 $q(x_t\mid x_{t-1})$，逐步把图像 $x_0$ 加噪至纯噪声 $x_T$；从左到右是可学习的反向过程 $p_\theta(x_{t-1}\mid x_t)$，逐步去噪还原。本文训练的正是这条反向马尔可夫链。</figcaption>
+        <figcaption>图 2（原文 p.3）：从右到左是固定的正向扩散过程 $q(x_t\mid x_{t-1})$，逐步把图像 $x_0$ 加噪至纯噪声 $x_T$；从左到右是可学习的反向过程 $p_\theta(x_{t-1}\mid x_t)$，逐步去噪还原。本文训练的正是这条反向马尔可夫链。点击放大。</figcaption>
       </figure>
     </div>
 
@@ -334,7 +343,7 @@ flowchart LR
     step --> out["x0 生成图像"]
   end
         </pre>
-        <figcaption>左：训练时随机抽 $t$、加噪、让网络回归噪声 $\epsilon$；右：采样时从纯噪声逐步去噪 $T$ 步还原图像。对应原文 Algorithm 1 / 2（图中 at=$\alpha_t$、at_bar=$\bar\alpha_t$，受 Mermaid 标签限制用纯文本表示）。</figcaption>
+        <figcaption>左：训练时随机抽 $t$、加噪、让网络回归噪声 $\epsilon$；右：采样时从纯噪声逐步去噪 $T$ 步还原图像。对应原文 Algorithm 1 / 2（图中 at=$\alpha_t$、at_bar=$\bar\alpha_t$，受 Mermaid 标签限制用纯文本表示）。点击放大。</figcaption>
       </figure>
     </div>
 
@@ -624,6 +633,13 @@ flowchart LR
       </div>
     </section>
   </main>
+
+  <div id="lightbox" role="dialog" aria-modal="true" aria-label="放大查看">
+    <span class="lb-close" aria-hidden="true">&times;</span>
+    <div class="lb-content"></div>
+    <div class="lb-cap"></div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
   <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral', flowchart: { htmlLabels: true } });</script>
   <script>
@@ -635,6 +651,58 @@ flowchart LR
     window.addEventListener('load', syncScrollPad);
     window.addEventListener('resize', syncScrollPad);
     syncScrollPad();
+
+    // 点击放大 / 再次点击取消放大（事件委托，兼容 Mermaid 异步渲染的 SVG）
+    (function () {
+      var lb = document.getElementById('lightbox');
+      var content = lb.querySelector('.lb-content');
+      var cap = lb.querySelector('.lb-cap');
+
+      function findZoomTarget(node) {
+        var el = node.closest ? node.closest('img, svg') : null;
+        if (!el) return null;
+        if (!el.closest('.diagram, .figure-row, .mermaid')) return null;
+        return el;
+      }
+      function nearestCaption(el) {
+        var fig = el.closest('figure') || el.closest('.diagram') || el.closest('.figure-row');
+        var c = fig && fig.querySelector('figcaption');
+        return c ? c.textContent.trim() : '';
+      }
+      function openLightbox(node, caption) {
+        content.innerHTML = '';
+        var clone = node.cloneNode(true);
+        clone.style.cursor = 'default';
+        clone.style.boxShadow = 'none';
+        var r = node.getBoundingClientRect();
+        var vw = window.innerWidth * 0.96, vh = window.innerHeight * 0.92;
+        var w = r.width || node.clientWidth || 600;
+        var h = r.height || node.clientHeight || 400;
+        var scale = Math.min(vw / w, vh / h);
+        if (!isFinite(scale) || scale <= 0) scale = 1;
+        clone.style.width = Math.round(w * scale) + 'px';
+        clone.style.height = Math.round(h * scale) + 'px';
+        clone.style.maxWidth = 'none';
+        clone.style.maxHeight = 'none';
+        content.appendChild(clone);
+        cap.textContent = caption || '';
+        lb.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+      function closeLightbox() {
+        lb.classList.remove('open');
+        content.innerHTML = '';
+        document.body.style.overflow = '';
+      }
+      document.addEventListener('click', function (e) {
+        if (lb.classList.contains('open')) { closeLightbox(); return; }
+        var el = findZoomTarget(e.target);
+        if (el) { e.preventDefault(); e.stopPropagation(); openLightbox(el, nearestCaption(el)); }
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && lb.classList.contains('open')) closeLightbox();
+      });
+    })();
   </script>
 </body>
 </html>

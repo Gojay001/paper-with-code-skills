@@ -156,6 +156,8 @@ Add paper entry with arXiv link, venue info, and official PyTorch repo.
 4. **不要**自动 push，除非用户明确要求
 5. **不要**在用户未确认时 commit
 
+精读页已存在且 Title ≠ HTML slug 时，在 `paper-reading/slug-aliases.json` 登记别名；在博客仓库运行 `sync-overview-from-list` 写回 Overview Title 链接。
+
 ## 示例
 
 用户输入:"添加LEDITS++"。搜索论文全称和链接：[LEDITS++: Limitless Image Editing using Text-to-Image Models](https://arxiv.org/abs/2311.16711)。搜索论文会议期刊：arXiv(2023) / CVPR(2024)。搜索论文代码仓库：[PyTorch](https://github.com/ml-research/ledits_pp)。判断该论文属于AIGC-Applications-Face Editing分类下，把信息加入table：| LEDITS++ | [LEDITS++: Limitless Image Editing using Text-to-Image Models](https://arxiv.org/abs/2311.16711) | arXiv(2023) / CVPR(2024) | [PyTorch](https://github.com/ml-research/ledits_pp)。再次检查该条信息是否无误。检查无误后询问用户是否提交到git。

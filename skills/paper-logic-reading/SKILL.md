@@ -20,6 +20,7 @@ After commit & push here → in blog repo **Gojay001.github.io** update submodul
 | HTML | `paper-reading/{slug}.html` |
 | Figures | `paper-reading/assets/{slug}/fig{N}.{jpg\|png}` |
 | Cache (gitignored) | `.cache/{slug}/` |
+| Title alias (optional) | `paper-reading/slug-aliases.json` — when list Title ≠ slug |
 
 **Meta line** (segment 2 → Hexo subcategory):
 
@@ -35,6 +36,7 @@ After commit & push here → in blog repo **Gojay001.github.io** update submodul
 4. Embed **lightbox** — copy from [references/lightbox-snippet.md](references/lightbox-snippet.md)
 5. Put paper figures in `<section class="figure-row">`; self-drawn SVG/Mermaid in `.diagram`
 6. Validate: KaTeX, div balance, asset paths, lightbox screenshot (see below)
+7. **List links:** if list `Title` ≠ `{slug}` (e.g. `SD 1.x` vs `sd.html`), add `paper-reading/slug-aliases.json` entry, then in blog repo run `skills/sync-overview-from-list/scripts/sync-overview-from-list.py`
 
 ## Reusable lessons (SD 2026-06)
 
@@ -95,6 +97,7 @@ python3 -m venv .cache/.venv
 - [ ] Lightbox works for at least one SVG and one raster figure
 - [ ] `#feynman` section present (bridge post excerpt)
 - [ ] `<title>` and `.meta` aligned with `paper-with-code-list.md`
+- [ ] If Title ≠ slug: `slug-aliases.json` + Overview sync (blog repo)
 
 ## References
 

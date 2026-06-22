@@ -438,4 +438,5 @@ There are paper with code for CV / AIGC / LLM / VLM.
 | MOT-Survey-2020                                                  | [Deep Learning in Video Multi-Object Tracking: A Survey](https://arxiv.org/abs/1907.12740)                                                                                                                | Neurocomputing(2020) |
 | Transformer-Survey-2021                                          | [A Survey of Transformers](http://arxiv.org/abs/2106.04554)                                                                                                                                               | arXiv(2021)          |
 
+<!-- CI: notify-blog → hexo-deploy active -->
 

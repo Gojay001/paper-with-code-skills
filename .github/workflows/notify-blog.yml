@@ -1,0 +1,22 @@
+name: Notify blog deploy
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "paper-reading/**"
+      - "paper-with-code-list.md"
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger blog repository_dispatch
+        env:
+          PAT: ${{ secrets.BLOG_REPO_PAT }}
+        run: |
+          curl -sf -X POST \
+            -H "Authorization: token ${PAT}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/Gojay001/Gojay001.github.io/dispatches \
+            -d '{"event_type":"paper-reading-updated","client_payload":{"source_sha":"'"${{ github.sha }}"'"}}'

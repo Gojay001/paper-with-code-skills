@@ -7,33 +7,33 @@ There are paper with code for CV / AIGC / LLM / VLM.
 [Updating...]
 
 - **AIGC** (AI Generated Content)
-  - [GAN](#generative-adversarial-network)
-  - [VAE](#variational-auto-encoder)
-  - [Diffusion](#diffusion-model)
-  - [Applications](#aigc-applications)
-    - [Face Editing](#face-editing)
-    - [Face Swapping](#face-swapping)
+  - [GAN](#Generative-Adversarial-Network)
+  - [VAE](#Variational-Auto-Encoder)
+  - [Diffusion](#Diffusion-Model)
+  - [Applications](#AIGC-Applications)
+    - [Face Editing](#Face-Editing)
+    - [Face Swapping](#Face-Swapping)
 - **LLM / VLM** (Large Language Model / Vision-Language Model)
-  - [Transformer](#attention-or-transformer)
-  - [ViT](#vision-transformer)
-  - [PLM](#pre-trained-language-model)
-  - [LLM](#large-language-model)
-  - [VLM](#vision-language-model)
+  - [Transformer](#Attention-or-Transformer)
+  - [ViT](#Vision-Transformer)
+  - [PLM](#Pre-trained-Language-Model)
+  - [LLM](#Large-Language-Model)
+  - [VLM](#Vision-Language-Model)
 - **CV** (Computer Vision)
-  - [Backbone](#backbone)
-  - [Optimization](#optimization)
-  - [Detection](#object-detection)
-  - [Segmentation](#object-segmentation)
-  - [Tracking](#object-tracking)
-    - [MOT](#multiple-object-tracking)
-    - [VOT](#visual-object-tracking)
-  - [FSS](#few-shot-segmentation)
-  - [FSL](#few-shot-learning)
-  - [3D-Face](#3d-face-reconstruction-and-facial-animation)
+  - [Backbone](#Backbone)
+  - [Optimization](#Optimization)
+  - [Detection](#Object-Detection)
+  - [Segmentation](#Object-Segmentation)
+  - [Tracking](#Object-Tracking)
+    - [MOT](#Multiple-Object-Tracking)
+    - [VOT](#Visual-Object-Tracking)
+  - [FSS](#Few-Shot-Segmentation)
+  - [FSL](#Few-Shot-Learning)
+  - [3D-Face](#3D-Face-Reconstruction-and-Facial-Animation)
   - Others
-    - [Detection-3D](#3d-object-detection)
-    - [RGBD-SOT](#salient-object-detection)
-  - [Survey](#survey)
+    - [Detection-3D](#3D-Object-Detection)
+    - [RGBD-SOT](#Salient-Object-Detection)
+  - [Survey](#Survey)
 
 ## Generative Adversarial Network
 
@@ -437,4 +437,3 @@ There are paper with code for CV / AIGC / LLM / VLM.
 | [FSL-Survey-2019](https://gojay.top/2020/07/07/FSL-Survey-2019/) | [Generalizing from a Few Examples: A Survey on Few-Shot Learning](https://arxiv.org/abs/1904.05046)                                                                                                       | CSUR(2019)           |
 | MOT-Survey-2020                                                  | [Deep Learning in Video Multi-Object Tracking: A Survey](https://arxiv.org/abs/1907.12740)                                                                                                                | Neurocomputing(2020) |
 | Transformer-Survey-2021                                          | [A Survey of Transformers](http://arxiv.org/abs/2106.04554)                                                                                                                                               | arXiv(2021)          |
-

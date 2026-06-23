@@ -83,15 +83,21 @@ There are paper with code for CV / AIGC / LLM / VLM.
 | SDXL | [SDXL: Improving Latent Diffusion Models for High-Resolution Image Synthesis](https://arxiv.org/abs/2307.01952) | arXiv(2023) / ICLR(2024) | [PyTorch](https://github.com/Stability-AI/generative-models) |
 | DALL-E 3 | [Improving Image Generation with Better Captions](https://cdn.openai.com/papers/dall-e-3.pdf) | OpenAI(2023) | [code] |
 | [SD 3](https://gojay.top/paper-reading/sd3.html) | [Scaling Rectified Flow Transformers for High-Resolution Image Synthesis](https://arxiv.org/abs/2403.03206) | arXiv(2024) / ICML(2024) | [PyTorch](https://github.com/Stability-AI/generative-models) |
+| GPT-Image-1 | [Introducing our latest image generation model in the API](https://openai.com/index/image-generation-api/) | OpenAI(2025) | [code] |
 | FLUX.1 | [FLUX.1 Kontext: Flow Matching for In-Context Image Generation and Editing in Latent Space](https://arxiv.org/abs/2506.15742) | arXiv(2025) | [PyTorch](https://github.com/black-forest-labs/flux) |
 | Qwen-Image | [Qwen-Image Technical Report](https://arxiv.org/abs/2508.02324) | arXiv(2025) | [PyTorch](https://github.com/QwenLM/Qwen-Image) |
+| Nano Banana | [Introducing Gemini 2.5 Flash Image, our state-of-the-art image model](https://developers.googleblog.com/en/introducing-gemini-2-5-flash-image/) | Google(2025) | [code] |
 | JiT | [Back to Basics: Let Denoising Generative Models Denoise](https://arxiv.org/abs/2511.13720) | arXiv(2025) | [PyTorch](https://github.com/LTH14/JiT) |
 | [PixelDiT](https://pixeldit.github.io/) | [PixelDiT: Pixel Diffusion Transformers for Image Generation](https://arxiv.org/abs/2511.20645) | arXiv(2025) / CVPR(2026) | [PyTorch](https://github.com/NVlabs/PixelDiT) |
 | Z-Image | [Z-Image: An Efficient Image Generation Foundation Model with Single-Stream Diffusion Transformer](https://arxiv.org/abs/2511.22699) | arXiv(2025) | [PyTorch](https://github.com/Tongyi-MAI/Z-Image) |
 | FLUX.2 | [FLUX.2: Frontier Visual Intelligence](https://bfl.ai/blog/flux-2) | BFL(2025) | [PyTorch](https://github.com/black-forest-labs/flux2) |
+| GPT-Image-1.5 | [The new ChatGPT Images is here](https://openai.com/index/new-chatgpt-images-is-here/) | OpenAI(2025) | [code] |
+| Nano Banana Pro | [Introducing Nano Banana Pro](https://blog.google/innovation-and-ai/products/nano-banana-pro/) | Google(2025) | [code] |
+| Nano Banana 2 | [Nano Banana 2: Google's latest AI image generation model](https://blog.google/innovation-and-ai/technology/ai/nano-banana-2/) | Google(2026) | [code] |
 | Qwen-Image-2.0 | [Qwen-Image-2.0 Technical Report](https://arxiv.org/abs/2605.10730) | arXiv(2026) | [PyTorch](https://github.com/QwenLM/Qwen-Image) |
-| [i1](https://zlab-princeton.github.io/i1/) | [i1: A Simple and Fully Open Recipe for Strong Text-to-Image Models](https://arxiv.org/abs/2606.11289) | arXiv(2026) | [PyTorch](https://github.com/zlab-princeton/i1) |
+| GPT-Image-2 | [Introducing ChatGPT Images 2.0](https://openai.com/index/introducing-chatgpt-images-2-0/) | OpenAI(2026) | [code] |
 | [Ideogram 4.0](https://ideogram.ai/blog/ideogram-4.0/) | [Ideogram 4.0 Technical Details: Open model at the forefront of design](https://ideogram.ai/blog/ideogram-4.0/) | Ideogram(2026) | [PyTorch](https://github.com/ideogram-oss/ideogram4) |
+| [i1](https://zlab-princeton.github.io/i1/) | [i1: A Simple and Fully Open Recipe for Strong Text-to-Image Models](https://arxiv.org/abs/2606.11289) | arXiv(2026) | [PyTorch](https://github.com/zlab-princeton/i1) |
 | [MiniT2I](https://peppaking8.github.io/#/post/minit2i) | [MiniT2I: A Minimalist Baseline for Text-to-Image Generation](https://peppaking8.github.io/#/post/minit2i) | blog(2026) | [PyTorch](https://github.com/Hope7Happiness/minit2i-torch) |
 
 

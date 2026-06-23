@@ -74,11 +74,14 @@ There are paper with code for CV / AIGC / LLM / VLM.
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------ | -------------------------------------------------------------------- |
 | [DDPM](https://gojay.top/paper-reading/ddpm.html) | [Denoising Diffusion Probabilistic Models](https://arxiv.org/abs/2006.11239) | arXiv(2020) / NIPS(2020) | [PyTorch](https://github.com/lucidrains/denoising-diffusion-pytorch) |
 | DDIM | [Denoising Diffusion Implicit Models](https://arxiv.org/abs/2010.02502) | arXiv(2020) / ICLR(2021) | [PyTorch](https://github.com/ermongroup/ddim) |
+| DALL-E | [Zero-Shot Text-to-Image Generation](https://arxiv.org/abs/2102.12092) | arXiv(2021) / ICML(2021) | [PyTorch](https://github.com/openai/DALL-E) |
 | [SD 1.x](https://gojay.top/paper-reading/sd.html) | [High-Resolution Image Synthesis with Latent Diffusion Models](https://arxiv.org/abs/2112.10752) | arXiv(2021) / CVPR(2022) | [PyTorch](https://github.com/CompVis/stable-diffusion) |
 | SD 2 | [High-Resolution Image Synthesis with Latent Diffusion Models](https://arxiv.org/abs/2112.10752) | arXiv(2021) / CVPR(2022) | [PyTorch](https://github.com/Stability-AI/generative-models) |
+| DALL-E 2 | [Hierarchical Text-Conditional Image Generation with CLIP Latents](https://arxiv.org/abs/2204.06125) | arXiv(2022) | [code] |
 | [FM](https://gojay.top/paper-reading/fm.html) | [Flow Matching for Generative Modeling](https://arxiv.org/abs/2210.02747) | arXiv(2022) / ICLR(2023) | [PyTorch](https://github.com/facebookresearch/flow_matching) |
 | [DiT](https://www.wpeebles.com/DiT) | [Scalable Diffusion Models with Transformers](https://arxiv.org/abs/2212.09748) | arXiv(2022) / ICCV(2023) | [PyTorch](https://github.com/facebookresearch/DiT) |
 | SDXL | [SDXL: Improving Latent Diffusion Models for High-Resolution Image Synthesis](https://arxiv.org/abs/2307.01952) | arXiv(2023) / ICLR(2024) | [PyTorch](https://github.com/Stability-AI/generative-models) |
+| DALL-E 3 | [Improving Image Generation with Better Captions](https://cdn.openai.com/papers/dall-e-3.pdf) | OpenAI(2023) | [code] |
 | [SD 3](https://gojay.top/paper-reading/sd3.html) | [Scaling Rectified Flow Transformers for High-Resolution Image Synthesis](https://arxiv.org/abs/2403.03206) | arXiv(2024) / ICML(2024) | [PyTorch](https://github.com/Stability-AI/generative-models) |
 | FLUX.1 | [FLUX.1 Kontext: Flow Matching for In-Context Image Generation and Editing in Latent Space](https://arxiv.org/abs/2506.15742) | arXiv(2025) | [PyTorch](https://github.com/black-forest-labs/flux) |
 | Qwen-Image | [Qwen-Image Technical Report](https://arxiv.org/abs/2508.02324) | arXiv(2025) | [PyTorch](https://github.com/QwenLM/Qwen-Image) |
@@ -89,7 +92,7 @@ There are paper with code for CV / AIGC / LLM / VLM.
 | Qwen-Image-2.0 | [Qwen-Image-2.0 Technical Report](https://arxiv.org/abs/2605.10730) | arXiv(2026) | [PyTorch](https://github.com/QwenLM/Qwen-Image) |
 | [i1](https://zlab-princeton.github.io/i1/) | [i1: A Simple and Fully Open Recipe for Strong Text-to-Image Models](https://arxiv.org/abs/2606.11289) | arXiv(2026) | [PyTorch](https://github.com/zlab-princeton/i1) |
 | [Ideogram 4.0](https://ideogram.ai/blog/ideogram-4.0/) | [Ideogram 4.0 Technical Details: Open model at the forefront of design](https://ideogram.ai/blog/ideogram-4.0/) | Ideogram(2026) | [PyTorch](https://github.com/ideogram-oss/ideogram4) |
-| [MiniT2I](https://peppaking8.github.io/#/post/minit2i) | [MiniT2I: A Minimalist Baseline for Text-to-Image Generation](https://peppaking8.github.io/#/post/minit2i) | blog(2026) | [JAX](https://github.com/PeppaKing8/minit2i-jax) |
+| [MiniT2I](https://peppaking8.github.io/#/post/minit2i) | [MiniT2I: A Minimalist Baseline for Text-to-Image Generation](https://peppaking8.github.io/#/post/minit2i) | blog(2026) | [PyTorch](https://github.com/Hope7Happiness/minit2i-torch) |
 
 
 > More implementation for Diffusion Models can be found in [Awesome-Diffusion-Models](https://github.com/diff-usion/Awesome-Diffusion-Models).

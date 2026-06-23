@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SD 3 — Scaling Rectified Flow Transformers · 逻辑精读</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+  <style>
+    :root {
+      --navy: #1a2744; --paper: #faf8f5; --thesis: #fff3cd; --concept: #f8d7da;
+      --evidence: #cfe2ff; --counter: #d1e7dd; --method: #e2d9f3;
+      --text: #2c2c2c; --muted: #6c757d; --border: #e8e4df;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'IBM Plex Sans', sans-serif; background: var(--paper); color: var(--text); line-height: 1.6; }
+    .sticky-head { position: sticky; top: 0; z-index: 100; }
+    .top-nav { background: var(--navy); color: #fff; padding: 1rem 2rem; }
+    .top-nav h1 { font-size: 1.25rem; font-weight: 600; }
+    .top-nav h1 a { color: #fff; text-decoration: none; border-bottom: 1px dotted rgba(255,255,255,0.5); }
+    .top-nav .meta { font-size: 0.85rem; opacity: 0.85; margin-top: 0.25rem; }
+    .legend { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.75rem; font-size: 0.8rem; }
+    .legend span { padding: 0.15rem 0.5rem; border-radius: 3px; color: #2c2c2c; }
+    .chapter-nav { background: #fff; border-bottom: 1px solid var(--border); padding: 0.75rem 2rem; overflow-x: auto; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+    .chapter-nav a { color: var(--navy); text-decoration: none; margin-right: 1.25rem; font-size: 0.9rem; font-weight: 500; }
+    main { max-width: 1680px; margin: 0 auto; padding: 2rem; }
+    .section-title { font-size: 1.5rem; color: var(--navy); margin: 2rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--navy); }
+    .col-labels { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 0.5rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+    .row { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; align-items: start; }
+    .col-original { font-family: 'Lora', serif; font-size: 0.95rem; line-height: 1.75; }
+    .col-original p { margin-bottom: 0.75rem; }
+    .col-translation { font-size: 0.92rem; line-height: 1.75; color: #333; }
+    .col-translation p { margin-bottom: 0.75rem; }
+    .analysis-card { background: #fff; border-left: 4px solid var(--navy); padding: 1rem 1.25rem; border-radius: 0 6px 6px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.06); font-size: 0.9rem; }
+    .analysis-card .tag { display: inline-block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0.5rem; color: var(--navy); }
+    .analysis-card h4 { font-size: 0.85rem; color: var(--muted); margin: 0.75rem 0 0.25rem; }
+    .analysis-card p { margin-bottom: 0.5rem; }
+    .analysis-card.deep { border-left-width: 5px; }
+    .analysis-detail { margin: 0.75rem 0; padding-top: 0.5rem; border-top: 1px dashed var(--border); }
+    .exp-table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.82rem; }
+    .exp-table th, .exp-table td { border: 1px solid var(--border); padding: 0.35rem 0.5rem; text-align: left; }
+    .exp-table th { background: var(--paper); color: var(--navy); font-weight: 600; }
+    .exp-table tr.is-ours { background: var(--evidence); }
+    .notation { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.88rem; background: #fff; }
+    .notation th, .notation td { border: 1px solid var(--border); padding: 0.4rem 0.6rem; text-align: left; }
+    .notation th { background: var(--paper); color: var(--navy); font-weight: 600; }
+    .diagram { margin: 0.75rem 0; }
+    .diagram img, .diagram svg { max-width: 100%; height: auto; display: block; border: 1px solid var(--border); border-radius: 4px; background: #fff; }
+    .figure-row { margin: 1.5rem 0; padding: 1.25rem; background: #fff; border: 1px solid var(--border); border-radius: 8px; }
+    .figure-row figure { margin: 0; text-align: center; }
+    .figure-row img { max-width: 100%; height: auto; }
+    .figure-row h3 { color: var(--navy); font-size: 1rem; margin-bottom: 0.75rem; }
+    .figure-row figcaption, .diagram figcaption { font-size: 0.82rem; color: var(--muted); margin-top: 0.5rem; }
+    .mermaid { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem; margin: 0.5rem 0; text-align: center; }
+    .diagram img, .diagram svg, .figure-row img, .figure-row svg { cursor: zoom-in; transition: box-shadow .15s; }
+    .diagram img:hover, .diagram svg:hover, .figure-row img:hover { box-shadow: 0 0 0 2px #0d9488; }
+    #lightbox { position: fixed; inset: 0; background: rgba(10,12,20,0.92); display: none; align-items: center; justify-content: center; z-index: 1000; cursor: zoom-out; padding: 3vh 3vw; }
+    #lightbox.open { display: flex; }
+    #lightbox .lb-content { display: flex; align-items: center; justify-content: center; }
+    #lightbox .lb-content img, #lightbox .lb-content svg { display: block; background: #fff; border-radius: 6px; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
+    #lightbox .lb-close { position: fixed; top: 1rem; right: 1.5rem; color: #fff; font-size: 2rem; line-height: 1; opacity: 0.8; }
+    #lightbox .lb-cap { position: fixed; bottom: 1.2rem; left: 0; right: 0; text-align: center; color: #e8e4df; font-size: 0.8rem; padding: 0 2rem; }
+    .hl-thesis { background: var(--thesis); padding: 0 2px; }
+    .hl-concept { background: var(--concept); padding: 0 2px; }
+    .hl-evidence { background: var(--evidence); padding: 0 2px; }
+    .hl-counter { background: var(--counter); padding: 0 2px; }
+    .hl-method { background: var(--method); padding: 0 2px; }
+    .summary { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 2rem; margin-top: 3rem; }
+    .summary h2 { color: var(--navy); margin-bottom: 1rem; }
+    .summary .skeleton { font-family: 'IBM Plex Sans', monospace; background: var(--paper); padding: 1rem; border-radius: 4px; margin: 1rem 0; line-height: 1.9; }
+    .summary .strength, .summary .weakness { padding: 0.75rem 1rem; border-radius: 4px; margin: 0.5rem 0; }
+    .summary .strength { background: var(--counter); }
+    .summary .weakness { background: var(--concept); }
+    .feynman { background: #fff; border: 1px solid var(--border); border-left: 5px solid #0d9488; border-radius: 0 8px 8px 0; padding: 1.25rem 1.5rem; margin: 1.5rem 0 2rem; }
+    .feynman h2 { color: #0d9488; font-size: 1.15rem; margin-bottom: 0.35rem; }
+    .feynman .tldr-meta { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.6rem; }
+    .feynman p { font-size: 0.95rem; line-height: 1.85; margin-bottom: 0.6rem; }
+    .faq details { background: #fff; border: 1px solid var(--border); border-radius: 6px; margin: 0.5rem 0; }
+    .faq summary { cursor: pointer; font-weight: 600; color: var(--navy); padding: 0.7rem 0.9rem; list-style: none; font-size: 0.92rem; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::before { content: '▸'; color: #0d9488; margin-right: 0.5rem; }
+    .faq details[open] summary::before { content: '▾'; }
+    .faq .answer { padding: 0 0.9rem 0.85rem 1.8rem; font-size: 0.9rem; line-height: 1.8; color: #333; }
+    .deepdive .block { margin: 0.9rem 0; padding: 0.85rem 1.1rem; border-radius: 4px; background: var(--paper); border-left: 3px solid #6f42c1; }
+    .deepdive .block.crit { border-left-color: #dc3545; background: #fdf0f1; }
+    .deepdive .block h4 { color: var(--navy); margin-bottom: 0.3rem; }
+    .deepdive .block ul { margin: 0.3rem 0 0 1.1rem; }
+    @media (max-width: 1100px) {
+      .col-labels { display: none; }
+      .row { grid-template-columns: 1fr; }
+      .row > div::before { display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 0.35rem; }
+      .col-original::before { content: '原文'; }
+      .col-translation::before { content: '翻译'; }
+      .col-analysis::before { content: '解析'; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sticky-head">
+    <header class="top-nav">
+      <h1><a href="https://arxiv.org/abs/2403.03206" target="_blank" rel="noopener">SD 3 — Scaling Rectified Flow Transformers for High-Resolution Image Synthesis</a></h1>
+      <div class="meta">DeepLearning-Paper-with-Code · Diffusion Model · arXiv(2024) / ICML(2024) · Esser, Kulal, Blattmann, et al. (Stability AI)</div>
+      <div class="legend">
+        <span class="hl-thesis">核心论点</span>
+        <span class="hl-concept">关键概念</span>
+        <span class="hl-evidence">实证证据</span>
+        <span class="hl-counter">让步/反驳</span>
+        <span class="hl-method">方法论</span>
+      </div>
+    </header>
+    <nav class="chapter-nav">
+      <a href="#feynman">速读</a>
+      <a href="#bigpic">全景图</a>
+      <a href="#abstract">Abstract</a>
+      <a href="#intro">Introduction</a>
+      <a href="#flows">Flows §2–3</a>
+      <a href="#arch">MM-DiT §4</a>
+      <a href="#experiments">Experiments</a>
+      <a href="#conclusion">Conclusion</a>
+      <a href="#notation">符号表</a>
+      <a href="#overview">总览</a>
+      <a href="#faq">十问</a>
+      <a href="#deepdive">深挖</a>
+    </nav>
+  </div>
+
+  <main>
+
+    <section class="feynman" id="feynman">
+      <h2>🎮 费曼一分钟（通俗速读）</h2>
+      <div class="tldr-meta">通俗速读 · Stable Diffusion 3 技术报告</div>
+      <p>SD 1.x/2.x 像沿着<strong>弯弯曲曲的河道</strong>把噪声「擦」成图——DDPM/VP 调度路径长，少步采样容易糊。Rectified Flow（整流流）则走<strong>直线</strong>：$z_t=(1-t)x_0+t\epsilon$，数据与噪声之间一根绳，理论上一步就能走完（实际仍需多步积分，但比弯曲扩散更省步）。本文（SD3）的第一招是：在大规模文生图里证明「直线流 + 聪明的时间步采样」能打赢传统 LDM-linear / EDM 扩散配方。</p>
+      <p>第二招是<strong>MM-DiT 架构</strong>：不再像 SD1 那样用 cross-attention「文本旁路注入」，而是把图像 token 与文本 token 拼成一条序列做<strong>联合注意力</strong>，但图像流与文本流各用<strong>独立权重</strong>（两套 Transformer，只在 attention 时见面）——文本能反向影响图像，图像上下文也能回馈文本理解，排版、复杂 prompt 遵循明显变好。</p>
+      <p>工程上仍站在 LDM 肩膀上：16 通道 latent VAE、冻结 CLIP+T5+CLIP-G 文本编码器、CogVLM 合成 caption 50/50 混训、SSCD 去重。最大 8B 模型验证损失与 GenEval / 人类偏好强相关，整体优于 SDXL、PixArt-α，并与 DALL·E 3 等闭源模型可比。</p>
+    </section>
+
+    <section class="figure-row" id="bigpic">
+      <h3>🗺️ SD3 技术栈一图流（自绘）</h3>
+      <pre class="mermaid">
+flowchart TB
+  subgraph DATA["数据与表示"]
+    IMG["图像"] --> AE["16-ch VAE 编码"]
+    TXT["Prompt"] --> ENC["CLIP-L/G + T5-XXL<br/>冻结文本编码"]
+    CAP["50% CogVLM 合成 caption"]
+  end
+  subgraph FLOW["整流流训练"]
+    Z["z_t = (1-t)z_0 + t·ε<br/>直线路径"] --> VEL["MM-DiT 预测速度 v_θ"]
+    SAM["Logit-Normal 时间步采样<br/>rf/lognorm(0,1)"] -.偏重中间 t.-> Z
+  end
+  subgraph ARCH["MM-DiT"]
+    XS["图像 token 流<br/>独立权重"] <-->|"联合 Attention"| CS["文本 token 流<br/>独立权重"]
+    QK["QK-Norm 稳定 bf16"]
+  end
+  AE --> Z
+  ENC --> ARCH
+  VEL --> DEC["VAE 解码 → 图像"]
+  ARCH --> VEL
+      </pre>
+      <figcaption>自绘总览：在 LDM latent 空间里用 Rectified Flow 训练 MM-DiT；关键增量是直线路径、logit-normal 时间步偏置与双向模态 Transformer。</figcaption>
+    </section>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 1：8B 模型样张（排版 / 细节 / 风格多样性）</h3>
+      <figure>
+        <img src="assets/sd3/fig1.jpg" alt="SD3 8B rectified flow samples">
+        <figcaption>原文 Fig.1（teaser）：展示 8B rectified flow 在排版、prompt 遵循、空间推理与多风格上的能力。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="abstract">Abstract</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>Diffusion models create data from noise by inverting forward paths; <span class="hl-concept">rectified flow</span> connects data and noise on a straight line with better theoretical properties, but is not yet standard practice. We <span class="hl-thesis">improve noise sampling for training rectified flow models</span> by biasing toward perceptually relevant scales, and demonstrate superior performance vs established diffusion formulations for high-resolution text-to-image synthesis through a large-scale study.</p>
+        <p>We present a <span class="hl-method">novel transformer architecture</span> with separate weights for image and text modalities and <span class="hl-method">bidirectional information flow</span> between tokens, improving text comprehension, typography, and human preference. Our largest models <span class="hl-evidence">outperform state-of-the-art</span> and follow predictable scaling trends where lower validation loss correlates with improved synthesis.</p>
+      </div>
+      <div class="col-translation">
+        <p>扩散模型通过逆转「数据→噪声」的前向路径来从噪声生成数据；整流流在数据与噪声之间走直线，理论性质更好，但尚未成为标准实践。我们改进训练整流流时的噪声/时间步采样，使其偏向感知相关的尺度，并通过大规模研究证明其在高分辨率文生图上优于既有扩散配方。</p>
+        <p>我们提出一种新的 Transformer 架构：图像与文本模态使用独立权重，token 之间双向交换信息，提升文本理解、排版与人类偏好。最大规模模型超越当时最优，且呈现可预测的缩放规律——验证损失越低，生成质量越好。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #ffc107;">
+          <span class="tag">双主张</span>
+          <p><strong>主张 A（训练配方）：</strong>RF + 感知相关时间步采样 &gt; 经典扩散。</p>
+          <p><strong>主张 B（架构）：</strong>MM-DiT 双向联合注意力 &gt; 单向 cross-attn。</p>
+          <p>摘要把「算法」与「架构」并列，后文 §5.1 / §5.2 分别大规模验证。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="intro">1. Introduction</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>While forward paths from data to noise enable efficient training, <span class="hl-counter">curved paths need many integration steps</span>; straight rectified flows could be simulated with fewer steps. Rectified flow has not become decisively established in practice beyond medium-scale class-conditional experiments.</p>
+        <p>We introduce <span class="hl-method">re-weighting of noise scales</span> in RF models (analogous to noise-predictive diffusion) and compare formulations at scale. We also argue that feeding a <span class="hl-counter">fixed text representation via cross-attention alone</span> is suboptimal, and propose learnable streams with <span class="hl-thesis">two-way mixing</span> between image and text tokens.</p>
+      </div>
+      <div class="col-translation">
+        <p>「数据→噪声」的前向路径虽便于训练，但弯曲路径需要很多次积分步；直线整流流理论上可用更少步数模拟。整流流在实践上尚未超越中等规模类别条件实验的范畴。</p>
+        <p>我们引入 RF 模型的噪声尺度重加权（类比噪声预测扩散），并在规模上对比多种配方。我们还认为仅靠 cross-attention 注入固定文本表示并不理想，提出可学习的双流并在图像与文本 token 间双向混合。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #1a2744;">
+          <span class="tag">问题语境</span>
+          <p>把 SD 系列的演进定位为：LDM（latent）+ DiT（Transformer）之后，下一步是 <strong>更短的生成路径（RF）</strong> + <strong>更深的文本-图像耦合（MM-DiT）</strong>。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="flows">2–3. Simulation-Free Flows &amp; Tailored Samplers</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>Unified framework: forward process $z_t=a_t x_0+b_t\epsilon$ with signal-to-noise ratio $\lambda_t=\log\frac{a_t^2}{b_t^2}$. Training regresses noise $\epsilon_\Theta$ with time-dependent weight $w_t$ (Eq. unified loss).</p>
+        <p><span class="hl-concept">Rectified Flow:</span> $z_t=(1-t)x_0+t\epsilon$, weight $w_t^{RF}=\frac{t}{1-t}$, network predicts velocity $v_\Theta$ directly.</p>
+        <p>Compared to <span class="hl-counter">EDM / cosine / LDM-linear</span> schedules in the same framework (§3).</p>
+      </div>
+      <div class="col-translation">
+        <p>统一框架：前向 $z_t=a_t x_0+b_t\epsilon$，信噪比 $\lambda_t=\log\frac{a_t^2}{b_t^2}$，用带权重的噪声回归损失训练（式中 $w_t$ 统一多种扩散/流配方）。</p>
+        <p><strong>整流流：</strong>$z_t=(1-t)x_0+t\epsilon$，权重 $w_t^{RF}=\frac{t}{1-t}$，网络直接预测速度 $v_\Theta$。</p>
+        <p>同框架下还与 EDM、cosine、LDM-linear（即 SD1 用的 VP 调度）等对比。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #6f42c1;">
+          <span class="tag">§3.1 时间步采样</span>
+          <p>均匀 $t\sim\mathcal{U}(0,1)$ 对 RF 不优：中间 $t$ 的 velocity 目标 $\epsilon-x_0$ 更难学。改采样密度 $\pi(t)$ 等价于加权损失 $w_t^\pi=\frac{t}{1-t}\pi(t)$。</p>
+          <p><strong>Logit-Normal：</strong>$\pi_{ln}(t;m,s)$，$m$ 控制偏向数据或噪声端，$s$ 控制宽度。<strong>Mode：</strong>端点密度非零。<strong>CosMap：</strong>与 cosine 调度对齐的 RF 版本。</p>
+          <p>61 种配方 × 2 数据集的大规模网格搜索 → 最优 <code>rf/lognorm(0.00, 1.00)</code>。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 11 / §3.1：Mode 与 Logit-Normal 时间步分布</h3>
+      <figure>
+        <img src="assets/sd3/fig3.png" alt="mode and logit-normal timestep samplers">
+        <figcaption>左：Mode 采样器；右：Logit-Normal。两者都把训练重心从均匀 $t$ 移向「中间难学」或感知相关区域。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 3：少步采样时 RF 更抗退化</h3>
+      <figure>
+        <img src="assets/sd3/fig4.png" alt="FID vs sampling steps rectified flow">
+        <figcaption>横轴采样步数、纵轴 FID：RF 配方（尤其 rf/lognorm）在步数减少时性能下降更慢，体现直线路径的采样效率优势。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Table 1 (global rank):</strong> <span class="hl-evidence">rf/lognorm(0.00, 1.00)</span> ranks best averaged over EMA/non-EMA, datasets, and sampler settings. Only modified RF samplers beat LDM-linear (<code>eps/linear</code>).</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>表 1 全局排名：</strong><code>rf/lognorm(0.00, 1.00)</code> 在 EMA、数据集与多种采样设置平均后排名第一；只有改过时间步采样的 RF 能稳定胜过 LDM-linear（<code>eps/linear</code>，即 SD1 路线）。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card">
+          <span class="tag">实证 · 配方</span>
+          <table class="exp-table">
+            <tr><th>排名</th><th>variant</th><th>备注</th></tr>
+            <tr class="is-ours"><td>1</td><td>rf/lognorm(0,1)</td><td>5 步与 50 步均优</td></tr>
+            <tr><td>~3</td><td>eps/linear</td><td>LDM/SD1 基线</td></tr>
+            <tr><td>~6</td><td>rf (uniform)</td><td>未改采样则一般</td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="arch">4. Text-to-Image Architecture (MM-DiT)</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>Follows <span class="hl-concept">LDM latent training</span> with frozen text encoders (CLIP-L, CLIP-G, T5-XXL). Builds on DiT modulation for timestep $t$ and pooled text $c_{vec}$, but also needs sequence context $c_{ctxt}$.</p>
+        <p><span class="hl-method">MM-DiT:</span> patchify latent $x$; concatenate text and image token sequences; apply modulated attention + MLP blocks with <span class="hl-thesis">separate weights per modality</span> — equivalent to two transformers that <span class="hl-thesis">jointly attend</span> over concatenated sequences.</p>
+        <p>Scaling: depth $d$, hidden $64d$, heads $d$. Optional third stream for separate CLIP/T5 weights (small gain, not used at scale).</p>
+      </div>
+      <div class="col-translation">
+        <p>沿用 LDM：在预训练 VAE latent 上训练，文本用冻结的 CLIP-L、CLIP-G、T5-XXL。基于 DiT 的 timestep 与 pooled 文本调制，同时需要序列级文本 $c_{ctxt}$。</p>
+        <p><strong>MM-DiT：</strong>把 latent 切成 patch token，与文本 token 拼接；每模态独立权重做调制注意力 + MLP——等价于两个 Transformer 仅在 attention 时对拼接序列做联合注意力。</p>
+        <p>缩放规则：深度 $d$，隐藏维 $64d$，头数 $d$。可为 CLIP/T5 设第三套权重（收益小，大规模未采用）。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #6f42c1;">
+          <span class="tag">架构对比</span>
+          <div class="analysis-detail">
+            <div class="diagram">
+              <svg viewBox="0 0 520 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="CrossDiT vs MM-DiT">
+                <rect width="520" height="200" fill="#fff"/>
+                <text x="130" y="22" font-size="11" fill="#1a2744" text-anchor="middle" font-weight="600">CrossDiT（SD1 式）</text>
+                <text x="390" y="22" font-size="11" fill="#1a2744" text-anchor="middle" font-weight="600">MM-DiT（SD3）</text>
+                <rect x="20" y="40" width="90" height="36" rx="4" fill="#cfe2ff" stroke="#0d6efd"/>
+                <text x="65" y="62" font-size="9" text-anchor="middle">文本 K,V</text>
+                <rect x="20" y="100" width="220" height="50" rx="4" fill="#e2d9f3" stroke="#6f42c1"/>
+                <text x="130" y="130" font-size="9" text-anchor="middle">图像 Self-Attn + Cross-Attn → 文本</text>
+                <rect x="280" y="55" width="70" height="30" rx="4" fill="#cfe2ff" stroke="#0d6efd"/>
+                <text x="315" y="74" font-size="8" text-anchor="middle">文本流</text>
+                <rect x="280" y="115" width="70" height="30" rx="4" fill="#fff3cd" stroke="#ffc107"/>
+                <text x="315" y="134" font-size="8" text-anchor="middle">图像流</text>
+                <rect x="370" y="45" width="130" height="110" rx="4" fill="#d1e7dd" stroke="#198754"/>
+                <text x="435" y="95" font-size="9" text-anchor="middle">联合 Attention</text>
+                <text x="435" y="110" font-size="8" text-anchor="middle">（双向信息）</text>
+                <text x="260" y="185" font-size="9" fill="#6c757d" text-anchor="middle">自绘：MM-DiT 让文本 token 与图像 token 在同一 attention 中互相可见，而非单向 cross-attn</text>
+              </svg>
+              <figcaption>CrossDiT 文本只作 K/V；MM-DiT 双流独立权重 + 联合 attention → 排版与复杂 prompt 更好。点击放大。</figcaption>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 2：MM-DiT 模型结构（核心架构）</h3>
+      <figure>
+        <img src="assets/sd3/fig2.png" alt="SD3 MM-DiT model architecture: overview and one block">
+        <figcaption>原文 Fig.2：<strong>(a) 整体组件</strong>——Caption 经 CLIP-G/14 + CLIP-L/14（拼出 77+77 token 序列 $c_{ctxt}$ 与 pooled 向量）与 T5-XXL 编码；Noised Latent 经 Patching + Linear + Positional Embedding 成图像 token $x$；Timestep 与 pooled 文本 $y$ 经 MLP 得调制向量，送入 $d$ 个 MM-DiT-Block，末端 Modulation→Linear→Unpatching 输出。<strong>(b) 单个 MM-DiT block</strong>——文本流 $c$ 与图像流 $x$ 各有独立的 LayerNorm/调制/Linear/MLP（两套权重），$Q,K,V$ 拼接后做一次<strong>联合 Attention</strong>；$\odot$ 为拼接、$*$ 为逐元素乘；$Q/K$ 前的虚线 <em>Opt. RMS-Norm</em> 即 QK-Norm，用于稳定大模型 bf16 训练。$\alpha,\beta,\gamma,\delta,\epsilon,\zeta$ 为由条件向量生成的调制参数。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <div class="col-labels"><span>原文（图注）</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Figure 2.</strong> Our model architecture. Concatenation is indicated by $\odot$ and element-wise multiplication by $*$. The RMS-Norm for $Q$ and $K$ can be added to stabilize training runs.</p>
+        <p>(a) Overview of all components. (b) One MM-DiT block: two modality streams with separate weights, joined only at the attention operation so each representation works in its own space yet attends to the other.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>图 2.</strong> 模型架构。$\odot$ 表示拼接，$*$ 表示逐元素乘。$Q$、$K$ 上的 RMS-Norm 可选，用于稳定训练。</p>
+        <p>(a) 全部组件总览；(b) 单个 MM-DiT block：两条模态流各用独立权重，仅在 attention 处合并——每条流在自己的空间运算，同时「看到」另一条流。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #6f42c1;">
+          <span class="tag">结构拆解 · 三条信息路径</span>
+          <div class="analysis-detail">
+            <h4>① 文本条件的双重注入</h4>
+            <p>SD3 用三个冻结文本编码器：CLIP-L/14 与 CLIP-G/14 的 <strong>pooled</strong> 输出拼成全局向量 $y$，走<strong>调制路径</strong>（与 timestep 相加 → AdaLN 式 scale/shift）；而 CLIP 与 T5-XXL 的 <strong>序列</strong> 特征 $c_{ctxt}$（77+77 token）走<strong>token 路径</strong>，进入联合 attention。粗粒度语义调制 + 细粒度序列交互，分工明确。</p>
+          </div>
+          <div class="analysis-detail">
+            <h4>② 双流独立权重 vs 单流 DiT</h4>
+            <p>图 (b) 左右对称却<strong>不共享权重</strong>：文本流、图像流各有自己的 LayerNorm、Linear、MLP。这等价于「两个 Transformer 在 attention 时握手」。对比 DiT（单流共享）与 CrossDiT（文本仅作 K/V 单向注入），MM-DiT 让图像可反向影响文本表示，提升排版与复杂 prompt 遵循（见上方自绘对比图与 Fig.4 曲线）。</p>
+          </div>
+          <div class="analysis-detail">
+            <h4>③ QK-Norm 的位置</h4>
+            <p>图中 $Q/K$ 进入 Attention 前的虚线 <em>Opt. RMS-Norm</em> 是关键工程细节：高分辨率微调时注意力 logit 爆炸导致熵坍塌、loss 发散；在两条流的 $Q,K$ 上加 RMSNorm 即可在 bf16-mixed 下稳定训练（§5.3.2）。</p>
+          </div>
+          <div class="analysis-detail">
+            <h4>逻辑角色</h4>
+            <p>本图是「主张 B（架构）」的落地蓝图：摘要里抽象的「双向信息流 + 独立权重」在此具体化为可实现的 block 结构，后续 Fig.4 用训练曲线证明其优越性。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 4：MM-DiT vs DiT / CrossDiT / UViT 训练曲线</h3>
+      <figure>
+        <img src="assets/sd3/fig6.jpg" alt="architecture training dynamics MM-DiT">
+        <figcaption>左：验证损失；右：CLIP / FID。MM-DiT 在 CC12M 文生图设定下全面优于 DiT、CrossDiT、UViT。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="experiments">5. Experiments at Scale</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>§5.2 Improvements:</strong> (i) <span class="hl-method">16-ch VAE</span> (FID 1.06 vs 4ch 2.41). (ii) <span class="hl-method">50% CogVLM synthetic captions</span> → GenEval 49.78% vs 43.27%. (iii) MM-DiT backbone ablation (Fig.4).</p>
+        <p><strong>§5.3 Scale:</strong> SSCD dedup, precomputed latents/embeddings, <span class="hl-method">QK-Norm</span> for stable bf16, resolution-dependent timestep shifting, bucketed multi-aspect training up to 8B params.</p>
+        <p><span class="hl-evidence">Validation loss correlates</span> with GenEval, human Elo, T2I-CompBench (Fig. scaling).</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>§5.2 组件改进：</strong>（i）16 通道 VAE 重建更好。（ii）50% CogVLM 合成 caption 显著提升 GenEval。（iii）MM-DiT 骨干消融（Fig.4）。</p>
+        <p><strong>§5.3 规模化：</strong>SSCD 去重、预计算 latent/文本嵌入、QK-Norm 稳定 bf16、分辨率相关 timestep shifting、分桶多宽高比训练，最大 8B 参数。</p>
+        <p>验证损失与 GenEval、人类 Elo、T2I-CompBench 强相关（缩放图）。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #198754;">
+          <span class="tag">工程清单</span>
+          <p>SD3 = RF 配方 + MM-DiT + 数据管线升级的组合拳，而非单一 trick。与 SD1 相比：路径（RF）、骨干（MM-DiT）、VAE（16ch）、caption（合成）、规模（8B）五处同时动刀。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 7 / scaling：验证损失 ↔ 下游指标</h3>
+      <figure>
+        <img src="assets/sd3/fig5.png" alt="validation loss scaling GenEval correlation">
+        <figcaption>左：验证损失随训练步与模型深度平滑下降；右：验证损失与 GenEval 强相关——可作为大规模训练的可预测代理指标。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <section class="figure-row">
+      <h3>📄 原文：人类偏好 vs SOTA 模型</h3>
+      <figure>
+        <img src="assets/sd3/fig7.jpg" alt="human preference vs SDXL DALL-E PixArt">
+        <figcaption>PartiPrompts 上人类评估：8B SD3 在视觉质量、prompt 遵循、排版生成上优于或持平 SDXL、PixArt-α、DALL·E 3 等。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="conclusion">Conclusion</h2>
+    <div class="row">
+      <div class="col-original">
+        <p>We establish <span class="hl-thesis">rectified flow with tailored timestep sampling</span> as a strong alternative to diffusion for large-scale T2I, and show <span class="hl-thesis">MM-DiT</span> scales predictably to 8B with improved text rendering and human preference. Code and weights released.</p>
+      </div>
+      <div class="col-translation">
+        <p>我们证明「带定制时间步采样的整流流」可替代大规模文生图中的扩散训练；MM-DiT 可预测地扩展到 8B，并改善文本渲染与人类偏好。代码与权重公开。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #ffc107;">
+          <span class="tag">遗留</span>
+          <p>RF 少步采样仍依赖求解器质量；多模态安全过滤与 memorization 仅部分讨论；视频扩展在附录提及但未展开。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="summary" id="notation">
+      <h2>📐 符号与配方速查</h2>
+      <table class="notation">
+        <tr><th>符号 / 名称</th><th>含义</th></tr>
+        <tr><td>$z_t$</td><td>latent 空间带噪样本</td></tr>
+        <tr><td>RF</td><td>$z_t=(1-t)z_0+t\epsilon$，直线整流流</td></tr>
+        <tr><td>$\pi_{ln}(t;m,s)$</td><td>Logit-Normal 训练时间步密度</td></tr>
+        <tr><td>rf/lognorm(0,1)</td><td>SD3 选用的最优 RF 配方</td></tr>
+        <tr><td>MM-DiT</td><td>多模态双流 DiT，联合 attention</td></tr>
+        <tr><td>$d$</td><td>Transformer 深度；hidden=$64d$，heads=$d$</td></tr>
+        <tr><td>QK-Norm</td><td>注意力前 RMSNorm Q/K，稳定大模型 bf16</td></tr>
+      </table>
+    </section>
+
+    <section class="summary" id="overview">
+      <h2>🦴 论证骨架</h2>
+      <div class="skeleton">
+        痛点：弯曲扩散路径 → 高 NFE；固定 cross-attn 文本 → 排版/复杂 prompt 弱<br>
+        ↓<br>
+        统一流/扩散框架（§2）→ RF 直线路径 + 时间步采样改进（§3.1）<br>
+        ↓<br>
+        61 配方大规模对比 → rf/lognorm(0,1) 胜出（表1、Fig.3）<br>
+        ↓<br>
+        MM-DiT 双向联合注意力（§4）+ 16ch VAE + 合成 caption（§5.2）<br>
+        ↓<br>
+        扩展至 8B：验证损失可预测，人类偏好 / GenEval SOTA（§5.3）
+      </div>
+      <div class="strength"><strong>强项：</strong>系统消融（配方网格 + 架构对比 + 缩放律）；RF 与 Transformer 骨干在同一工作中的首次大规模耦合；工程细节（QK-Norm、timestep shift）可复用。</div>
+      <div class="weakness"><strong>弱项：</strong>多因素同时改变，难 isolate 单一贡献；闭源训练数据与算力门槛高；RF「一步生成」理论优势在实际仍要多步。</div>
+    </section>
+
+    <section class="summary faq" id="faq">
+      <h2>❓ 十问十答</h2>
+      <details><summary>Q1 · SD3 和 SD1 最大区别是什么？</summary>
+        <div class="answer">训练目标从 VP 扩散（eps/linear）换成 Rectified Flow + logit-normal 时间步采样；骨干从 U-Net/cross-attn 换成 MM-DiT 双流联合注意力；VAE 从 4/8 通道升到 16 通道；规模到 8B。</div>
+      </details>
+      <details><summary>Q2 · Rectified Flow 和 Flow Matching 什么关系？</summary>
+        <div class="answer">RF 是 FM/CFM 的一个具体实例：直线路径 $z_t=(1-t)x_0+t\epsilon$。FM 论文（2210.02747）提出一般框架；SD3 把它推到大规模 T2I 并加时间步采样技巧。</div>
+      </details>
+      <details><summary>Q3 · 为什么 rf/lognorm(0,1) 最好？</summary>
+        <div class="answer">均匀 $t$ 浪费在中间难学的区域；logit-normal 居中（$m=0,s=1$）加重中间时间步权重，在 5 步与 50 步采样、CLIP/FID 上 Pareto 排名均靠前。</div>
+      </details>
+      <details><summary>Q4 · MM-DiT 和 SD3 论文里的 MMDiT 一样吗？</summary>
+        <div class="answer">本文提出的 MM-DiT 即 SD3 核心骨干：图像/文本独立权重 + 拼接序列联合 attention，区别于 SD1 LDM 的 U-Net cross-attn 与纯 DiT 单流。</div>
+      </details>
+      <details><summary>Q5 · T5 可以去掉吗？</summary>
+        <div class="answer">推理可去掉 T5 仍有一定质量，但复杂 prompt、长文本、精确拼写明显依赖 T5（Fig. embedder dropping）。</div>
+      </details>
+      <details><summary>Q6 · 验证损失能当 early stopping 吗？</summary>
+        <div class="answer">作者证明 val loss 与 GenEval、人类 Elo、CompBench 强相关，适合作为大规模训练监控指标；但最终仍应用人类/任务基准确认。</div>
+      </details>
+      <details><summary>Q7 · 代码在哪？</summary>
+        <div class="answer">官方：<a href="https://github.com/Stability-AI/generative-models" target="_blank" rel="noopener">Stability-AI/generative-models</a>（MM-DiT / SD3 推理与权重）。</div>
+      </details>
+      <details><summary>Q8 · 少步采样可行吗？</summary>
+        <div class="answer">RF 相对 eps/linear 在少步时 FID 退化更小（Fig.3），后续 SD3 Turbo / distilled 变体在此基础上进一步压缩步数。</div>
+      </details>
+      <details><summary>Q9 · 主要贡献是什么？</summary>
+        <div class="answer">① 大规模证明 RF+采样 &gt; 经典扩散；② MM-DiT 架构；③ 8B 缩放律与 SOTA 文生图结果。</div>
+      </details>
+      <details><summary>Q10 · 下一步工作？</summary>
+        <div class="answer">作者释放权重与消融数据；社区方向：蒸馏少步、控制/编辑、视频（论文附录有 video val loss 相关图）、与 DPO 对齐（Fig. DPO）。</div>
+      </details>
+    </section>
+
+    <section class="summary deepdive" id="deepdive">
+      <h2>🔬 深挖追问</h2>
+      <div class="block">
+        <h4>与 SDXL / FLUX 谱系</h4>
+        <p>SDXL 仍走扩散 + U-Net/DiT 混合；SD3 彻底押注 RF + MM-DiT。FLUX 后来也采用 flow matching + 类似多模态 Transformer——可对照两者 timestep shifting 与 VAE 选择。</p>
+      </div>
+      <div class="block crit">
+        <h4>批判性盲区</h4>
+        <ul>
+          <li>61 配方搜索计算量巨大，中小团队难以复现「最优」采样超参。</li>
+          <li>同时改 RF、架构、VAE、caption、数据去重，因果归因依赖消融而非单因子。</li>
+          <li>人类评估与 GenEval 仍无法覆盖全部失败模式（手、计数、物理）。</li>
+          <li>RF 直线假设在极高维 latent 是否总优于 EDM 曲线路径，理论仍开放。</li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="lightbox" role="dialog" aria-modal="true" aria-label="放大查看">
+    <span class="lb-close" aria-hidden="true">&times;</span>
+    <div class="lb-content"></div>
+    <div class="lb-cap"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral', flowchart: { htmlLabels: true } });</script>
+  <script>
+    function syncScrollPad() {
+      var head = document.querySelector('.sticky-head');
+      if (head) document.documentElement.style.scrollPaddingTop = (head.offsetHeight + 8) + 'px';
+    }
+    window.addEventListener('load', syncScrollPad);
+    window.addEventListener('resize', syncScrollPad);
+    syncScrollPad();
+    (function () {
+      var lb = document.getElementById('lightbox');
+      var content = lb.querySelector('.lb-content');
+      var cap = lb.querySelector('.lb-cap');
+      function findZoomTarget(node) {
+        var el = node.closest ? node.closest('img, svg') : null;
+        if (!el) return null;
+        if (!el.closest('.diagram, .figure-row, .mermaid')) return null;
+        return el;
+      }
+      function nearestCaption(el) {
+        var fig = el.closest('figure') || el.closest('.diagram') || el.closest('.figure-row');
+        var c = fig && fig.querySelector('figcaption');
+        return c ? c.textContent.trim() : '';
+      }
+      function openLightbox(node, caption) {
+        content.innerHTML = '';
+        var clone = node.cloneNode(true);
+        var r = node.getBoundingClientRect();
+        var vw = window.innerWidth * 0.96, vh = window.innerHeight * 0.92;
+        var w = r.width || 600, h = r.height || 400;
+        var scale = Math.min(vw / w, vh / h);
+        if (!isFinite(scale) || scale <= 0) scale = 1;
+        clone.style.width = Math.round(w * scale) + 'px';
+        clone.style.height = Math.round(h * scale) + 'px';
+        clone.style.maxWidth = clone.style.maxHeight = 'none';
+        content.appendChild(clone);
+        cap.textContent = caption || '';
+        lb.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+      function closeLightbox() {
+        lb.classList.remove('open');
+        content.innerHTML = '';
+        document.body.style.overflow = '';
+      }
+      document.addEventListener('click', function (e) {
+        if (lb.classList.contains('open')) { closeLightbox(); return; }
+        var el = findZoomTarget(e.target);
+        if (el) { e.preventDefault(); e.stopPropagation(); openLightbox(el, nearestCaption(el)); }
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && lb.classList.contains('open')) closeLightbox();
+      });
+    })();
+  </script>
+</body>
+</html>

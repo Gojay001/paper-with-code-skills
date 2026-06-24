@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChordEdit — One-Step Low-Energy Transport for Image Editing · 逻辑精读</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+  <style>
+    :root {
+      --navy: #1a2744;
+      --paper: #faf8f5;
+      --thesis: #fff3cd;
+      --concept: #f8d7da;
+      --evidence: #cfe2ff;
+      --counter: #d1e7dd;
+      --method: #e2d9f3;
+      --text: #2c2c2c;
+      --muted: #6c757d;
+      --border: #e8e4df;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'IBM Plex Sans', sans-serif; background: var(--paper); color: var(--text); line-height: 1.6; }
+    .sticky-head { position: sticky; top: 0; z-index: 100; }
+    .top-nav { background: var(--navy); color: #fff; padding: 1rem 2rem; }
+    .top-nav h1 { font-size: 1.25rem; font-weight: 600; }
+    .top-nav h1 a { color: #fff; text-decoration: none; border-bottom: 1px dotted rgba(255,255,255,0.5); }
+    .top-nav h1 a:hover { border-bottom-style: solid; }
+    .top-nav .meta { font-size: 0.85rem; opacity: 0.85; margin-top: 0.25rem; }
+    .legend { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.75rem; font-size: 0.8rem; }
+    .legend span { padding: 0.15rem 0.5rem; border-radius: 3px; color: #2c2c2c; }
+    .chapter-nav { background: #fff; border-bottom: 1px solid var(--border); padding: 0.75rem 2rem; overflow-x: auto; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+    .chapter-nav a { color: var(--navy); text-decoration: none; margin-right: 1.25rem; font-size: 0.9rem; font-weight: 500; }
+    .chapter-nav a:hover { text-decoration: underline; }
+    main { max-width: 1680px; margin: 0 auto; padding: 2rem; }
+    .section-title { font-size: 1.5rem; color: var(--navy); margin: 2rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--navy); }
+    .col-labels { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 0.5rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+    .row { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; align-items: start; }
+    .col-original { font-family: 'Lora', serif; font-size: 0.95rem; line-height: 1.75; }
+    .col-original p { margin-bottom: 0.75rem; }
+    .col-translation { font-size: 0.92rem; line-height: 1.75; color: #333; }
+    .col-translation p { margin-bottom: 0.75rem; }
+    .analysis-card { background: #fff; border-left: 4px solid var(--navy); padding: 1rem 1.25rem; border-radius: 0 6px 6px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.06); font-size: 0.9rem; }
+    .analysis-card .tag { display: inline-block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0.5rem; color: var(--navy); }
+    .analysis-card h4 { font-size: 0.85rem; color: var(--muted); margin: 0.75rem 0 0.25rem; }
+    .analysis-card p { margin-bottom: 0.5rem; }
+    .analysis-card.deep { border-left-width: 5px; }
+    .analysis-detail { margin: 0.75rem 0; padding-top: 0.5rem; border-top: 1px dashed var(--border); }
+    .analysis-detail:first-of-type { border-top: none; }
+    .exp-detail { list-style: none; margin: 0.5rem 0; }
+    .exp-detail li { margin-bottom: 0.4rem; }
+    .exp-detail li strong { color: var(--navy); }
+    .exp-table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.82rem; }
+    .exp-table th, .exp-table td { border: 1px solid var(--border); padding: 0.35rem 0.5rem; text-align: left; }
+    .exp-table th { background: var(--paper); color: var(--navy); font-weight: 600; }
+    .exp-table tr.is-ours { background: var(--evidence); }
+    .exp-table tr.is-ours td { font-weight: 600; }
+    .notation { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.88rem; background: #fff; }
+    .notation th, .notation td { border: 1px solid var(--border); padding: 0.4rem 0.6rem; text-align: left; }
+    .notation th { background: var(--paper); color: var(--navy); font-weight: 600; }
+    .notation td:first-child { width: 22%; white-space: nowrap; }
+    .diagram { margin: 0.75rem 0; }
+    .diagram img, .diagram svg { max-width: 100%; height: auto; display: block; border: 1px solid var(--border); border-radius: 4px; background: #fff; }
+    .diagram figcaption { font-size: 0.78rem; color: var(--muted); margin-top: 0.35rem; }
+    .figure-row { margin: 1.5rem 0; padding: 1.25rem; background: #fff; border: 1px solid var(--border); border-radius: 8px; }
+    .figure-row figure { margin: 0; text-align: center; }
+    .figure-row img, .figure-row svg { max-width: 100%; height: auto; display: inline-block; }
+    .figure-row figcaption { font-size: 0.82rem; color: var(--muted); margin-top: 0.5rem; }
+    .figure-row h3 { color: var(--navy); font-size: 1rem; margin-bottom: 0.75rem; }
+    .mermaid { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem; margin: 0.5rem 0; text-align: center; }
+    .diagram img, .diagram svg, .figure-row img, .figure-row svg { cursor: zoom-in; transition: box-shadow .15s; }
+    .diagram img:hover, .diagram svg:hover, .figure-row img:hover, .figure-row svg:hover { box-shadow: 0 0 0 2px #0d9488; }
+    #lightbox { position: fixed; inset: 0; background: rgba(10,12,20,0.92); display: none; align-items: center; justify-content: center; z-index: 1000; cursor: zoom-out; padding: 3vh 3vw; }
+    #lightbox.open { display: flex; }
+    #lightbox .lb-content { display: flex; align-items: center; justify-content: center; }
+    #lightbox .lb-content img, #lightbox .lb-content svg { display: block; background: #fff; border-radius: 6px; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
+    #lightbox .lb-close { position: fixed; top: 1rem; right: 1.5rem; color: #fff; font-size: 2rem; line-height: 1; opacity: 0.8; }
+    #lightbox .lb-cap { position: fixed; bottom: 1.2rem; left: 0; right: 0; text-align: center; color: #e8e4df; font-size: 0.8rem; padding: 0 2rem; }
+    .hl-thesis { background: var(--thesis); padding: 0 2px; }
+    .hl-concept { background: var(--concept); padding: 0 2px; }
+    .hl-evidence { background: var(--evidence); padding: 0 2px; }
+    .hl-counter { background: var(--counter); padding: 0 2px; }
+    .hl-method { background: var(--method); padding: 0 2px; }
+    .summary { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 2rem; margin-top: 3rem; }
+    .summary h2 { color: var(--navy); margin-bottom: 1rem; }
+    .summary .skeleton { font-family: 'IBM Plex Sans', monospace; background: var(--paper); padding: 1rem; border-radius: 4px; margin: 1rem 0; line-height: 1.9; }
+    .summary .strength, .summary .weakness { padding: 0.75rem 1rem; border-radius: 4px; margin: 0.5rem 0; }
+    .summary .strength { background: var(--counter); }
+    .summary .weakness { background: var(--concept); }
+    .feynman { background: #fff; border: 1px solid var(--border); border-left: 5px solid #0d9488; border-radius: 0 8px 8px 0; padding: 1.25rem 1.5rem; margin: 1.5rem 0 2rem; }
+    .feynman h2 { color: #0d9488; font-size: 1.15rem; margin-bottom: 0.35rem; }
+    .feynman .tldr-meta { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.6rem; }
+    .feynman p { font-size: 0.95rem; line-height: 1.85; margin-bottom: 0.6rem; }
+    .faq details { background: #fff; border: 1px solid var(--border); border-radius: 6px; margin: 0.5rem 0; }
+    .faq details[open] { box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .faq summary { cursor: pointer; font-weight: 600; color: var(--navy); padding: 0.7rem 0.9rem; list-style: none; font-size: 0.92rem; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::before { content: '▸'; color: #0d9488; margin-right: 0.5rem; }
+    .faq details[open] summary::before { content: '▾'; }
+    .faq .answer { padding: 0 0.9rem 0.85rem 1.8rem; font-size: 0.9rem; line-height: 1.8; color: #333; }
+    .deepdive .block { margin: 0.9rem 0; padding: 0.85rem 1.1rem; border-radius: 4px; background: var(--paper); border-left: 3px solid #6f42c1; }
+    .deepdive .block.crit { border-left-color: #dc3545; background: #fdf0f1; }
+    .deepdive .block h4 { color: var(--navy); margin-bottom: 0.3rem; }
+    .deepdive .block ul { margin: 0.3rem 0 0 1.1rem; }
+    .deepdive .block li { margin-bottom: 0.3rem; font-size: 0.9rem; }
+    @media (max-width: 1100px) {
+      .col-labels { display: none; }
+      .row { grid-template-columns: 1fr; }
+      .row > div::before {
+        display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+        letter-spacing: 0.05em; color: var(--muted); margin-bottom: 0.35rem;
+      }
+      .col-original::before { content: '原文'; }
+      .col-translation::before { content: '翻译'; }
+      .col-analysis::before { content: '解析'; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sticky-head">
+    <header class="top-nav">
+      <h1><a href="https://arxiv.org/abs/2602.19083" target="_blank" rel="noopener">ChordEdit — One-Step Low-Energy Transport for Image Editing</a></h1>
+      <div class="meta">DeepLearning-Paper-with-Code · Diffusion Model · arXiv(2026) / CVPR(2026) · Lu et al. (GDUT / PKU)</div>
+      <div class="legend">
+        <span class="hl-thesis">核心论点</span>
+        <span class="hl-concept">关键概念</span>
+        <span class="hl-evidence">实证证据</span>
+        <span class="hl-counter">让步/反驳</span>
+        <span class="hl-method">方法论</span>
+      </div>
+    </header>
+    <nav class="chapter-nav">
+      <a href="#feynman">速读</a>
+      <a href="#abstract">Abstract</a>
+      <a href="#intro">Introduction</a>
+      <a href="#prelim">Preliminaries</a>
+      <a href="#method">Method §4</a>
+      <a href="#experiments">Experiments</a>
+      <a href="#conclusion">Conclusion</a>
+      <a href="#notation">符号表</a>
+      <a href="#overview">总览</a>
+      <a href="#faq">十问</a>
+      <a href="#deepdive">深挖</a>
+    </nav>
+  </div>
+
+  <main>
+
+    <section class="feynman" id="feynman">
+      <h2>🎮 费曼一分钟（通俗速读）</h2>
+      <div class="tldr-meta">通俗速读 · 先建立模糊认知，再读正文</div>
+      <p>一步文生图模型（如 <strong>SD-Turbo</strong>、SwiftBrush-v2、InstaFlow）把原本需要几十步的扩散蒸馏成<strong>一次前向</strong>就能出图——合成速度极快，自然让人期待「实时编辑」。但把传统编辑套路（源/目标 prompt 的 drift 差分）硬塞进一步模型会<strong>彻底翻车</strong>：物体严重扭曲、背景碎裂——因为 naive 编辑场是两个大幅度、发散轨迹的算术差，能量高、方差大，单步大积分误差累积致命。</p>
+      <p><strong>ChordEdit</strong> 换视角：把编辑看作从源分布到目标分布的<strong>动态最优传输（OT）</strong>问题，用时间加权的 <strong>Chord Control Field</strong> 替代瞬时 naive 差分——相当于对观测场 $\mathbf{R}$ 做因果核平滑，$L^2$ 收缩、能量更低、Euler 单步更稳。方法<strong>免训练、免 inversion</strong>，黑盒查询模型 velocity/noise 即可；可选 proximal refinement 再增强语义。PIE-bench 上 SD-Turbo 配置 <strong>0.38s、NFE=2、PSNR 22.20、CLIP-Edited 22.96</strong>；去掉 prox 仅 transport 则 <strong>NFE=1、0.20s、PSNR 23.89</strong>，背景保真更强。</p>
+    </section>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 1：ChordEdit 编辑能力展示（Teaser）</h3>
+      <figure>
+        <img src="assets/chordedit/fig1.jpg" alt="ChordEdit Fig.1 一步编辑能力展示 SD-Turbo SwiftBrush-v2">
+        <figcaption>Fig.1：model-agnostic、training-free、inversion-free 的 ChordEdit 在 SD-Turbo（上两行）与 SwiftBrush-v2（下行）上的一步编辑样例——非编辑区域结构保持、语义对齐目标 prompt。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="abstract">Abstract</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>The advent of <span class="hl-concept">one-step text-to-image (T2I) models</span> offers unprecedented synthesis speed. However, their application to text-guided image editing remains severely hampered, as forcing existing training-free editors into a single inference step fails — manifesting as <span class="hl-counter">severe object distortion</span> and <span class="hl-counter">critical loss of consistency in non-edited regions</span>, resulting from high-energy, erratic trajectories produced by naive vector arithmetic on the models' structured fields.</p>
+        <p>We introduce <span class="hl-thesis">ChordEdit</span>, a <span class="hl-method">model-agnostic, training-free, and inversion-free</span> method for high-fidelity one-step editing. We recast editing as a transport problem between source and target distributions defined by prompts. Leveraging <span class="hl-method">dynamic optimal transport</span>, we derive a low-energy control strategy yielding a <span class="hl-concept">smoothed, variance-reduced Chord Control Field</span> that can be traversed in a single, large integration step.</p>
+      </div>
+      <div class="col-translation">
+        <p>一步文生图模型带来了前所未有的合成速度，但其用于文本引导图像编辑仍严重受阻——将现有免训练编辑器强行压到单步推理会失败，表现为严重物体扭曲与非编辑区域一致性丧失，根因是 naive 向量算术在结构化场上产生高能量、不稳定轨迹。</p>
+        <p>我们提出 ChordEdit——一种 model-agnostic、免训练、免 inversion 的高保真一步编辑方法。将编辑重述为源/目标 prompt 定义的两个分布之间的传输问题；借助动态最优传输推导低能量控制策略，得到平滑、降方差的 Chord Control Field，可在单步大积分中稳定穿越。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #ffc107;">
+          <span class="tag">概括主张</span>
+          <h4>段落功能</h4>
+          <p>点出一步 T2I 与一步编辑之间的鸿沟（naive drift 差分失败），宣告 ChordEdit 用 OT + 平滑控制场填补空白。</p>
+          <h4>逻辑角色</h4>
+          <p>论证链起点：问题（单步编辑不稳定）→ 解法（低能量 Chord 场）→ 承诺（实时、轻量、精确）。</p>
+          <h4>论证技巧 / 潜在漏洞</h4>
+          <p>技巧：摘要同时锚定「理论（dynamic OT）」「工程（training-free / inversion-free）」「效率（single step）」。漏洞：「real-time」依赖特定 GPU 与 SD-Turbo 等蒸馏模型，泛化到其他编辑任务未在摘要展开。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="intro">1. Introduction</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>One-step T2I models such as <span class="hl-concept">SD-Turbo</span>, SwiftBrush-v2 and InstaFlow distill large diffusion models into a compact, single-step pathway, promising truly interactive applications. This progress raises the expectation that real-time capability can be leveraged for text-guided image editing.</p>
+        <p>However, this promise remains unmet. Existing one-step method SwiftEdit achieves speed by <span class="hl-counter">training dedicated networks</span>, sacrificing model-agnostic flexibility. The training-free alternative computes an editing field by differencing drifts conditioned on source and target prompts — effective in multi-step generators but <span class="hl-counter">fails in one-step models</span>: severe object distortion and background disintegration (Figure 3).</p>
+      </div>
+      <div class="col-translation">
+        <p>SD-Turbo、SwiftBrush-v2、InstaFlow 等一步 T2I 模型将大扩散模型蒸馏为紧凑单步通路，承诺真正交互式应用，自然让人期待实时文本引导编辑。</p>
+        <p>然而这一承诺尚未兑现。SwiftEdit 等一步方法靠训练专用网络换速度，牺牲 model-agnostic 灵活性。免训练方案用源/目标 prompt 条件 drift 的差分构造编辑场——多步生成器上有效，但在一步模型上失败：物体严重扭曲、背景解体（Fig.3）。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #1a2744;">
+          <span class="tag">引出问题</span>
+          <h4>段落功能</h4>
+          <p>建立「一步 T2I 已成熟 vs 一步编辑仍失败」的反差；区分训练式（SwiftEdit）与免训练（InfEdit/FlowEdit 风格）两条路线的局限。</p>
+          <h4>逻辑角色</h4>
+          <p>问题语境：为何 naive drift 差分在蒸馏模型上崩溃？预告根因——文本条件到向量场的映射高度非线性，差分场能量过高。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <p>The root cause: naive editing field is the arithmetic difference of two large-magnitude, divergent trajectories — an <span class="hl-counter">erratic, high-energy control field</span>. A single large integration step accumulates significant error.</p>
+        <p>We introduce <span class="hl-thesis">ChordEdit</span>, recasting editing from dynamic OT perspective, seeking a low-energy chord to transport source to target. Our <span class="hl-method">Chord Control Field</span> is a time-weighted average of source and target drifts, acting as temporal smoothing. Optional proximal refinement enhances semantics. Results on <span class="hl-evidence">PIE-bench</span> demonstrate state-of-the-art efficiency with high background preservation.</p>
+      </div>
+      <div class="col-translation">
+        <p>根因：naive 编辑场是两个大幅度、发散轨迹的算术差——高能量、不稳定控制场；单步大积分误差累积导致失真。</p>
+        <p>我们提出 ChordEdit，从动态 OT 视角重述编辑，寻找低能量「弦」传输源到目标。Chord Control Field 是源/目标 drift 的时间加权平均，充当时间平滑算子；可选 proximal refinement 增强语义。PIE-bench 实验表明 SOTA 级效率与背景保真。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #ffc107;">
+          <span class="tag">提出论点</span>
+          <h4>段落功能</h4>
+          <p>诊断 naive 场 → 宣告 Chord 平滑场 + OT 框架 → 预告 PIE-bench 证据。</p>
+          <h4>论证技巧 / 潜在漏洞</h4>
+          <p>技巧：把「多步平均才稳定」的直觉形式化为时间窗口 $[t-\delta,t]$ 上的核平滑。漏洞：OT 视角是启发式测量模型（Eq.4.2），非严格求解 Benamou–Brenier 问题。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 3：Naive Simple Drift 失败 vs ChordEdit</h3>
+      <figure>
+        <img src="assets/chordedit/fig3.png" alt="一步 Simple drift 编辑失败 ChordEdit 保结构">
+        <figcaption>Fig.3：一步 Simple drift（源/目标 drift 直接差分）产生高能量非平滑向量场，导致 (i) 物体严重扭曲 (ii) 背景碎裂与伪结构；ChordEdit 结果 photorealistic 且保结构。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="prelim">3. Preliminaries</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>A pre-trained T2I model induces conditional probability flow $\frac{dx_t}{dt}=v(x_t,t,c)$. Given prompts $c_{\rm src}, c_{\rm tar}$ and source image $x_{\rm src}:=x_1$, editing transports toward target $x_{\rm tar}$ via instantaneous residual:</p>
+        <p>$$\Delta v(x_t,t)=v(x_t,t,c_{\rm tar})-v(x_t,t,c_{\rm src}) \quad\text{(Eq. 3.2)}$$</p>
+        <p>In practice we anchor at clean source $x_\tau:=x_1$ and query the model at synthetic noisy proxy $z\sim K_t(\cdot\mid x_\tau)$. The <span class="hl-concept">observable proxy field</span> is:</p>
+        <p>$$\mathbf{R}(x_\tau,t)=\mathbb{E}_{z\sim K_t(\cdot\mid x_\tau)}\!\big[\,\mathcal{B}_t\,\Delta Q(z,t)\,\big] \quad\text{(Eq. 3.3)}$$</p>
+        <p>where $\Delta Q=Q(\cdot,c_{\rm tar})-Q(\cdot,c_{\rm src})$ and $\mathcal{B}_t$ is a time-only linear map (e.g. for SD-Turbo: $Q=\hat\epsilon_\theta$, $\mathcal{B}_t=A_t^{(\epsilon)}$).</p>
+      </div>
+      <div class="col-translation">
+        <p>预训练 T2I 模型诱导条件概率流 $\frac{dx_t}{dt}=v(x_t,t,c)$。给定源/目标 prompt 与源图 $x_{\rm src}:=x_1$，编辑通过瞬时残差传输：</p>
+        <p>$$\Delta v(x_t,t)=v(x_t,t,c_{\rm tar})-v(x_t,t,c_{\rm src}) \quad\text{（式 3.2）}$$</p>
+        <p>实践中锚定干净源状态 $x_\tau:=x_1$，在合成噪声代理 $z\sim K_t(\cdot\mid x_\tau)$ 上查询模型。可观测代理场为：</p>
+        <p>$$\mathbf{R}(x_\tau,t)=\mathbb{E}_{z\sim K_t(\cdot\mid x_\tau)}\!\big[\,\mathcal{B}_t\,\Delta Q(z,t)\,\big] \quad\text{（式 3.3）}$$</p>
+        <p>其中 $\Delta Q$ 为源/目标模型输出差，$\mathcal{B}_t$ 为仅依赖时间的线性映射（SD-Turbo 下 $Q=\hat\epsilon_\theta$）。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #6f42c1;">
+          <span class="tag">形式化基础</span>
+          <div class="analysis-detail">
+            <h4>编辑问题设定（自绘）</h4>
+            <div class="diagram">
+              <pre class="mermaid">
+flowchart LR
+  XSRC["x_src ~ p₁(·|c_src)<br/>源图"] -->|"理想: 修改流场"| XTAR["x_tar ~ p₀(·|c_tar)<br/>编辑结果"]
+  VSRC["v(x,t,c_src)"] --> Dv["Δv = v_tar − v_src<br/>naive 差分场"]
+  VTAR["v(x,t,c_tar)"] --> Dv
+  Dv -->|"一步积分<br/>高能量→失败"| FAIL["扭曲 / 背景碎"]
+              </pre>
+              <figcaption>预备知识：编辑 = 对齐两个条件流的控制；naive 方案直接用 Δv 或其在噪声代理上的期望 R，单步时不稳定。点击放大。</figcaption>
+            </div>
+          </div>
+          <div class="analysis-detail">
+            <h4>逻辑角色</h4>
+            <p>为 §4 Chord 场提供符号：$x_\tau$ 锚定、$\mathbf{R}$ 可查询、$\mathcal{B}_t$ 统一不同参数化（noise / velocity）。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="method">4. ChordEdit — Chord Control Field &amp; Algorithm</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p><span class="hl-method">Dynamic OT view:</span> ideal editing field $u_t$ minimizes Benamou–Brenier kinetic energy subject to continuity equation. We only observe $\mathbf{R}(x_\tau,t)=u_t+\varepsilon_t$ (measurement model). Naive control $u_{\rm nai}=\mathbf{R}$ is high-energy and unstable for single-step integration.</p>
+        <p>To obtain low-energy estimator $\hat u_t$, minimize quadratic surrogate over window $[t-\delta,t]$:</p>
+        <p>$$\Phi_t(u;x_\tau)=t\,\|u-\hat u_{t-\delta}(x_\tau)\|^2+\int_{t-\delta}^{t}\!\|u-\mathbf{R}(x_\tau,\xi)\|^2\,d\xi \quad\text{(Eq. 4.3)}$$</p>
+        <p>Setting $\nabla_u\Phi_t=0$ and using first-order causal approximations yields the <span class="hl-thesis">Chord Control Field</span>:</p>
+        <p>$$\hat u_t(x_\tau)=\frac{t\,\mathbf{R}(x_\tau,t-\delta)+\delta\,\mathbf{R}(x_\tau,t)}{t+\delta} \quad\text{(Eq. 4.5)}$$</p>
+        <p>By Jensen's inequality, $\int\!\|\hat u\|^2\leq\int\!\|\mathbf{R}\|^2$ — an $L^2$ contraction suppressing high-energy spikes; consistency proxy $\mathcal{C}(\hat u)\leq\mathcal{C}(\mathbf{R})$ tightens Euler error for $h=1$ step.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>动态 OT 视角：</strong>理想编辑场 $u_t$ 最小化 Benamou–Brenier 动能并满足连续性方程；实际只能观测 $\mathbf{R}=u_t+\varepsilon_t$。Naive 控制 $u_{\rm nai}=\mathbf{R}$ 能量高，单步积分不稳定。</p>
+        <p>为得到低能量估计 $\hat u_t$，在窗口 $[t-\delta,t]$ 上最小化二次 surrogate：</p>
+        <p>$$\Phi_t(u;x_\tau)=t\,\|u-\hat u_{t-\delta}\|^2+\int_{t-\delta}^{t}\!\|u-\mathbf{R}(x_\tau,\xi)\|^2\,d\xi \quad\text{（式 4.3）}$$</p>
+        <p>令 $\nabla_u\Phi_t=0$ 并做一阶因果近似，得 <strong>Chord Control Field</strong>：</p>
+        <p>$$\hat u_t(x_\tau)=\frac{t\,\mathbf{R}(x_\tau,t-\delta)+\delta\,\mathbf{R}(x_\tau,t)}{t+\delta} \quad\text{（式 4.5）}$$</p>
+        <p>Jensen 不等式保证 $L^2$ 收缩；一致性代理 $\mathcal{C}(\hat u)\leq\mathcal{C}(\mathbf{R})$ 收紧单步 Euler 误差界。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #6f42c1;">
+          <span class="tag">核心方法 · CCF</span>
+          <div class="analysis-detail">
+            <h4>Chord 场 vs Naive 场（自绘）</h4>
+            <div class="diagram">
+              <pre class="mermaid">
+flowchart TB
+  R1["R(x_τ, t−δ)<br/>较早时刻观测"] --> CCF["Chord Control Field<br/>û = (t·R_{t−δ} + δ·R_t)/(t+δ)"]
+  R2["R(x_τ, t)<br/>当前时刻观测"] --> CCF
+  CCF -->|"x_pred = x_in + λ·û<br/>1-NFE transport"| XPRED["x_pred"]
+  XPRED -->|"可选 prox<br/>1-NFE"| OUT["x_tar"]
+  NAIVE["δ=0: R only<br/>高能量"] -.->|"单步失败"| FAIL["失真"]
+              </pre>
+              <figcaption>Eq.4.5：对 naive 场 R 做因果核平滑；δ=0 退化为 naive baseline。Transport 1-NFE，prox 可选 +1 NFE。点击放大。</figcaption>
+            </div>
+          </div>
+          <div class="analysis-detail">
+            <h4>设计取舍</h4>
+            <p>关键 trick：不增加模型调用次数（R 在 $t$ 与 $t-\delta$ 两次查询可 batch 并行），用时间加权平均换数值稳定性——多步编辑里「迭代平均」的单步等价物。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Proximal refinement (optional):</strong></p>
+        <p>$$\operatorname{prox}(x^{\rm pred},t_c,c_{\rm tar})=\mathcal{B}_{t_c}\,Q(x^{\rm pred},t_c,c_{\rm tar}) \quad\text{(Eq. 4.7)}$$</p>
+        <p><strong>Algorithm 1 (simplified):</strong></p>
+        <p>1. $x_{\rm in}\leftarrow x_{\rm src}$<br/>
+        2. $\hat u\leftarrow\frac{t\,\mathbf{R}(x_{\rm in},t-\delta)+\delta\,\mathbf{R}(x_{\rm in},t)}{t+\delta}$<br/>
+        3. $x^{\rm pred}\leftarrow x_{\rm in}+\lambda\,\hat u$<br/>
+        4. $x_{\rm tar}\leftarrow\operatorname{prox}(x^{\rm pred},t_c,c_{\rm tar})$ (optional)<br/>
+        Default: $n=1$, $t=0.90$, $\delta=0.15$, $\lambda=1.00$, $t_c=0.30$ — transport-only is 1-NFE; full pipeline is 2-NFE.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>Proximal refinement（可选）：</strong></p>
+        <p>$$\operatorname{prox}(x^{\rm pred},t_c,c_{\rm tar})=\mathcal{B}_{t_c}\,Q(x^{\rm pred},t_c,c_{\rm tar}) \quad\text{（式 4.7）}$$</p>
+        <p><strong>算法 1（简化）：</strong></p>
+        <p>1. 初始化 $x_{\rm in}\leftarrow x_{\rm src}$<br/>
+        2. 计算 Chord 场 $\hat u$（式 4.5）<br/>
+        3. 一步传输 $x^{\rm pred}\leftarrow x_{\rm in}+\lambda\,\hat u$<br/>
+        4. 可选 prox 增强语义 → $x_{\rm tar}$<br/>
+        默认超参：$t=0.90$, $\delta=0.15$, $\lambda=1.00$, $t_c=0.30$；仅 transport 为 1-NFE，完整流程 2-NFE。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #0d6efd;">
+          <span class="tag">模块化设计</span>
+          <h4>段落功能</h4>
+          <p>分离「结构保真 transport」（高 PSNR）与「语义增强 prox」（高 CLIP-Edited）——Table 2 消融验证：w/o prox PSNR 23.89，w/ prox CLIP-Edited 22.96。</p>
+          <h4>逻辑角色</h4>
+          <p>算法段落把理论场落地为 VAE latent 空间 1–2 次前向，强调 parallel batch 与黑盒接口。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 5：2D Toy 分布传输 — Naive vs ChordEdit</h3>
+      <figure>
+        <img src="assets/chordedit/fig5.png" alt="2D toy 分布传输 naive 高能量 ChordEdit 低能量单步">
+        <figcaption>Fig.5：二维 toy 例——naive 残差场高能量、粗离散化下不稳定；ChordEdit 式 4.5 低能量场使粒子几乎直线到达目标，支持可靠单步传输。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 2：PIE-bench 方法对比（MAIN · 背景 PSNR / CLIP / Runtime）</h3>
+      <figure>
+        <img src="assets/chordedit/fig2.png" alt="ChordEdit vs 一步少步多步编辑 PIE-bench 对比">
+        <figcaption>Fig.2：ChordEdit（SD-Turbo）与一步/少步/多步编辑方法在 PIE-bench 上的 PSNR（背景一致性）、CLIP-Edited（语义对齐）与 Runtime 对比——ChordEdit 在实时性与质量间取得竞争力平衡。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="experiments">5–6. Experiments &amp; Ablation</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>We evaluate on <span class="hl-evidence">PIE-bench</span> (700 samples, 512×512, 10 editing categories). Metrics: PSNR/MSE on non-edited regions; CLIP-Whole and CLIP-Edited for semantic alignment. Single NVIDIA Titan 24GB GPU.</p>
+        <p>Table 1 compares multi-step, few-step, and one-step editors. ChordEdit achieves <span class="hl-evidence">state-of-the-art efficiency</span> — less than half VRAM of SwiftEdit on same model, 19× faster than FlowEdit, 3.4× faster than fastest few-step alternative.</p>
+      </div>
+      <div class="col-translation">
+        <p>在 PIE-bench（700 样本、512×512、10 类编辑）上评估；非编辑区 PSNR/MSE 衡量背景保真，CLIP-Whole / CLIP-Edited 衡量语义对齐。单卡 Titan 24GB。</p>
+        <p>表 1 对比多步/少步/一步编辑器。ChordEdit 效率 SOTA——同模型 VRAM 不到 SwiftEdit 一半，比 FlowEdit 快 19×，比最快少步方法快 3.4×。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #0d6efd;">
+          <span class="tag">Table 1 · One-step 关键行</span>
+          <table class="exp-table">
+            <thead><tr><th>Method</th><th>PSNR↑</th><th>CLIP-Edited↑</th><th>NFE↓</th><th>Runtime↓</th><th>VRAM↓</th><th>T-free</th></tr></thead>
+            <tbody>
+              <tr><td>SwiftEdit (SwiftBrush-v2)</td><td>21.71</td><td>21.85</td><td>2</td><td>0.54s</td><td>15060 MiB</td><td>✗</td></tr>
+              <tr class="is-ours"><td>ChordEdit w/o prox (SD-Turbo)</td><td>23.89</td><td>21.87</td><td>1</td><td>0.20s</td><td>6988 MiB</td><td>✓</td></tr>
+              <tr class="is-ours"><td>ChordEdit (SD-Turbo)</td><td>22.20</td><td>22.96</td><td>2</td><td>0.38s</td><td>6988 MiB</td><td>✓</td></tr>
+            </tbody>
+          </table>
+          <ul class="exp-detail">
+            <li><strong>论点↔证据：</strong>w/o prox 验证 CCF 核心——NFE=1 仍 PSNR 23.89；完整版 prox 将 CLIP-Edited 提至 22.96，综合最优。</li>
+            <li><strong>vs SwiftEdit：</strong>免训练、VRAM 减半（6988 vs 15060 MiB）、更快（0.38s vs 0.54s），语义 CLIP-Edited 更高（22.96 vs 21.85）。</li>
+            <li><strong>公平性：</strong>各方法用官方指定 backbone；一步类在 SwiftBrush-v2 上也有直接对比（ChordEdit PSNR 22.04 vs SwiftEdit 21.71）。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Ablation — Chord Control Field ($\delta$):</strong> Setting $\delta=0$ degenerates to naive baseline. As step count $S\to 1$, naive field energy spikes and PSNR collapses; CCF ($\delta=0.15$) remains stable and strictly Pareto-dominates naive on perceptual-semantic trade-off (Figure 9).</p>
+        <p><strong>Noise samples:</strong> ChordEdit with $n=1$ is seed-robust (CLIP CoV 0.20%, PSNR CoV 0.07%); increasing $n$ yields negligible marginal returns — intrinsic variance reduction from smoothing.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>消融 — Chord Control Field（$\delta$）：</strong>$\delta=0$ 退化为 naive baseline。步数 $S\to 1$ 时 naive 场能量飙升、PSNR 崩溃；CCF（$\delta=0.15$）保持稳定，在感知-语义权衡上严格 Pareto 支配 naive（Fig.9）。</p>
+        <p><strong>噪声样本数：</strong>$n=1$ 即 seed 鲁棒；增加 $n$ 边际收益可忽略——平滑构造自带降方差。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #6f42c1;">
+          <span class="tag">消融逻辑</span>
+          <h4>段落功能</h4>
+          <p>§6.1 用 kinetic energy + PSNR 曲线证明「单步需要低能量场」；§6.2 证明 MC 多噪声非必需；§6.3 Table 2 分离 transport vs prox。</p>
+          <h4>论证技巧</h4>
+          <p>把 δ 作为唯一旋钮连接理论与实验：δ→0 即 reproducing naive failure，δ=0.15 即 full ChordEdit。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 4 / Fig.8：编辑场稳定性与能量可视化消融</h3>
+      <figure>
+        <img src="assets/chordedit/fig4.jpg" alt="多步 naive vs 一步 ChordEdit 编辑场稳定性能量可视化">
+        <figcaption>Fig.4：(a) 多步 Simple Drift 迭代应用可稳定；(b) 一步 naive 场高能量 volatile，单步大积分偏离目标；(c) ChordEdit 时间平均得低能量 Chord Control Field，单步准确到达 $x_{\rm tar}$。Fig.8 进一步对比 naive（δ=0）高能量导致伪影 vs ChordEdit 低能量高保真。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 7：定性 SOTA 对比网格</h3>
+      <figure>
+        <img src="assets/chordedit/fig6.jpg" alt="PIE-bench 定性编辑 SOTA 对比">
+        <figcaption>Fig.7（assets/fig6）：PIE-bench 上与多步/少步/一步方法的定性对比——ChordEdit 在 prompt 遵循与背景保真上 consistently 优于 Direct Inversion+PnP 等，与 FlowEdit 等相比更快且结构更完整。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="conclusion">7. Conclusion</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>We introduced <span class="hl-thesis">ChordEdit</span>, a training-free, inversion-free framework solving one-step editing instability. Our <span class="hl-method">Chord Control Field</span> replaces naive high-energy drift difference with temporal smoothing, enabling a single large integration step while preserving non-edited regions.</p>
+        <p>ChordEdit achieves <span class="hl-evidence">state-of-the-art efficiency</span> — runtime 0.38s, low VRAM — without sacrificing quality: high fidelity and strong semantic alignment, robustly model-agnostic and seed-insensitive with a single noise sample. True real-time, high-fidelity generative image editing.</p>
+      </div>
+      <div class="col-translation">
+        <p>我们提出 ChordEdit——免训练、免 inversion 的框架，解决一步编辑不稳定性。Chord Control Field 以时间平滑替代 naive 高能量 drift 差分，支持单步大积分并保非编辑区域。</p>
+        <p>ChordEdit 效率 SOTA——0.38s 运行时、低 VRAM——且不牺牲质量：高保真、强语义对齐，model-agnostic 且单噪声样本 seed 不敏感。实现真正实时、高保真、一致的生成式图像编辑。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #ffc107;">
+          <span class="tag">总结</span>
+          <h4>段落功能</h4>
+          <p>收束 OT + CCF + prox 模块化贡献，强调效率与质量兼得。</p>
+          <h4>逻辑角色</h4>
+          <p>论证链终点——从 Intro 的「一步编辑失败」到「0.38s 实时高保真编辑」闭环。</p>
+          <h4>论证技巧 / 潜在漏洞</h4>
+          <p>技巧：结论同时_claim 效率、质量、鲁棒性、model-agnostic 四轴。漏洞：PIE-bench 以 instruction editing 为主；复杂局部编辑、视频、3D 未涉及；社会影响仅附录简述。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="summary" id="notation">
+      <h2>符号速查表</h2>
+      <table class="notation">
+        <thead><tr><th>符号</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td>$x_t,\; t\in[0,1]$</td><td>时刻 $t$ 的图像状态；$t=1$ 为数据端，$t=0$ 为先验端</td></tr>
+          <tr><td>$c_{\rm src},\,c_{\rm tar}$</td><td>源 / 目标文本 prompt 条件</td></tr>
+          <tr><td>$x_{\rm src}=x_1,\;x_\tau$</td><td>源图（干净锚点状态）</td></tr>
+          <tr><td>$v(x_t,t,c)$</td><td>条件概率流 drift</td></tr>
+          <tr><td>$\Delta v$</td><td>Naive 编辑残差 $v(\cdot,c_{\rm tar})-v(\cdot,c_{\rm src})$（式 3.2）</td></tr>
+          <tr><td>$Q(z,t,c),\;\mathcal{B}_t$</td><td>模型可观测输出与时间线性映射（noise/velocity 统一接口）</td></tr>
+          <tr><td>$\mathbf{R}(x_\tau,t)$</td><td>可观测代理编辑场 $\mathbb{E}[\mathcal{B}_t\Delta Q]$（式 3.3）</td></tr>
+          <tr><td>$\hat u_t$</td><td>Chord Control Field（式 4.5），$\delta=0$ 时退化为 naive $\mathbf{R}$</td></tr>
+          <tr><td>$\delta,\;t,\;\lambda,\;t_c$</td><td>平滑窗口、传输时刻、步长缩放、prox 时刻（默认 0.15, 0.90, 1.00, 0.30）</td></tr>
+          <tr><td>$\operatorname{prox}(\cdot)$</td><td>可选 proximal refinement（式 4.7），+1 NFE 增强语义</td></tr>
+          <tr><td>NFE</td><td>Number of Function Evaluations；transport=1，+prox=2</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="summary" id="overview">
+      <h2>论证结构总览</h2>
+      <div class="skeleton">
+        问题（一步 T2I 已成熟，但 naive drift 差分单步编辑失败 → 扭曲 + 背景碎）<br/>
+        → 论点（动态 OT 视角 + Chord Control Field 时间加权平滑 → 低能量、单步稳定）<br/>
+        → 方法（Eq.4.5 CCF + 可选 prox；Algorithm 1；黑盒 model-agnostic）<br/>
+        → 证据（PIE-bench Table 1：ChordEdit SD-Turbo PSNR 22.20 / CLIP-Edited 22.96 / 0.38s / NFE 2；w/o prox PSNR 23.89 / NFE 1 / 0.20s；vs SwiftEdit 21.71 / 需训练 / 0.54s）<br/>
+        → 消融（δ=0 能量飙升 PSNR 崩；n=1 seed 鲁棒；transport vs prox 解耦）<br/>
+        → 结论（真正实时高保真一步编辑，CVPR 2026 Oral）
+      </div>
+      <h4>核心主张（一句话）</h4>
+      <p>通过对 naive 编辑场做 OT 启发的因果时间平滑（Chord Control Field），可在免训练、免 inversion 的前提下，于一步 T2I 模型上实现稳定、低能量、实时的文本引导图像编辑。</p>
+      <div class="strength"><strong>论证最强处：</strong>理论（Benamou–Brenier + $L^2$ 收缩 + Euler 误差界）与实验（δ 消融、能量曲线、PIE-bench 全表）环环相扣；w/o prox 行单独验证 CCF 而非 prox 功劳；model-agnostic 在 SD-Turbo / SwiftBrush-v2 / InstaFlow 三模型一致增益。</div>
+      <div class="weakness"><strong>论证最弱处：</strong>OT 为测量模型启发式非严格最优传输求解；PIE-bench 512×512 指令编辑，高分辨率/局部精细编辑未充分验证；与 FlowEdit（SD3）等多步方法比 CLIP 语义略低但 PSNR 更高——权衡依赖任务；无开源代码链接在正文（仅 supplementary）。</div>
+      <p style="margin-top:1rem;font-size:0.85rem;color:var(--muted);">来源：<a href="https://arxiv.org/abs/2602.19083">arXiv:2602.19083</a> · <a href="https://chordedit.github.io" target="_blank" rel="noopener">chordedit.github.io</a> · 生成工具：paper-logic-reading skill（三栏版）</p>
+    </section>
+
+    <section class="summary faq" id="faq">
+      <h2>🧩 结构化十问（AI 解构）</h2>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.75rem;">让 AI 当助教，从十个角度提取论文骨架。</p>
+
+      <details open>
+        <summary>Q1 · 论文试图解决什么问题？</summary>
+        <div class="answer">一步 T2I 模型（SD-Turbo 等）合成极快，但现有免训练编辑器（drift 差分）压到单步推理时严重失败：物体扭曲、背景碎裂。目标：在<strong>不训练、不 inversion</strong> 的前提下实现高保真<strong>一步</strong>文本引导编辑（§1）。</div>
+      </details>
+      <details>
+        <summary>Q2 · 这是否是一个新问题？</summary>
+        <div class="answer">一步 T2I 与 diffusion editing（InfEdit、FlowEdit）皆非新，但「一步 T2I + training-free + inversion-free + 单步编辑稳定」是未解决组合。SwiftEdit 用训练换速度；本文走 orthogonal 路线——平滑控制场而非专用 inverter。</div>
+      </details>
+      <details>
+        <summary>Q3 · 要验证什么科学假设？</summary>
+        <div class="answer">假设：① naive 编辑场高能量是单步失败根因；② 对 $\mathbf{R}$ 做时间加权平滑（Eq.4.5）可 $L^2$ 降能量并收紧 Euler 单步误差；③ 由此可在 NFE=1–2 达到 competitive PSNR 与 CLIP，且 model-agnostic、$n=1$ 噪声即可。</div>
+      </details>
+      <details>
+        <summary>Q4 · 有哪些相关研究？如何归类？</summary>
+        <div class="answer">
+          <ul>
+            <li><strong>一步 T2I：</strong>SD-Turbo、InstaFlow、SwiftBrush-v2、LCM</li>
+            <li><strong>免训练编辑：</strong>InfEdit、FlowEdit、DiffEdit、PnP Inversion</li>
+            <li><strong>一步训练式编辑：</strong>SwiftEdit（专用 inversion 网络）</li>
+            <li><strong>OT / 流：</strong>Benamou–Brenier dynamic OT、Flow Matching</li>
+          </ul>
+          作者：Liangsi Lu, Xuhang Chen, Minzhe Guo, Shichu Li, Jingchao Wang, Yang Shi（GDUT / PKU 等）。
+        </div>
+      </details>
+      <details>
+        <summary>Q5 · 解决方案的关键是什么？</summary>
+        <div class="answer">三件套：① 把编辑重述为 dynamic OT 传输；② Chord Control Field $\hat u_t=\frac{t\mathbf{R}_{t-\delta}+\delta\mathbf{R}_t}{t+\delta}$ 替代 naive $\mathbf{R}$；③ 可选 prox 分离结构传输与语义增强。Algorithm 1 在 VAE latent 1–2 NFE 完成。</div>
+      </details>
+      <details>
+        <summary>Q6 · 实验是如何设计的？</summary>
+        <div class="answer">PIE-bench 700 样本；PSNR/MSE（非编辑区）、CLIP-Whole/Edited；对比 multi-/few-/one-step 代表方法；消融 δ（CCF vs naive）、噪声样本数 $n$、transport vs prox（Table 2）、三 T2I backbone（Table 3）；能量 $E$ 与 PSNR 随步数 $S$ 曲线（Fig.9）。</div>
+      </details>
+      <details>
+        <summary>Q7 · 用什么数据集评估？代码开源吗？</summary>
+        <div class="answer">PIE-bench（512×512，10 类 instruction editing，带 edit mask）。代码在 supplementary material；项目页 <a href="https://chordedit.github.io" target="_blank" rel="noopener">chordedit.github.io</a>。单卡 Titan 24GB。</div>
+      </details>
+      <details>
+        <summary>Q8 · 实验结果是否很好支持了假设？</summary>
+        <div class="answer">较好支持：δ=0 时能量升、PSNR 崩；δ=0.15 稳定且 Pareto 支配 naive；ChordEdit SD-Turbo 0.38s / CLIP-Edited 22.96；w/o prox PSNR 23.89@NFE=1 直接验证 CCF。保留：multi-step FlowEdit CLIP-Edited 23.69 仍略高；LPIPS 并非全程最优。</div>
+      </details>
+      <details>
+        <summary>Q9 · 这篇论文到底有什么贡献？</summary>
+        <div class="answer">① 诊断一步编辑失败为「高能量 naive 场 + 单步 Euler 误差」；② Chord Control Field 理论（Eq.4.3–4.5）与 $L^2$ / $\mathcal{C}$ 收缩证明；③ 首个 training-free + inversion-free 一步编辑在 PIE-bench 达到实时（0.38s）与 competitive 质量；④ CVPR 2026 Oral。</div>
+      </details>
+      <details>
+        <summary>Q10 · 下一步可以做什么？</summary>
+        <div class="answer">作者未详述远期路线。自然延伸：更高分辨率、视频编辑、与 consistency model 结合、学习最优 δ(t) 调度、严格 mini-batch OT 配对、开源权重与 Gradio demo。社会影响与误用风险见 Appendix。</div>
+      </details>
+    </section>
+
+    <section class="summary deepdive" id="deepdive">
+      <h2>🔬 深挖追问</h2>
+
+      <div class="block">
+        <h4>第一性原理 · 本质</h4>
+        <p>编辑的本质是在<strong>固定源图锚点</strong>下，把「源 prompt 条件流」运输到「目标 prompt 条件流」。多步方法靠<strong>迭代小步</strong>隐式平均高方差场；一步模型没有迭代预算，必须显式构造<strong>低能量、低曲率</strong>的控制场——ChordEdit 用时间窗口平滑实现这一平均。</p>
+      </div>
+      <div class="block">
+        <h4>第一性原理 · 与 FlowEdit / InfEdit 关系</h4>
+        <p>InfEdit / FlowEdit 的 drift 差分在<strong>多步</strong>积分下稳定——每步小，误差可控。蒸馏一步模型把「路径长度」压到 1，等价于 Euler 步长 $h=1$；naive 场的 Lipschitz 常数过大时，显式 Euler 全局误差 $O(h)$ 仍可能很大。CCF 通过降低 $\|\nabla_x u\|_\infty$ 和 $\|u\|_\infty$ 扩大稳定步长 margin。</p>
+      </div>
+      <div class="block">
+        <h4>第一性原理 · 数学基础</h4>
+        <p>Benamou–Brenier 动态 OT（式 4.1）、连续性方程、Jensen $L^2$ 收缩、一致性代理 $\mathcal{C}(u)=\|\partial_t u\|_\infty+\|\nabla_x u\|_\infty\|u\|_\infty$ 与 Appendix Thm. C.6 的 $O(h)$ 全局误差界。Eq.4.5 是因果核 $K_\delta$ 与 $\mathbf{R}$ 的卷积，$\delta$ 控制 bias-variance：大 δ 更稳但语义弱。</p>
+      </div>
+      <div class="block crit">
+        <h4>批判性思维 · 我们还没问的根本问题（盲区）</h4>
+        <ul>
+          <li><strong>OT 严格性：</strong>$\mathbf{R}=u+\varepsilon$ 是 post-hoc 测量模型，未从 T2I 训练目标推导；CCF 是最小二乘平滑而非 Wasserstein geodesic。</li>
+          <li><strong>超参敏感性：</strong>$t,\delta,\lambda,t_c$ 默认 0.90/0.15/1.00/0.30——跨数据集/分辨率是否需重调？Appendix 有分析但主文依赖 PIE-bench 调参。</li>
+          <li><strong>Prox 与 PSNR 权衡：</strong>完整 ChordEdit PSNR 22.20 低于 w/o prox 23.89——用户若只要背景保真是否应默认关掉 prox？</li>
+          <li><strong>编辑类型边界：</strong>PIE-bench 以全局语义替换为主；精细几何编辑、文字编辑、多人脸 ID 保持未系统测试。</li>
+          <li><strong>与 SwiftEdit 公平性：</strong>SwiftEdit 需训练但可能随 teacher 升级；ChordEdit 黑盒优势在<strong>新蒸馏模型即插即用</strong>，长期维护成本更低。</li>
+          <li><strong>伦理：</strong>实时高保真编辑降低 deepfake 门槛；正文仅简短 acknowledge，无技术层缓解（水印/检测）。</li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="lightbox" role="dialog" aria-modal="true" aria-label="放大查看">
+    <span class="lb-close" aria-hidden="true">&times;</span>
+    <div class="lb-content"></div>
+    <div class="lb-cap"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral', flowchart: { htmlLabels: true } });</script>
+  <script>
+    function syncScrollPad() {
+      var head = document.querySelector('.sticky-head');
+      if (head) document.documentElement.style.scrollPaddingTop = (head.offsetHeight + 8) + 'px';
+    }
+    window.addEventListener('load', syncScrollPad);
+    window.addEventListener('resize', syncScrollPad);
+    syncScrollPad();
+
+    (function () {
+      var lb = document.getElementById('lightbox');
+      var content = lb.querySelector('.lb-content');
+      var cap = lb.querySelector('.lb-cap');
+
+      function findZoomTarget(node) {
+        var el = node.closest ? node.closest('img, svg') : null;
+        if (!el) return null;
+        if (!el.closest('.diagram, .figure-row, .mermaid')) return null;
+        return el;
+      }
+      function nearestCaption(el) {
+        var fig = el.closest('figure') || el.closest('.diagram') || el.closest('.figure-row');
+        var c = fig && fig.querySelector('figcaption');
+        return c ? c.textContent.trim() : '';
+      }
+      function openLightbox(node, caption) {
+        content.innerHTML = '';
+        var clone = node.cloneNode(true);
+        clone.style.cursor = 'default';
+        clone.style.boxShadow = 'none';
+        var r = node.getBoundingClientRect();
+        var vw = window.innerWidth * 0.96, vh = window.innerHeight * 0.92;
+        var w = r.width || node.clientWidth || 600;
+        var h = r.height || node.clientHeight || 400;
+        var scale = Math.min(vw / w, vh / h);
+        if (!isFinite(scale) || scale <= 0) scale = 1;
+        clone.style.width = Math.round(w * scale) + 'px';
+        clone.style.height = Math.round(h * scale) + 'px';
+        clone.style.maxWidth = 'none';
+        clone.style.maxHeight = 'none';
+        content.appendChild(clone);
+        cap.textContent = caption || '';
+        lb.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+      function closeLightbox() {
+        lb.classList.remove('open');
+        content.innerHTML = '';
+        document.body.style.overflow = '';
+      }
+      document.addEventListener('click', function (e) {
+        if (lb.classList.contains('open')) { closeLightbox(); return; }
+        var el = findZoomTarget(e.target);
+        if (el) { e.preventDefault(); e.stopPropagation(); openLightbox(el, nearestCaption(el)); }
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && lb.classList.contains('open')) closeLightbox();
+      });
+    })();
+  </script>
+</body>
+</html>

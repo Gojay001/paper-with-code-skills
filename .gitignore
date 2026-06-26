@@ -7,3 +7,5 @@ __pycache__/
 # local
 Classification/
 .cache/
+paper-reading-local/*
+!paper-reading-local/README.md

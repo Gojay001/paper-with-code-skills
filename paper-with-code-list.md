@@ -10,6 +10,7 @@ There are paper with code for CV / AIGC / LLM / VLM.
   - [GAN](#Generative-Adversarial-Network)
   - [VAE](#Variational-Auto-Encoder)
   - [Diffusion](#Diffusion-Model)
+  - [Video Generation](#Video-Generation)
   - [Applications](#AIGC-Applications)
     - [Face Editing](#Face-Editing)
     - [Face Swapping](#Face-Swapping)
@@ -103,6 +104,25 @@ There are paper with code for CV / AIGC / LLM / VLM.
 
 
 > More leaderboard for AIGC can be found in [Artificial-Analysis](https://artificialanalysis.ai/image/leaderboard/text-to-image).
+
+## Video Generation
+
+
+| Title | Paper | Conf | Code |
+| ----- | ----- | ---- | ---- |
+| CogVideoX | [CogVideoX: Text-to-Video Diffusion Models with An Expert Transformer](https://arxiv.org/abs/2408.06072) | arXiv(2024) / ICLR(2025) | [PyTorch](https://github.com/THUDM/CogVideo) |
+| HunyuanVideo | [HunyuanVideo: A Systematic Framework For Large Video Generative Models](https://arxiv.org/abs/2412.03603) | arXiv(2024) | [PyTorch](https://github.com/Tencent-Hunyuan/HunyuanVideo) |
+| Open-Sora 2.0 | [Open-Sora 2.0: Training a Commercial-Level Video Generation Model in $200k](https://arxiv.org/abs/2503.09642) | arXiv(2025) | [PyTorch](https://github.com/hpcaitech/Open-Sora) |
+| Wan2.1 | [Wan: Open and Advanced Large-Scale Video Generative Models](https://arxiv.org/abs/2503.20314) | arXiv(2025) | [PyTorch](https://github.com/Wan-Video/Wan2.1) |
+| Wan2.2 | [Wan: Open and Advanced Large-Scale Video Generative Models](https://arxiv.org/abs/2503.20314) | arXiv(2025) | [PyTorch](https://github.com/Wan-Video/Wan2.2) |
+| Wan2.2-S2V-14B | [Wan-S2V: Audio-Driven Cinematic Video Generation](https://arxiv.org/abs/2508.18621) | arXiv(2025) | [PyTorch](https://github.com/Wan-Video/Wan2.2) |
+| LongCat-Video | [LongCat-Video Technical Report](https://arxiv.org/abs/2510.22200) | arXiv(2025) | [PyTorch](https://github.com/meituan-longcat/LongCat-Video) |
+| HunyuanVideo 1.5 | [HunyuanVideo 1.5 Technical Report](https://arxiv.org/abs/2511.18870) | arXiv(2025) | [PyTorch](https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5) |
+| LongCat-Video-Avatar | [LongCat-Video-Avatar: Super-Realistic Lip-Synchronized Long Video Generation](https://meigen-ai.github.io/LongCat-Video-Avatar/) | blog(2025) | [PyTorch](https://github.com/meituan-longcat/LongCat-Video) |
+| LTX-2 | [LTX-2: Efficient Joint Audio-Visual Foundation Model](https://arxiv.org/abs/2601.03233) | arXiv(2026) | [PyTorch](https://github.com/Lightricks/LTX-2) |
+| LTX-2.3 | [LTX-2: Efficient Joint Audio-Visual Foundation Model](https://arxiv.org/abs/2601.03233) | blog(2026) | [PyTorch](https://github.com/Lightricks/LTX-2) |
+| Wan2.6 | [Wan2.6: Native Multimodal Video Generation with Multi-Shot Narrative](https://www.alibabacloud.com/blog/alibaba-unveils-wan2-6-series-enabling-everyone-to-star-in-videos_602742) | Alibaba(2026) | [code] |
+| MOVA | [MOVA: Towards Scalable and Synchronized Video–Audio Generation](https://arxiv.org/abs/2602.08794) | arXiv(2026) | [PyTorch](https://github.com/OpenMOSS/MOVA) |
 
 ## AIGC-Applications
 

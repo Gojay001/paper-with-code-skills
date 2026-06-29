@@ -81,6 +81,16 @@ Repeat for a `.figure-row img` (paper raster figure).
 - Paper originals: `<section class="figure-row"><figure><img src="assets/{slug}/figN.jpg"><figcaption>…点击放大。</figcaption></figure></section>`
 - Self-drawn: `.diagram` with inline SVG or `<pre class="mermaid">`
 - Cursor/hover: CSS on `.diagram img, .diagram svg, .figure-row img, .figure-row svg` (no per-element JS class)
+- **结构化十问**（`#faq`）：Q1–Q10 全部 `<details open>`，默认展开；读者仍可点击折叠。勿只给 Q1 加 `open`
+
+```html
+<section class="summary faq" id="faq">
+  <h2>🧩 结构化十问（AI 解构）</h2>
+  <details open><summary>Q1 · …</summary><div class="answer">…</div></details>
+  <details open><summary>Q2 · …</summary><div class="answer">…</div></details>
+  <!-- Q3–Q10 同样 details open -->
+</section>
+```
 
 ### 4. Pillow / venv
 
@@ -125,6 +135,7 @@ python3 -m venv .cache/.venv
 - [ ] Extension matches file (`.jpg` vs `.png`) after format choice
 - [ ] Lightbox works for at least one SVG and one raster figure
 - [ ] `#feynman` section present (bridge post excerpt)
+- [ ] `#faq` 十问全部 `<details open>`（默认展开）
 - [ ] `<title>` and `.meta` aligned with `paper-with-code-list.md`
 - [ ] If official repo: `#code` with `code-map` + ≥2 伪代码/摘录小节；`chapter-nav` 含「代码」
 - [ ] KaTeX 无 Tab 破坏（`$z_{\text{…}}$` 勿写成 `$z_{` + Tab + `ext{…}}$`）

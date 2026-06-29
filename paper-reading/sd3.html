@@ -448,34 +448,34 @@ flowchart TB
 
     <section class="summary faq" id="faq">
       <h2>❓ 十问十答</h2>
-      <details><summary>Q1 · SD3 和 SD1 最大区别是什么？</summary>
+      <details open><summary>Q1 · SD3 和 SD1 最大区别是什么？</summary>
         <div class="answer">训练目标从 VP 扩散（eps/linear）换成 Rectified Flow + logit-normal 时间步采样；骨干从 U-Net/cross-attn 换成 MM-DiT 双流联合注意力；VAE 从 4/8 通道升到 16 通道；规模到 8B。</div>
       </details>
-      <details><summary>Q2 · Rectified Flow 和 Flow Matching 什么关系？</summary>
+      <details open><summary>Q2 · Rectified Flow 和 Flow Matching 什么关系？</summary>
         <div class="answer">RF 是 FM/CFM 的一个具体实例：直线路径 $z_t=(1-t)x_0+t\epsilon$。FM 论文（2210.02747）提出一般框架；SD3 把它推到大规模 T2I 并加时间步采样技巧。</div>
       </details>
-      <details><summary>Q3 · 为什么 rf/lognorm(0,1) 最好？</summary>
+      <details open><summary>Q3 · 为什么 rf/lognorm(0,1) 最好？</summary>
         <div class="answer">均匀 $t$ 浪费在中间难学的区域；logit-normal 居中（$m=0,s=1$）加重中间时间步权重，在 5 步与 50 步采样、CLIP/FID 上 Pareto 排名均靠前。</div>
       </details>
-      <details><summary>Q4 · MM-DiT 和 SD3 论文里的 MMDiT 一样吗？</summary>
+      <details open><summary>Q4 · MM-DiT 和 SD3 论文里的 MMDiT 一样吗？</summary>
         <div class="answer">本文提出的 MM-DiT 即 SD3 核心骨干：图像/文本独立权重 + 拼接序列联合 attention，区别于 SD1 LDM 的 U-Net cross-attn 与纯 DiT 单流。</div>
       </details>
-      <details><summary>Q5 · T5 可以去掉吗？</summary>
+      <details open><summary>Q5 · T5 可以去掉吗？</summary>
         <div class="answer">推理可去掉 T5 仍有一定质量，但复杂 prompt、长文本、精确拼写明显依赖 T5（Fig. embedder dropping）。</div>
       </details>
-      <details><summary>Q6 · 验证损失能当 early stopping 吗？</summary>
+      <details open><summary>Q6 · 验证损失能当 early stopping 吗？</summary>
         <div class="answer">作者证明 val loss 与 GenEval、人类 Elo、CompBench 强相关，适合作为大规模训练监控指标；但最终仍应用人类/任务基准确认。</div>
       </details>
-      <details><summary>Q7 · 代码在哪？</summary>
+      <details open><summary>Q7 · 代码在哪？</summary>
         <div class="answer">官方：<a href="https://github.com/Stability-AI/generative-models" target="_blank" rel="noopener">Stability-AI/generative-models</a>（MM-DiT / SD3 推理与权重）。</div>
       </details>
-      <details><summary>Q8 · 少步采样可行吗？</summary>
+      <details open><summary>Q8 · 少步采样可行吗？</summary>
         <div class="answer">RF 相对 eps/linear 在少步时 FID 退化更小（Fig.3），后续 SD3 Turbo / distilled 变体在此基础上进一步压缩步数。</div>
       </details>
-      <details><summary>Q9 · 主要贡献是什么？</summary>
+      <details open><summary>Q9 · 主要贡献是什么？</summary>
         <div class="answer">① 大规模证明 RF+采样 &gt; 经典扩散；② MM-DiT 架构；③ 8B 缩放律与 SOTA 文生图结果。</div>
       </details>
-      <details><summary>Q10 · 下一步工作？</summary>
+      <details open><summary>Q10 · 下一步工作？</summary>
         <div class="answer">作者释放权重与消融数据；社区方向：蒸馏少步、控制/编辑、视频（论文附录有 video val loss 相关图）、与 DPO 对齐（Fig. DPO）。</div>
       </details>
     </section>

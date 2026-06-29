@@ -593,39 +593,39 @@ vae.load(<span class="str">"3d-vae.pt"</span>); vae.eval(); freeze(vae)
         <summary>Q1 · 论文试图解决什么问题？</summary>
         <div class="answer">DiT 时代文生视频仍难生成<strong>长时、动作大、叙事连贯</strong>的视频；网络视频 caption 短/不准限制语义对齐。目标：10 秒、768×1360、16fps、与 prompt 强对齐（§1）。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q2 · 这是否是一个新问题？</summary>
         <div class="answer">CogVideo、Make-A-Video、OpenSora 等已有 T2V；CogVideoX 独特在 <strong>3D causal VAE + Expert AdaLN DiT + Frame Pack + dense caption 工业化流水线</strong> 组合，并首个开源商用级 5B T2V。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q3 · 要验证什么科学假设？</summary>
         <div class="answer">① 3D VAE 比 2D 逐帧编码减 flicker 且更高压缩；② Expert AdaLN 足够融合图文，无需 MMDiT 双塔；③ 3D full attention 优于 2D+1D 于大动作一致；④ dense caption 显著提升 text-video 对齐。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q4 · 有哪些相关研究？</summary>
         <div class="answer">CogVideo/Phenaki（Transformer T2V）；Make-A-Video/Video LDM；DiT/Sora；AnimateDiff（2D+1D）；MMDiT/SD3；OpenSora/HunyuanVideo 等开源 T2V。作者：清华 + 智谱 AI。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q5 · 解决方案的关键是什么？</summary>
         <div class="answer">四件套：3D causal VAE（8×8×4）→ Expert Transformer（3D-RoPE + Expert AdaLN + 3D full attention）→ 渐进训练 + Frame Pack + Uniform Sampling → 过滤 + dense recaption（CogVLM2-Caption）。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q6 · 实验是如何设计的？</summary>
         <div class="answer">WebVid 消融（FVD/CLIP4Clip/loss 曲线）；VBench 子集 + Dynamic Quality + GPT4o-MT vs 8 开源/闭源基线；人类四维评分 vs Kling；VAE 重建 flicker/PSNR 对比。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q7 · 用什么数据集？代码开源吗？</summary>
         <div class="answer">~35M 过滤单镜头 + 2B 美学图；6 类负样本过滤。代码/权重：<a href="https://github.com/THUDM/CogVideo" target="_blank" rel="noopener">github.com/THUDM/CogVideo</a>（2B/5B T2V + I2V + VAE + CogVLM2-Caption）。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q8 · 实验结果是否支持假设？</summary>
         <div class="answer">较好支持：消融验证 RoPE/Expert/3D attention/Uniform Sampling；5B 七指标五冠；人类评测胜 Kling。保留：部分 aesthetic 维度非第一；依赖外部 caption 模型。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q9 · 主要贡献？</summary>
         <div class="answer">① 3D causal VAE + Expert DiT 架构；② Frame Pack + 渐进训练 + Uniform Sampling；③ dense video caption 流水线；④ 开源商用级 2B/5B；⑤ ICLR 2025。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q10 · 下一步？</summary>
         <div class="answer">更大模型/更长视频 scaling law；更高 VAE 压缩比；端到端 caption 去 GPT-4 依赖；音视频联合（CogVideoX 后续线）；降低 768p 10s 推理成本。</div>
       </details>

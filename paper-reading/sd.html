@@ -794,15 +794,15 @@ flowchart LR
     <section class="summary faq" id="faq">
       <h2>🧩 结构化十问（AI 解构）</h2>
       <details open><summary>Q1 · 论文试图解决什么问题？</summary><div class="answer">像素空间扩散模型质量 SOTA 但算力极贵（训练数百 GPU 天、单 A100 生成 5 万样本约 5 天，§1）。目标：在不牺牲质量与灵活性的前提下，大幅降低 DM 的训练与推理成本，使其「民主化」。</div></details>
-      <details><summary>Q2 · 这是否是一个新问题？</summary><div class="answer">「降低生成模型成本」非新问题（VQ-VAE/VQGAN 早有两阶段思路）。新意在于：不做激进 1D 离散压缩，而是在「感知等价的 2D 连续 latent」上跑卷积扩散，并自由选择压缩率（§2）。</div></details>
-      <details><summary>Q3 · 要验证什么科学假设？</summary><div class="answer">假设：图像学习可分为「感知压缩（扔不可感知细节）」与「语义压缩（学构图）」；把前者交给一次性训练的自编码器、后者交给 latent 扩散，能在「复杂度削减 vs 细节保留」间达到近最优平衡（§1, Fig.2）。</div></details>
-      <details><summary>Q4 · 有哪些相关研究？如何归类？值得关注的研究者？</summary><div class="answer">GAN（高效但难优化/覆盖不全）、VAE/flow（高效但质量稍逊）、ARM/VQGAN/DALL-E（激进离散压缩 + AR）、像素 DM（DDPM/ADM/SR3）、联合训练的 LSGM。团队：Rombach、Blattmann、Esser、Ommer（CompVis，慕尼黑），与 Runway ML；其 DDPM(Ho)、ADM(Dhariwal & Nichol)、VQGAN(Esser) 是直接前序。</div></details>
-      <details><summary>Q5 · 解决方案的关键是什么？</summary><div class="answer">三招：① 预训练感知自编码器（KL/VQ 正则）把图压到 latent；② 在 latent 上跑时间条件 U-Net 扩散（式2）；③ 交叉注意力条件机制 $\tau_\theta$（式3）统一文本/语义图/边框/低分图等条件。</div></details>
-      <details><summary>Q6 · 实验是如何设计的？</summary><div class="answer">$f$ 压缩率消融（§4.1，固定单 A100 同算力）；无条件生成（CelebA-HQ/FFHQ/LSUN，FID + P/R）；条件生成（文生图 LAION→COCO、类别条件 ImageNet、布局/超分/补全）；卷积式分辨率泛化。</div></details>
-      <details><summary>Q7 · 用什么数据集评估？代码是否开源？</summary><div class="answer">数据集：ImageNet、CelebA-HQ、FFHQ、LSUN-Churches/-Bedrooms、LAION-400M、MS-COCO、OpenImages。指标：FID/IS/Precision/Recall/PSNR/SSIM。代码与预训练模型开源：<a href="https://github.com/CompVis/latent-diffusion" target="_blank" rel="noopener">github.com/CompVis/latent-diffusion</a>（后续 Stable Diffusion：CompVis/stability-ai）。</div></details>
-      <details><summary>Q8 · 实验结果是否很好支持了假设？</summary><div class="answer">较好支持：$f=4\!\sim\!8$ 最优、CelebA-HQ FID 5.11、ImageNet LDM-4-G FID 3.60、文生图参数 1/4 仍持平。但跨方法协议不一致、无误差棒，故「显著优于」需谨慎；LSUN-Bedrooms 上 GAN 仍 FID 更低。</div></details>
-      <details><summary>Q9 · 这篇论文到底有什么贡献？</summary><div class="answer">① 提出 LDM「先压缩再生成」两阶段范式，把扩散成本降一个量级而不降质；② 交叉注意力通用条件机制，一套架构横扫文生图/超分/补全/布局；③ 开源预训练模型——直接成为 Stable Diffusion 的技术底座，引爆开源生成式 AI 生态。</div></details>
-      <details><summary>Q10 · 下一步可以做什么？</summary><div class="answer">作者展望：复用通用自编码器探索更多下游任务。本文补充（事后验证）：加速采样（DDIM/蒸馏/一致性模型解决「慢」）、改进 VAE 重建（SDXL/SD3 解决「重建瓶颈」）、Rectified Flow/DiT 替换 U-Net、更强文本编码器（CLIP→T5）。</div></details>
+      <details open><summary>Q2 · 这是否是一个新问题？</summary><div class="answer">「降低生成模型成本」非新问题（VQ-VAE/VQGAN 早有两阶段思路）。新意在于：不做激进 1D 离散压缩，而是在「感知等价的 2D 连续 latent」上跑卷积扩散，并自由选择压缩率（§2）。</div></details>
+      <details open><summary>Q3 · 要验证什么科学假设？</summary><div class="answer">假设：图像学习可分为「感知压缩（扔不可感知细节）」与「语义压缩（学构图）」；把前者交给一次性训练的自编码器、后者交给 latent 扩散，能在「复杂度削减 vs 细节保留」间达到近最优平衡（§1, Fig.2）。</div></details>
+      <details open><summary>Q4 · 有哪些相关研究？如何归类？值得关注的研究者？</summary><div class="answer">GAN（高效但难优化/覆盖不全）、VAE/flow（高效但质量稍逊）、ARM/VQGAN/DALL-E（激进离散压缩 + AR）、像素 DM（DDPM/ADM/SR3）、联合训练的 LSGM。团队：Rombach、Blattmann、Esser、Ommer（CompVis，慕尼黑），与 Runway ML；其 DDPM(Ho)、ADM(Dhariwal & Nichol)、VQGAN(Esser) 是直接前序。</div></details>
+      <details open><summary>Q5 · 解决方案的关键是什么？</summary><div class="answer">三招：① 预训练感知自编码器（KL/VQ 正则）把图压到 latent；② 在 latent 上跑时间条件 U-Net 扩散（式2）；③ 交叉注意力条件机制 $\tau_\theta$（式3）统一文本/语义图/边框/低分图等条件。</div></details>
+      <details open><summary>Q6 · 实验是如何设计的？</summary><div class="answer">$f$ 压缩率消融（§4.1，固定单 A100 同算力）；无条件生成（CelebA-HQ/FFHQ/LSUN，FID + P/R）；条件生成（文生图 LAION→COCO、类别条件 ImageNet、布局/超分/补全）；卷积式分辨率泛化。</div></details>
+      <details open><summary>Q7 · 用什么数据集评估？代码是否开源？</summary><div class="answer">数据集：ImageNet、CelebA-HQ、FFHQ、LSUN-Churches/-Bedrooms、LAION-400M、MS-COCO、OpenImages。指标：FID/IS/Precision/Recall/PSNR/SSIM。代码与预训练模型开源：<a href="https://github.com/CompVis/latent-diffusion" target="_blank" rel="noopener">github.com/CompVis/latent-diffusion</a>（后续 Stable Diffusion：CompVis/stability-ai）。</div></details>
+      <details open><summary>Q8 · 实验结果是否很好支持了假设？</summary><div class="answer">较好支持：$f=4\!\sim\!8$ 最优、CelebA-HQ FID 5.11、ImageNet LDM-4-G FID 3.60、文生图参数 1/4 仍持平。但跨方法协议不一致、无误差棒，故「显著优于」需谨慎；LSUN-Bedrooms 上 GAN 仍 FID 更低。</div></details>
+      <details open><summary>Q9 · 这篇论文到底有什么贡献？</summary><div class="answer">① 提出 LDM「先压缩再生成」两阶段范式，把扩散成本降一个量级而不降质；② 交叉注意力通用条件机制，一套架构横扫文生图/超分/补全/布局；③ 开源预训练模型——直接成为 Stable Diffusion 的技术底座，引爆开源生成式 AI 生态。</div></details>
+      <details open><summary>Q10 · 下一步可以做什么？</summary><div class="answer">作者展望：复用通用自编码器探索更多下游任务。本文补充（事后验证）：加速采样（DDIM/蒸馏/一致性模型解决「慢」）、改进 VAE 重建（SDXL/SD3 解决「重建瓶颈」）、Rectified Flow/DiT 替换 U-Net、更强文本编码器（CLIP→T5）。</div></details>
     </section>
 
     <!-- ===================== 深挖 ===================== -->

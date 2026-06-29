@@ -560,15 +560,15 @@ flowchart LR
         <summary>Q1 · 论文试图解决什么问题？</summary>
         <div class="answer">证明扩散概率模型能够生成<strong>高质量</strong>图像样本，并给出一套简洁、训练高效的实现方案。此前扩散模型「易定义、训练高效」，但尚无工作证明其样本质量可与 GAN 等主流模型比肩（§1）。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q2 · 这是否是一个新问题？</summary>
         <div class="answer">框架本身不新——扩散模型由 Sohl-Dickstein et al. (2015) 提出。但「扩散模型能否达到高质量样本」这一具体问题此前未被解决，本文首次给出肯定的实证答案（§1）。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q3 · 要验证什么科学假设？</summary>
         <div class="answer">假设：通过特定参数化（让网络预测噪声 $\epsilon$）配合简化加权目标 $L_\text{simple}$，扩散模型可达到甚至超越当时主流生成模型的样本质量；且该训练在形式上等价于多噪声尺度上的去噪分数匹配、采样等价于退火 Langevin 动力学（§1, §3）。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q4 · 有哪些相关研究？如何归类？值得关注的研究者？</summary>
         <div class="answer">
           <ul>
@@ -579,27 +579,27 @@ flowchart LR
           值得关注：本文作者 Jonathan Ho、Ajay Jain、Pieter Abbeel（UC Berkeley）；分数生成方向的 Yang Song、Stefano Ermon。
         </div>
       </details>
-      <details>
+      <details open>
         <summary>Q5 · 解决方案的关键是什么？</summary>
         <div class="answer">$\epsilon$-参数化：网络预测「加进去的噪声」而非后验均值 $\tilde\mu$，使反向均值可写成 $\mu_\theta=\frac{1}{\sqrt{\alpha_t}}(x_t-\frac{\beta_t}{\sqrt{1-\bar\alpha_t}}\epsilon_\theta)$（式11）；再配简化目标 $L_\text{simple}=\mathbb{E}\lVert\epsilon-\epsilon_\theta\rVert^2$（式14），损失退化为干净的 MSE（§3.2）。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q6 · 实验是如何设计的？</summary>
         <div class="answer">所有实验 $T=1000$、$\beta$ 从 $10^{-4}$ 线性增至 $0.02$、U-Net 主干。用 IS/FID 评样本质量、bits/dim 评 NLL；并做「参数化 × 训练目标」正交消融（Table 2），以及 rate-distortion / 渐进解码分析（§4）。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q7 · 用什么数据集评估？代码开源吗？</summary>
         <div class="answer">CIFAR10（无条件，32²）、CelebA-HQ 256²、LSUN Bedroom/Cat/Church 256²。代码已开源：<a href="https://github.com/hojonathanho/diffusion" target="_blank" rel="noopener">github.com/hojonathanho/diffusion</a>（摘要给出）。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q8 · 实验结果是否很好支持了假设？</summary>
         <div class="answer">基本支持。CIFAR10 FID 3.17（SOTA 级）、IS 9.46±0.11 印证样本质量；消融 Table 2 证明「$\epsilon$-预测 + $L_\text{simple}$」是性能跃升关键。<strong>但有保留</strong>：NLL 不占优、跨数据集结论多靠定性样本、FID 相对训练集计算，「超越」有边界（§4）。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q9 · 这篇论文到底有什么贡献？</summary>
         <div class="answer">① 首次实证扩散模型可高质量生成图像；② 建立「扩散模型 ↔ 去噪分数匹配 / 退火 Langevin」的显式等价（作者视为主要贡献之一）；③ 用 rate-distortion / 渐进有损解码重新解释采样过程（§1, §5）。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q10 · 下一步可以做什么？</summary>
         <div class="answer">作者展望：其他数据模态、作为更大生成系统的组件（§5）。本文补充延伸：加速采样（$T=1000$ 太慢，后续 DDIM 解决）、提升似然、条件生成、理论上探究高斯假设与 $\beta$ 调度的最优性。<span style="color:var(--muted)">（标注：作者展望 + 本文批判性补充）</span></div>
       </details>

@@ -639,15 +639,15 @@ flowchart TB
         <summary>Q1 · 论文试图解决什么问题？</summary>
         <div class="answer">大型文生图扩散模型（Stable Diffusion）只能从文本粗粒度控制内容，<strong>无法精确指定</strong>边缘、深度、姿态、分割等区域结构。目标：在不损害预训练模型质量的前提下，添加<strong>可训练、可组合</strong>的空间条件控制（§1）。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q2 · 这是否是一个新问题？</summary>
         <div class="answer">条件扩散与图像引导生成（PITI、Sketch-Guided 等）已有，但「锁大模型 + 全 encoder 副本 + zero conv 无损启动 + 小数据训多种条件」的组合是 ControlNet 的独特贡献；与 LoRA/Adapter 的轻量微调路线 orthogonal。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q3 · 要验证什么科学假设？</summary>
         <div class="answer">假设：① zero conv 保证初始行为等于原模型；② 仅训 ControlNet 副本不会灾难性遗忘文本能力；③ 同一 locked-copy 架构可泛化到 Canny/depth/pose/seg 等；④ 小数据集（~50k）足够学会条件对齐。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q4 · 有哪些相关研究？如何归类？</summary>
         <div class="answer">
           <ul>
@@ -659,27 +659,27 @@ flowchart TB
           作者：Lvmin Zhang, Anyi Rao, Maneesh Agrawala（Stanford）。
         </div>
       </details>
-      <details>
+      <details open>
         <summary>Q5 · 解决方案的关键是什么？</summary>
         <div class="answer">三件套：① <strong>Lock</strong> $\Theta$，$y=\mathcal{F}(x;\Theta)$ 不变；② <strong>Trainable copy</strong> $\Theta_c$ 镜像 SD encoder + middle；③ <strong>Zero conv</strong> $Z$ 连接两路，初始 $y_c=y$。条件 $c$ 经小 encoder 注入副本，残差 skip 到 SD decoder。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q6 · 实验是如何设计的？</summary>
         <div class="answer">每种条件单独训 ControlNet（SD v1.5 locked）；定性网格 + 与 PITI/Sketch/Taming 对比（Fig.5）；空 prompt 实验（Fig.6）；消融 zero conv / locked weights；用户研究评可控性与美学；报告 sudden convergence 训练曲线（Fig.4）。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q7 · 用什么数据集评估？代码开源吗？</summary>
         <div class="answer">Canny fill50k、depth ~3M LAION pairs、pose ~200k、seg ~164k 等；条件由 OpenCV Canny、MiDaS、OpenPose、Uniformer 等预处理器生成。代码与预训练权重开源：<a href="https://github.com/lllyasviel/ControlNet" target="_blank" rel="noopener">github.com/lllyasviel/ControlNet</a>。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q8 · 实验结果是否很好支持了假设？</summary>
         <div class="answer">较好支持：多条件定性对齐强；vs 基线 Fig.5 更优；消融验证 zero conv 与 lock 必要；sudden convergence 与 zero init 理论一致。保留：部分条件依赖 3M 级数据；定量指标不如定性丰富；多 CN 组合为启发式求和。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q9 · 这篇论文到底有什么贡献？</summary>
         <div class="answer">① ControlNet 架构（locked copy + zero conv）；② 证明小数据可训且不损 SD；③ 9+ 条件类型统一配方；④ sudden convergence 现象分析；⑤ 开源生态事实标准（ComfyUI/A1111）；⑥ ICCV 2023。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q10 · 下一步可以做什么？</summary>
         <div class="answer">自然延伸：与 SDXL/SD3/DiT 等新骨干结合；学习最优多条件融合；端到端训条件编码器；视频 ControlNet；理论分析 sudden convergence；控制强度自适应调度；版权/检测/水印缓解 deepfake 滥用。</div>
       </details>

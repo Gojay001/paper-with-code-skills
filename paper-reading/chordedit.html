@@ -509,15 +509,15 @@ flowchart TB
         <summary>Q1 · 论文试图解决什么问题？</summary>
         <div class="answer">一步 T2I 模型（SD-Turbo 等）合成极快，但现有免训练编辑器（drift 差分）压到单步推理时严重失败：物体扭曲、背景碎裂。目标：在<strong>不训练、不 inversion</strong> 的前提下实现高保真<strong>一步</strong>文本引导编辑（§1）。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q2 · 这是否是一个新问题？</summary>
         <div class="answer">一步 T2I 与 diffusion editing（InfEdit、FlowEdit）皆非新，但「一步 T2I + training-free + inversion-free + 单步编辑稳定」是未解决组合。SwiftEdit 用训练换速度；本文走 orthogonal 路线——平滑控制场而非专用 inverter。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q3 · 要验证什么科学假设？</summary>
         <div class="answer">假设：① naive 编辑场高能量是单步失败根因；② 对 $\mathbf{R}$ 做时间加权平滑（Eq.4.5）可 $L^2$ 降能量并收紧 Euler 单步误差；③ 由此可在 NFE=1–2 达到 competitive PSNR 与 CLIP，且 model-agnostic、$n=1$ 噪声即可。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q4 · 有哪些相关研究？如何归类？</summary>
         <div class="answer">
           <ul>
@@ -529,27 +529,27 @@ flowchart TB
           作者：Liangsi Lu, Xuhang Chen, Minzhe Guo, Shichu Li, Jingchao Wang, Yang Shi（GDUT / PKU 等）。
         </div>
       </details>
-      <details>
+      <details open>
         <summary>Q5 · 解决方案的关键是什么？</summary>
         <div class="answer">三件套：① 把编辑重述为 dynamic OT 传输；② Chord Control Field $\hat u_t=\frac{t\mathbf{R}_{t-\delta}+\delta\mathbf{R}_t}{t+\delta}$ 替代 naive $\mathbf{R}$；③ 可选 prox 分离结构传输与语义增强。Algorithm 1 在 VAE latent 1–2 NFE 完成。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q6 · 实验是如何设计的？</summary>
         <div class="answer">PIE-bench 700 样本；PSNR/MSE（非编辑区）、CLIP-Whole/Edited；对比 multi-/few-/one-step 代表方法；消融 δ（CCF vs naive）、噪声样本数 $n$、transport vs prox（Table 2）、三 T2I backbone（Table 3）；能量 $E$ 与 PSNR 随步数 $S$ 曲线（Fig.9）。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q7 · 用什么数据集评估？代码开源吗？</summary>
         <div class="answer">PIE-bench（512×512，10 类 instruction editing，带 edit mask）。代码在 supplementary material；项目页 <a href="https://chordedit.github.io" target="_blank" rel="noopener">chordedit.github.io</a>。单卡 Titan 24GB。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q8 · 实验结果是否很好支持了假设？</summary>
         <div class="answer">较好支持：δ=0 时能量升、PSNR 崩；δ=0.15 稳定且 Pareto 支配 naive；ChordEdit SD-Turbo 0.38s / CLIP-Edited 22.96；w/o prox PSNR 23.89@NFE=1 直接验证 CCF。保留：multi-step FlowEdit CLIP-Edited 23.69 仍略高；LPIPS 并非全程最优。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q9 · 这篇论文到底有什么贡献？</summary>
         <div class="answer">① 诊断一步编辑失败为「高能量 naive 场 + 单步 Euler 误差」；② Chord Control Field 理论（Eq.4.3–4.5）与 $L^2$ / $\mathcal{C}$ 收缩证明；③ 首个 training-free + inversion-free 一步编辑在 PIE-bench 达到实时（0.38s）与 competitive 质量；④ CVPR 2026 Oral。</div>
       </details>
-      <details>
+      <details open>
         <summary>Q10 · 下一步可以做什么？</summary>
         <div class="answer">作者未详述远期路线。自然延伸：更高分辨率、视频编辑、与 consistency model 结合、学习最优 δ(t) 调度、严格 mini-batch OT 配对、开源权重与 Gradio demo。社会影响与误用风险见 Appendix。</div>
       </details>

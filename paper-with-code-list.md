@@ -81,6 +81,7 @@ There are paper with code for CV / AIGC / LLM / VLM.
 | DALL-E 2 | [Hierarchical Text-Conditional Image Generation with CLIP Latents](https://arxiv.org/abs/2204.06125) | arXiv(2022) | [code] |
 | [FM](https://gojay.top/paper-reading/fm.html) | [Flow Matching for Generative Modeling](https://arxiv.org/abs/2210.02747) | arXiv(2022) / ICLR(2023) | [PyTorch](https://github.com/facebookresearch/flow_matching) |
 | [DiT](https://www.wpeebles.com/DiT) | [Scalable Diffusion Models with Transformers](https://arxiv.org/abs/2212.09748) | arXiv(2022) / ICCV(2023) | [PyTorch](https://github.com/facebookresearch/DiT) |
+| [ControlNet](https://gojay.top/paper-reading/controlnet.html) | [Adding Conditional Control to Text-to-Image Diffusion Models](https://arxiv.org/abs/2302.05543) | arXiv(2023) / ICCV(2023) | [PyTorch](https://github.com/lllyasviel/ControlNet) |
 | SDXL | [SDXL: Improving Latent Diffusion Models for High-Resolution Image Synthesis](https://arxiv.org/abs/2307.01952) | arXiv(2023) / ICLR(2024) | [PyTorch](https://github.com/Stability-AI/generative-models) |
 | DALL-E 3 | [Improving Image Generation with Better Captions](https://cdn.openai.com/papers/dall-e-3.pdf) | OpenAI(2023) | [code] |
 | [SD 3](https://gojay.top/paper-reading/sd3.html) | [Scaling Rectified Flow Transformers for High-Resolution Image Synthesis](https://arxiv.org/abs/2403.03206) | arXiv(2024) / ICML(2024) | [PyTorch](https://github.com/Stability-AI/generative-models) |

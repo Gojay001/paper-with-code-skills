@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ControlNet — Adding Conditional Control to Text-to-Image Diffusion Models · 逻辑精读</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+  <style>
+    :root { --navy:#1a2744; --paper:#faf8f5; --thesis:#fff3cd; --concept:#f8d7da; --evidence:#cfe2ff; --counter:#d1e7dd; --method:#e2d9f3; --text:#2c2c2c; --muted:#6c757d; --border:#e8e4df; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'IBM Plex Sans',sans-serif; background:var(--paper); color:var(--text); line-height:1.6; }
+    .sticky-head { position:sticky; top:0; z-index:100; }
+    .top-nav { background:var(--navy); color:#fff; padding:1rem 2rem; }
+    .top-nav h1 { font-size:1.25rem; font-weight:600; }
+    .top-nav h1 a { color:#fff; text-decoration:none; border-bottom:1px dotted rgba(255,255,255,0.5); }
+    .top-nav h1 a:hover { border-bottom-style:solid; }
+    .top-nav .meta { font-size:0.85rem; opacity:0.85; margin-top:0.25rem; }
+    .legend { display:flex; flex-wrap:wrap; gap:0.75rem; margin-top:0.75rem; font-size:0.8rem; }
+    .legend span { padding:0.15rem 0.5rem; border-radius:3px; color:#2c2c2c; }
+    .chapter-nav { background:#fff; border-bottom:1px solid var(--border); padding:0.75rem 2rem; overflow-x:auto; white-space:nowrap; box-shadow:0 2px 6px rgba(0,0,0,0.08); }
+    .chapter-nav a { color:var(--navy); text-decoration:none; margin-right:1.25rem; font-size:0.9rem; font-weight:500; }
+    .chapter-nav a:hover { text-decoration:underline; }
+    main { max-width:1680px; margin:0 auto; padding:2rem; }
+    .section-title { font-size:1.5rem; color:var(--navy); margin:2rem 0 1rem; padding-bottom:0.5rem; border-bottom:2px solid var(--navy); }
+    .col-labels { display:grid; grid-template-columns:1.1fr 1fr 1fr; gap:1.5rem; margin-bottom:0.5rem; font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); }
+    .row { display:grid; grid-template-columns:1.1fr 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem; align-items:start; }
+    .col-original { font-family:'Lora',serif; font-size:0.95rem; line-height:1.75; }
+    .col-original p { margin-bottom:0.75rem; }
+    .col-translation { font-size:0.92rem; line-height:1.75; color:#333; }
+    .col-translation p { margin-bottom:0.75rem; }
+    .analysis-card { background:#fff; border-left:4px solid var(--navy); padding:1rem 1.25rem; border-radius:0 6px 6px 0; box-shadow:0 1px 3px rgba(0,0,0,0.06); font-size:0.9rem; }
+    .analysis-card .tag { display:inline-block; font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.03em; margin-bottom:0.5rem; color:var(--navy); }
+    .analysis-card h4 { font-size:0.85rem; color:var(--muted); margin:0.75rem 0 0.25rem; }
+    .analysis-card p { margin-bottom:0.5rem; }
+    .analysis-card.deep { border-left-width:5px; }
+    .analysis-detail { margin:0.75rem 0; padding-top:0.5rem; border-top:1px dashed var(--border); }
+    .analysis-detail:first-of-type { border-top:none; }
+    .exp-detail { list-style:none; margin:0.5rem 0; }
+    .exp-detail li { margin-bottom:0.4rem; }
+    .exp-detail li strong { color:var(--navy); }
+    .exp-table { width:100%; border-collapse:collapse; margin:0.75rem 0; font-size:0.82rem; }
+    .exp-table th, .exp-table td { border:1px solid var(--border); padding:0.35rem 0.5rem; text-align:left; }
+    .exp-table th { background:var(--paper); color:var(--navy); font-weight:600; }
+    .exp-table tr.is-ours { background:var(--evidence); }
+    .exp-table tr.is-ours td { font-weight:600; }
+    .notation { width:100%; border-collapse:collapse; margin:0.75rem 0; font-size:0.88rem; background:#fff; }
+    .notation th, .notation td { border:1px solid var(--border); padding:0.4rem 0.6rem; text-align:left; }
+    .notation th { background:var(--paper); color:var(--navy); font-weight:600; }
+    .notation td:first-child { width:22%; white-space:nowrap; }
+    .diagram { margin:0.75rem 0; }
+    .diagram img, .diagram svg { max-width:100%; height:auto; display:block; border:1px solid var(--border); border-radius:4px; background:#fff; }
+    .diagram figcaption { font-size:0.78rem; color:var(--muted); margin-top:0.35rem; }
+    .figure-row { margin:1.5rem 0; padding:1.25rem; background:#fff; border:1px solid var(--border); border-radius:8px; }
+    .figure-row figure { margin:0; text-align:center; }
+    .figure-row img, .figure-row svg { max-width:100%; height:auto; display:inline-block; }
+    .figure-row figcaption { font-size:0.82rem; color:var(--muted); margin-top:0.5rem; }
+    .figure-row h3 { color:var(--navy); font-size:1rem; margin-bottom:0.75rem; }
+    .mermaid { background:#fff; border:1px solid var(--border); border-radius:4px; padding:0.5rem; margin:0.5rem 0; text-align:center; }
+    .diagram img, .diagram svg, .figure-row img, .figure-row svg { cursor:zoom-in; transition:box-shadow .15s; }
+    .diagram img:hover, .diagram svg:hover, .figure-row img:hover, .figure-row svg:hover { box-shadow:0 0 0 2px #0d9488; }
+    #lightbox { position:fixed; inset:0; background:rgba(10,12,20,0.92); display:none; align-items:center; justify-content:center; z-index:1000; cursor:zoom-out; padding:3vh 3vw; }
+    #lightbox.open { display:flex; }
+    #lightbox .lb-content { display:flex; align-items:center; justify-content:center; }
+    #lightbox .lb-content img, #lightbox .lb-content svg { display:block; background:#fff; border-radius:6px; box-shadow:0 8px 40px rgba(0,0,0,0.5); }
+    #lightbox .lb-close { position:fixed; top:1rem; right:1.5rem; color:#fff; font-size:2rem; line-height:1; opacity:0.8; }
+    #lightbox .lb-cap { position:fixed; bottom:1.2rem; left:0; right:0; text-align:center; color:#e8e4df; font-size:0.8rem; padding:0 2rem; }
+    .hl-thesis { background:var(--thesis); padding:0 2px; }
+    .hl-concept { background:var(--concept); padding:0 2px; }
+    .hl-evidence { background:var(--evidence); padding:0 2px; }
+    .hl-counter { background:var(--counter); padding:0 2px; }
+    .hl-method { background:var(--method); padding:0 2px; }
+    .summary { background:#fff; border:1px solid var(--border); border-radius:8px; padding:2rem; margin-top:3rem; }
+    .summary h2 { color:var(--navy); margin-bottom:1rem; }
+    .summary .skeleton { font-family:'IBM Plex Sans',monospace; background:var(--paper); padding:1rem; border-radius:4px; margin:1rem 0; line-height:1.9; }
+    .summary .strength, .summary .weakness { padding:0.75rem 1rem; border-radius:4px; margin:0.5rem 0; }
+    .summary .strength { background:var(--counter); }
+    .summary .weakness { background:var(--concept); }
+    .feynman { background:#fff; border:1px solid var(--border); border-left:5px solid #0d9488; border-radius:0 8px 8px 0; padding:1.25rem 1.5rem; margin:1.5rem 0 2rem; }
+    .feynman h2 { color:#0d9488; font-size:1.15rem; margin-bottom:0.35rem; }
+    .feynman .tldr-meta { font-size:0.78rem; color:var(--muted); margin-bottom:0.6rem; }
+    .feynman p { font-size:0.95rem; line-height:1.85; margin-bottom:0.6rem; }
+    .faq details { background:#fff; border:1px solid var(--border); border-radius:6px; margin:0.5rem 0; }
+    .faq details[open] { box-shadow:0 1px 4px rgba(0,0,0,0.06); }
+    .faq summary { cursor:pointer; font-weight:600; color:var(--navy); padding:0.7rem 0.9rem; list-style:none; font-size:0.92rem; }
+    .faq summary::-webkit-details-marker { display:none; }
+    .faq summary::before { content:'▸'; color:#0d9488; margin-right:0.5rem; }
+    .faq details[open] summary::before { content:'▾'; }
+    .faq .answer { padding:0 0.9rem 0.85rem 1.8rem; font-size:0.9rem; line-height:1.8; color:#333; }
+    .deepdive .block { margin:0.9rem 0; padding:0.85rem 1.1rem; border-radius:4px; background:var(--paper); border-left:3px solid #6f42c1; }
+    .deepdive .block.crit { border-left-color:#dc3545; background:#fdf0f1; }
+    .deepdive .block h4 { color:var(--navy); margin-bottom:0.3rem; }
+    .deepdive .block ul { margin:0.3rem 0 0 1.1rem; }
+    .deepdive .block li { margin-bottom:0.3rem; font-size:0.9rem; }
+    .code-section { background:#fff; border:1px solid var(--border); border-radius:8px; padding:1.5rem 1.75rem; margin:2rem 0; }
+    .code-section h3 { color:var(--navy); font-size:1.05rem; margin:1.5rem 0 0.75rem; }
+    .code-section h3:first-of-type { margin-top:0; }
+    .code-section p, .code-section li { font-size:0.9rem; line-height:1.75; margin-bottom:0.5rem; }
+    .code-section ul { margin:0.5rem 0 0.75rem 1.25rem; }
+    .code-block { font-family:'IBM Plex Mono','IBM Plex Sans',monospace; font-size:0.78rem; line-height:1.65; background:#1e293b; color:#e2e8f0; padding:1rem 1.15rem; border-radius:6px; overflow-x:auto; margin:0.75rem 0; white-space:pre; tab-size:2; }
+    .code-block .cm { color:#94a3b8; font-style:italic; }
+    .code-block .kw { color:#7dd3fc; }
+    .code-block .fn { color:#fde68a; }
+    .code-block .str { color:#86efac; }
+    .code-note { font-size:0.82rem; color:var(--muted); margin:0.35rem 0 1rem; padding-left:0.75rem; border-left:3px solid #0d9488; }
+    .code-map { width:100%; border-collapse:collapse; margin:0.75rem 0; font-size:0.82rem; }
+    .code-map th, .code-map td { border:1px solid var(--border); padding:0.4rem 0.55rem; text-align:left; vertical-align:top; }
+    .code-map th { background:var(--paper); color:var(--navy); font-weight:600; }
+    .code-map code { font-size:0.78rem; background:var(--paper); padding:0.1rem 0.3rem; border-radius:3px; }
+    @media (max-width:1100px) {
+      .col-labels { display:none; }
+      .row { grid-template-columns:1fr; }
+      .row > div::before { display:block; font-size:0.7rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); margin-bottom:0.35rem; }
+      .col-original::before { content:'原文'; }
+      .col-translation::before { content:'翻译'; }
+      .col-analysis::before { content:'解析'; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sticky-head">
+    <header class="top-nav">
+      <h1><a href="https://arxiv.org/abs/2302.05543" target="_blank" rel="noopener">ControlNet — Adding Conditional Control to Text-to-Image Diffusion Models</a></h1>
+      <div class="meta">DeepLearning-Paper-with-Code · Diffusion Model · arXiv(2023) / ICCV(2023) · Zhang et al. (Stanford)</div>
+      <div class="legend">
+        <span class="hl-thesis">核心论点</span>
+        <span class="hl-concept">关键概念</span>
+        <span class="hl-evidence">实证证据</span>
+        <span class="hl-counter">让步/反驳</span>
+        <span class="hl-method">方法论</span>
+      </div>
+    </header>
+    <nav class="chapter-nav">
+      <a href="#feynman">速读</a>
+      <a href="#abstract">Abstract</a>
+      <a href="#intro">Introduction</a>
+      <a href="#related">Related Work</a>
+      <a href="#method">Method</a>
+      <a href="#code">代码</a>
+      <a href="#experiments">Experiments</a>
+      <a href="#conclusion">Conclusion</a>
+      <a href="#notation">符号表</a>
+      <a href="#overview">总览</a>
+      <a href="#faq">十问</a>
+      <a href="#deepdive">深挖</a>
+    </nav>
+  </div>
+  <main>
+    <section class="feynman" id="feynman">
+      <h2>🎮 费曼一分钟（通俗速读）</h2>
+      <div class="tldr-meta">通俗速读 · 先建立模糊认知，再读正文</div>
+      <p>大扩散模型（如 <strong>Stable Diffusion</strong>）只会听文字，难精确控构图、姿态、边缘。ControlNet = <strong>锁住原 U-Net 权重</strong> + <strong>复制可训练支路</strong>，用 <strong>zero-init 1×1 卷积</strong>渐进注入条件，不破坏预训练能力。可训 Canny / depth / pose / seg 等；小数据集也稳；「<strong>sudden convergence</strong>」现象——几百步后 loss 突然下降、条件控制突然学会。</p>
+    </section>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 1：ControlNet 条件控制 Teaser（Canny / Pose 等）</h3>
+      <figure>
+        <img src="assets/controlnet/fig1.jpg" alt="ControlNet Fig.1 Canny pose depth 条件控制示例">
+        <figcaption>Fig.1：同一 SD 骨干下，ControlNet 接受 Canny 边缘、人体姿态、深度图等空间条件，生成与结构对齐的高质量图像。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="abstract">Abstract</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>We present <span class="hl-thesis">ControlNet</span>, a neural network architecture to add <span class="hl-concept">spatially localized control signals</span> to large, pretrained text-to-image diffusion models without damaging their original capabilities. ControlNet <span class="hl-method">duplicates the weights</span> of the U-Net encoder into a trainable copy and connects them via <span class="hl-method">zero-initialized 1×1 convolutions</span> ("zero convolutions").</p>
+        <p>Because the original weights are locked and the trainable copy uses zero initialization, the model can be trained on <span class="hl-evidence">small datasets</span> without harming the large diffusion model. ControlNet enables fine-grained control over structure, pose, edges, and more, while preserving the quality and diversity of the base model.</p>
+      </div>
+      <div class="col-translation">
+        <p>我们提出 ControlNet——一种神经网络架构，向大型预训练文生图扩散模型添加<strong>空间局部化控制信号</strong>，且不损害原有能力。ControlNet 将 U-Net 编码器权重复制为可训练副本，并通过 <strong>零初始化 1×1 卷积</strong>（zero convolution）连接。</p>
+        <p>原权重锁定、可训练副本零初始化，使模型可在<strong>小数据集</strong>上训练而不伤害大扩散模型。ControlNet 实现对结构、姿态、边缘等的细粒度控制，同时保留基座模型的质量与多样性。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#ffc107;">
+          <span class="tag">概括主张</span>
+          <h4>段落功能</h4>
+          <p>宣告「锁权重 + 可训练副本 + zero conv」三件套，承诺小数据可控微调且不损 SD 能力。</p>
+          <h4>逻辑角色</h4>
+          <p>论证链起点：问题（文本难精确控空间）→ 解法（ControlNet 旁路注入）→ 承诺（多条件、小数据、保质量）。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="intro">1. Introduction</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>Large text-to-image diffusion models like <span class="hl-concept">Stable Diffusion</span> can generate high-quality images from text prompts, but <span class="hl-counter">lack precise spatial control</span> — users cannot easily specify where objects appear, their pose, or edge structure.</p>
+        <p>Fine-tuning the entire model for each new control type is expensive and risks <span class="hl-counter">catastrophic forgetting</span>. Adapter-based methods add limited capacity. Image-guided approaches (e.g., concatenating edge maps to input) often require retraining or degrade base model quality.</p>
+      </div>
+      <div class="col-translation">
+        <p>Stable Diffusion 等大型文生图扩散模型可从文本生成高质量图像，但<strong>缺乏精确空间控制</strong>——用户难以指定物体位置、姿态或边缘结构。</p>
+        <p>为每种新控制类型微调整模昂贵且易<strong>灾难性遗忘</strong>。Adapter 方法容量有限。图像引导方案（如拼接边缘图到输入）常需重训或损害基座质量。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#1a2744;">
+          <span class="tag">引出问题</span>
+          <h4>段落功能</h4>
+          <p>建立「SD 文本强 vs 空间控弱」反差；列举微调整模、adapter、输入拼接三类路线的局限。</p>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-original">
+        <p>We propose <span class="hl-thesis">ControlNet</span>: lock the pretrained U-Net, create a trainable duplicate of encoder + middle blocks, inject spatial conditions through <span class="hl-method">zero convolutions</span>. At training start, zero conv outputs are zero — ControlNet adds nothing, preserving pretrained behavior. Gradually it learns to inject condition without disrupting $\Theta$.</p>
+      </div>
+      <div class="col-translation">
+        <p>我们提出 ControlNet：锁定预训练 U-Net，复制编码器 + middle block 为可训练副本，经 <strong>zero conv</strong> 注入空间条件。训练初始 zero conv 输出为零——ControlNet 不改动原模型；随后渐进学会条件注入而不破坏 $\Theta$。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#ffc107;">
+          <span class="tag">提出论点</span>
+          <h4>论证技巧</h4>
+          <p>核心 insight：不是改原网络，而是<strong>旁路增量</strong>；zero init 保证 $t=0$ 时 $y_c = F(x;\Theta)$ 恒成立——数学上「无损启动」。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="related">2. Related Work</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Image-guided diffusion:</strong> <span class="hl-counter">PITI</span> (pretrain + finetune on paired data), <span class="hl-counter">Sketch-Guided Diffusion</span>, <span class="hl-counter">Taming Transformers</span> — often require large paired datasets or full model finetuning.</p>
+        <p><strong>Adapter / LoRA:</strong> add small trainable layers but may lack capacity for complex spatial conditions. <strong>GLIGEN</strong> boxes objects via gated attention. ControlNet differs by <span class="hl-method">full encoder duplicate + zero conv skip connections</span> to every decoder level.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>图像引导扩散：</strong>PITI、Sketch-Guided Diffusion、Taming Transformers 等常需大规模配对数据或全模微调。</p>
+        <p><strong>Adapter / LoRA：</strong>加小层但容量可能不足。<strong>GLIGEN</strong> 用门控注意力框物体。ControlNet 不同：完整编码器副本 + zero conv 跳连到各 decoder 层。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#6f42c1;">
+          <span class="tag">定位差异</span>
+          <h4>逻辑角色</h4>
+          <p>为 Fig.5 对比埋伏笔——ControlNet 在相同 SD 骨干上优于 PITI / Sketch-Guided / Taming 的空间对齐与保真。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="method">3. Method — ControlNet Block &amp; SD Integration</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>Consider a neural network block with input feature map $x$ and output $y$:</p>
+        <p>$$y = \mathcal{F}(x;\,\Theta) \quad\text{(locked)}$$</p>
+        <p>To add spatial condition $c$, we introduce trainable $\Theta_c$ and zero convolutions $Z(\cdot;\,\Theta_{z})$:</p>
+        <p>$$y_c = \mathcal{F}\!\big(x + Z(c;\,\Theta_{z1});\,\Theta_c\big) + Z\!\Big(\mathcal{F}\!\big(x + Z(c;\,\Theta_{z1});\,\Theta_c\big);\,\Theta_{z2}\Big)$$</p>
+        <p>$\Theta$ is <span class="hl-method">locked</span> (no gradient). $Z$ is 1×1 conv with weights and biases initialized to <strong>zero</strong> — at step 0, $y_c = \mathcal{F}(x;\,\Theta)$ exactly.</p>
+      </div>
+      <div class="col-translation">
+        <p>设神经网络块输入特征 $x$、输出 $y$：</p>
+        <p>$$y = \mathcal{F}(x;\,\Theta) \quad\text{（锁定）}$$</p>
+        <p>为加入空间条件 $c$，引入可训练 $\Theta_c$ 与 zero conv $Z$：</p>
+        <p>$$y_c = \mathcal{F}\!\big(x + Z(c;\,\Theta_{z1});\,\Theta_c\big) + Z\!\Big(\mathcal{F}\!\big(x + Z(c;\,\Theta_{z1});\,\Theta_c\big);\,\Theta_{z2}\Big)$$</p>
+        <p>$\Theta$ 锁定；$Z$ 为权重/偏置<strong>全零初始化</strong>的 1×1 卷积——初始 $y_c = \mathcal{F}(x;\,\Theta)$ 恒成立。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color:#6f42c1;">
+          <span class="tag">ControlNet Block</span>
+          <div class="analysis-detail">
+            <h4>Locked + Trainable Copy（自绘）</h4>
+            <div class="diagram">
+              <pre class="mermaid">
+flowchart TB
+  C["条件 c<br/>Canny/pose/depth"] --> Z1["Z(·; Θ_z1)<br/>zero conv"]
+  X["特征 x"] --> LOCK["F(x; Θ)<br/>🔒 locked"]
+  X --> Z1
+  Z1 --> CN["F(·; Θ_c)<br/>trainable copy"]
+  CN --> Z2["Z(·; Θ_z2)<br/>zero conv"]
+  LOCK --> ADD["+"]
+  Z2 --> ADD
+  ADD --> YC["y_c → decoder skip"]
+              </pre>
+              <figcaption>ControlNet 块：条件经 zero conv 注入可训练副本，输出再经 zero conv 加回 locked 支路。点击放大。</figcaption>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 3：Locked Block + Trainable Copy + Zero Conv</h3>
+      <figure>
+        <img src="assets/controlnet/fig3.png" alt="ControlNet locked block trainable copy zero convolution">
+        <figcaption>Fig.3：单个 ControlNet 块——左侧 locked $\mathcal{F}(x;\Theta)$，右侧 trainable copy $\mathcal{F}(\cdot;\Theta_c)$，条件 $c$ 经 zero conv 注入，输出经第二个 zero conv 加回主路径。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Stable Diffusion integration:</strong> Lock entire SD U-Net $\epsilon_\theta$. Duplicate <span class="hl-method">encoder blocks + middle block</span> as ControlNet. Condition image $c$ (e.g., Canny edges) encoded by small conv stack, fed into ControlNet encoder mirroring SD encoder.</p>
+        <p>ControlNet outputs (one per encoder level + middle) connect to SD decoder skip connections via zero convs. SD decoder blocks receive: locked features + ControlNet residuals. Text conditioning via cross-attention unchanged.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>SD 集成：</strong>锁定 SD U-Net $\epsilon_\theta$。将<strong>编码器块 + middle block</strong>复制为 ControlNet。条件图 $c$（如 Canny）经小卷积栈编码，送入镜像 SD 编码器的 ControlNet。</p>
+        <p>ControlNet 各层输出（每 encoder level + middle）经 zero conv 连到 SD decoder skip。Decoder 接收 locked 特征 + ControlNet 残差；文本 cross-attention 不变。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#0d6efd;">
+          <span class="tag">SD 挂载点</span>
+          <h4>设计取舍</h4>
+          <p>只复制 encoder + middle（非 decoder）——条件信息在<strong>压缩语义层</strong>注入，经 skip 影响各分辨率 decoder；比全 U-Net 复制参数少一半仍足够强。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 2：U-Net + ControlNet 整体架构（MAIN）</h3>
+      <figure>
+        <img src="assets/controlnet/fig2.png" alt="ControlNet Stable Diffusion U-Net architecture">
+        <figcaption>Fig.2（主方法图）：Stable Diffusion U-Net（灰/锁定）+ ControlNet 可训练副本（蓝），条件图经 encoder 镜像路径，zero conv skip 注入各 decoder 层；文本仍走 cross-attention。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Training:</strong> Standard diffusion objective — predict noise $\epsilon$ on latent $z_t$. Only ControlNet (+ condition encoder) trainable; SD locked. Can train on <span class="hl-evidence">small datasets</span> (e.g., fill50k ~50k Canny pairs). Observed <span class="hl-concept">sudden convergence</span>: loss flat for many steps, then drops sharply ~300–3000 steps as condition control "clicks in".</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>训练：</strong>标准扩散目标——在 latent $z_t$ 上预测噪声 $\epsilon$。仅训 ControlNet（+ 条件编码器），SD 锁定。可在<strong>小数据集</strong>（如 fill50k 约 5 万 Canny 对）上训练。观察到<strong>突然收敛</strong>：loss 长期平坦后于约 300–3000 步陡降，条件控制「突然学会」。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#0d6efd;">
+          <span class="tag">训练动力学</span>
+          <h4>逻辑角色</h4>
+          <p>zero conv 使早期梯度主要更新 $\Theta_c$ 内部；待 $Z$ 权重偏离零后条件信号才有效注入——解释 sudden convergence 非 bug 而是设计必然。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 4：Sudden Convergence 现象</h3>
+      <figure>
+        <img src="assets/controlnet/fig4.jpg" alt="ControlNet sudden convergence training loss">
+        <figcaption>Fig.4：训练 loss 与生成质量随步数变化——前段几乎无结构对齐，某临界步后 Canny/姿态控制突然生效（sudden convergence）。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Inference — CFG &amp; Control Weight:</strong> Text uses classifier-free guidance (CFG) as in SD. Control strength scaled by weight $w_c$ on ControlNet residuals. <span class="hl-method">CFG-RW</span> (Classifier-Free Guidance with Resolution Weighting): when combining text CFG and control, apply resolution-dependent weighting so low-res structure does not overpower high-res detail.</p>
+        <p><strong>Multi-condition:</strong> Multiple ControlNets run in parallel; outputs summed before injection. Each condition (Canny + depth + pose) has independent $w_c$. Enables compositional control without retraining merged model.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>推理 — CFG 与控制权重：</strong>文本沿用 SD 的 classifier-free guidance（CFG）。控制强度由 ControlNet 残差权重 $w_c$ 缩放。<strong>CFG-RW</strong>（带分辨率加权的 CFG）：合并文本 CFG 与控制时，按分辨率加权，避免低分辨率结构压过高频细节。</p>
+        <p><strong>多条件：</strong>多个 ControlNet 并行，输出求和后注入；Canny + depth + pose 各设 $w_c$，无需重训合并模型即可组合控制。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color:#6f42c1;">
+          <span class="tag">推理组合</span>
+          <div class="analysis-detail">
+            <h4>Multi-ControlNet（自绘）</h4>
+            <div class="diagram">
+              <pre class="mermaid">
+flowchart LR
+  C1["Canny CN"] --> S["Σ w_i · residual_i"]
+  C2["Depth CN"] --> S
+  C3["Pose CN"] --> S
+  S --> DEC["SD Decoder skips"]
+  TXT["Text CFG"] --> DEC
+  DEC --> OUT["生成图像"]
+              </pre>
+              <figcaption>推理：多 ControlNet 残差加权求和 + 文本 CFG 并行作用于 locked SD decoder。点击放大。</figcaption>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="code-section" id="code">
+      <h2 class="section-title" style="margin-top:0;border:none;padding:0;">💻 代码对照 — Locked Copy + Zero Conv</h2>
+      <p>官方实现：<a href="https://github.com/lllyasviel/ControlNet" target="_blank" rel="noopener">github.com/lllyasviel/ControlNet</a> · 核心在 <code>cldm/cldm.py</code> + <code>ldm/modules/diffusionmodules/util.py</code>。论文式 (3.1) 在工程里拆成三块：<strong>锁 SD 主干</strong>、<strong>可训 ControlNet 副本</strong>、<strong>zero conv 残差注入 decoder skip</strong>。</p>
+
+      <table class="code-map">
+        <thead><tr><th>论文符号</th><th>代码位置</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td>$\mathcal{F}(x;\Theta)$ locked</td><td><code>ControlledUnetModel.forward</code> 内 <code>with torch.no_grad():</code></td><td>SD U-Net encoder + middle 冻结前向，$hs$ 存 skip</td></tr>
+          <tr><td>$\mathcal{F}(\cdot;\Theta_c)$</td><td><code>ControlNet</code> 的 <code>input_blocks</code> + <code>middle_block</code></td><td>镜像 SD encoder 结构，权重从 SD 复制后单独训练</td></tr>
+          <tr><td>$Z(\cdot;\Theta_z)$</td><td><code>make_zero_conv</code> → <code>zero_module(conv 1×1)</code></td><td>每层输出经 1×1 conv，权重/偏置全零初始化</td></tr>
+          <tr><td>条件 $c$ 编码</td><td><code>input_hint_block(hint)</code></td><td>Canny 等 hint 图 → 与 latent 同尺度特征，首层 <code>h += guided_hint</code></td></tr>
+          <tr><td>$y_c$ 加回主路</td><td><code>hs.pop() + control.pop()</code></td><td>ControlNet 各层 zero conv 输出栈，LIFO 注入 decoder concat</td></tr>
+        </tbody>
+      </table>
+
+      <h3>① Zero Conv — 论文 $Z$ 的最小实现</h3>
+      <p>不是特殊算子，就是<strong>普通 Conv/Linear，参数置零</strong>。训练 step 0 时任意输入 → 输出恒 0，保证旁路关闭。</p>
+      <div class="code-block"><span class="cm"># ldm/modules/diffusionmodules/util.py</span>
+<span class="kw">def</span> <span class="fn">zero_module</span>(module):
+    <span class="cm">"""Zero out the parameters of a module and return it."""</span>
+    <span class="kw">for</span> p <span class="kw">in</span> module.parameters():
+        p.detach().zero_()
+    <span class="kw">return</span> module</div>
+      <p class="code-note">对应论文：$Z$ 为 1×1 conv，权重/偏置 initial = 0 → $Z(c)=0$，故 $y_c = \mathcal{F}(x;\Theta)$。</p>
+
+      <h3>② ControlNet Block — 伪代码 ↔ 论文式 (3.1)</h3>
+      <p>论文在一个 block 内写 locked $\mathcal{F}$ + trainable copy + 两个 $Z$。仓库把「copy 支路」整段做成独立 <code>ControlNet</code> 模块；「locked $\mathcal{F}$」留在 <code>ControlledUnetModel</code>；连接靠每层 <code>zero_convs</code> 输出残差列表。</p>
+      <div class="code-block"><span class="cm"># 伪代码 — 对应论文 Fig.3 / 式 (3.1)</span>
+<span class="kw">def</span> <span class="fn">controlnet_block_paper</span>(x, c, F_locked, F_copy, Z1, Z2):
+    <span class="cm"># F_locked: 无梯度；F_copy / Z*: 可训练</span>
+    y_locked = F_locked(x)                    <span class="cm"># Θ 锁定，不参与反传</span>
+    h = x + Z1(c)                             <span class="cm"># 条件经 zero conv 注入 copy 输入</span>
+    y_copy = F_copy(h)                        <span class="cm"># trainable copy Θ_c</span>
+    y_c = y_locked + Z2(y_copy)               <span class="cm"># 第二 zero conv 加回主路</span>
+    <span class="cm"># 初始: Z1=Z2=0 ⇒ y_c = F_locked(x) = y</span>
+    <span class="kw">return</span> y_c</div>
+      <p>仓库等价写法（每层 encoder block 后挂一个 zero conv，输出进栈）：</p>
+      <div class="code-block"><span class="cm"># cldm/cldm.py — ControlNet</span>
+<span class="kw">def</span> <span class="fn">make_zero_conv</span>(self, channels):
+    <span class="cm"># 1×1 conv, padding=0 — 即论文 zero convolution</span>
+    <span class="kw">return</span> TimestepEmbedSequential(
+        zero_module(conv_nd(self.dims, channels, channels, <span class="str">1</span>, padding=<span class="str">0</span>))
+    )
+
+<span class="kw">def</span> <span class="fn">forward</span>(self, x, hint, timesteps, context, **kwargs):
+    guided_hint = self.input_hint_block(hint, emb, context)  <span class="cm"># 条件 c 编码</span>
+    outs = []
+    h = x
+    <span class="kw">for</span> module, zero_conv <span class="kw">in</span> zip(self.input_blocks, self.zero_convs):
+        <span class="kw">if</span> guided_hint <span class="kw">is not None</span>:
+            h = module(h, emb, context)
+            h += guided_hint          <span class="cm"># 首层一次性注入 hint（≈ Z1(c) 进 copy）</span>
+            guided_hint = <span class="kw">None</span>
+        <span class="kw">else</span>:
+            h = module(h, emb, context)
+        outs.append(zero_conv(h, emb, context))  <span class="cm"># Z2(F_copy(·)) 进栈</span>
+    h = self.middle_block(h, emb, context)
+    outs.append(self.middle_block_out(h, emb, context))
+    <span class="kw">return</span> outs   <span class="cm"># len=13，与 SD skip 层数对齐</span></div>
+      <p class="code-note"><code>input_hint_block</code> 最后一层也是 <code>zero_module(conv)</code>——hint 通路同样 zero-init，避免条件图在 step 0 扰动 copy。</p>
+
+      <h3>③ Locked SD U-Net — 主路冻结 + 残差注入</h3>
+      <p>论文「lock $\Theta$」在代码里 = encoder/middle 包在 <code>torch.no_grad()</code>；decoder 仍跑 locked 权重，但 skip 来自 <code>hs + control</code>。</p>
+      <div class="code-block"><span class="cm"># cldm/cldm.py — ControlledUnetModel(UNetModel)</span>
+<span class="kw">def</span> <span class="fn">forward</span>(self, x, timesteps, context, control=<span class="kw">None</span>, only_mid_control=<span class="kw">False</span>, **kwargs):
+    hs = []
+    <span class="kw">with</span> torch.no_grad():           <span class="cm"># 🔒 locked：SD encoder + middle</span>
+        emb = self.time_embed(timestep_embedding(timesteps, ...))
+        h = x
+        <span class="kw">for</span> module <span class="kw">in</span> self.input_blocks:
+            h = module(h, emb, context)
+            hs.append(h)
+        h = self.middle_block(h, emb, context)
+
+    <span class="kw">if</span> control <span class="kw">is not None</span>:
+        h += control.pop()            <span class="cm"># middle 层 ControlNet 残差</span>
+
+    <span class="kw">for</span> module <span class="kw">in</span> self.output_blocks:
+        <span class="kw">if</span> only_mid_control <span class="kw">or</span> control <span class="kw">is None</span>:
+            h = torch.cat([h, hs.pop()], dim=<span class="str">1</span>)
+        <span class="kw">else</span>:
+            h = torch.cat([h, hs.pop() + control.pop()], dim=<span class="str">1</span>)  <span class="cm"># skip + zero conv 输出</span>
+        h = module(h, emb, context)
+    <span class="kw">return</span> self.out(h)</div>
+      <p class="code-note">注意：decoder 在 <code>no_grad</code> 外——仍用 locked 权重前向，但梯度经 <code>control</code> 残差回传到 ControlNet；默认 <code>sd_locked=True</code> 时不更新 SD 参数。</p>
+
+      <h3>④ 训练 glue — 只优化 ControlNet</h3>
+      <div class="code-block"><span class="cm"># cldm/cldm.py — ControlLDM.apply_model</span>
+<span class="kw">def</span> <span class="fn">apply_model</span>(self, x_noisy, t, cond, *args, **kwargs):
+    cond_txt = torch.cat(cond[<span class="str">'c_crossattn'</span>], <span class="str">1</span>)
+    <span class="kw">if</span> cond[<span class="str">'c_concat'</span>] <span class="kw">is None</span>:
+        eps = diffusion_model(x=x_noisy, timesteps=t, context=cond_txt, control=<span class="kw">None</span>)
+    <span class="kw">else</span>:
+        control = self.control_model(
+            x=x_noisy,
+            hint=torch.cat(cond[<span class="str">'c_concat'</span>], <span class="str">1</span>),  <span class="cm"># 条件图 c</span>
+            timesteps=t, context=cond_txt
+        )
+        control = [c * scale <span class="kw">for</span> c, scale <span class="kw">in</span> zip(control, self.control_scales)]  <span class="cm"># 推理权重 w_c</span>
+        eps = diffusion_model(x=x_noisy, timesteps=t, context=cond_txt, control=control)
+    <span class="kw">return</span> eps
+
+<span class="cm"># configure_optimizers — sd_locked 时仅 ControlNet (+ 可选 decoder 解锁)</span>
+params = list(self.control_model.parameters())
+<span class="kw">if not</span> self.sd_locked:
+    params += list(self.model.diffusion_model.output_blocks.parameters())
+opt = torch.optim.AdamW(params, lr=lr)</div>
+
+      <h3>⑤ 数据流一图（训练一步）</h3>
+      <div class="diagram">
+        <pre class="mermaid">
+flowchart TB
+  subgraph LOCK["ControlledUnetModel 🔒 no_grad"]
+    X["x_noisy latent"] --> ENC["SD input_blocks → hs[]"]
+    ENC --> MID["middle_block → h"]
+  end
+  subgraph CN["ControlNet 可训 copy"]
+    HINT["hint 条件图 c"] --> HINTENC["input_hint_block"]
+    X --> COPY["镜像 input_blocks + middle"]
+    HINTENC --> COPY
+    COPY --> ZC["每层 zero_conv → outs[13]"]
+  end
+  ZC --> INJ["hs.pop()+control.pop() 注入 decoder skip"]
+  MID --> INJ
+  LOCK --> INJ
+  INJ --> DEC["output_blocks → ε̂"]
+  DEC --> LOSS["L = ‖ε − ε̂‖²  仅 CN 有梯度"]
+        </pre>
+        <figcaption>训练一步：locked SD 提供 skip 特征；ControlNet 经 zero conv 产出 13 路残差；相加后进 decoder 预测噪声。点击放大。</figcaption>
+      </div>
+
+      <h3>⑥ 与论文差异（读代码时留意）</h3>
+      <ul>
+        <li><strong>Block 粒度：</strong>论文画「单 block 内 locked+copy+双 Z」；代码是<strong>整段 U-Net encoder 级</strong>镜像 + 每层一个 <code>zero_conv</code>，语义一致、粒度更粗。</li>
+        <li><strong>条件注入：</strong>论文 $x + Z_1(c)$ 进 copy；代码用 <code>input_hint_block</code> 编码后在<strong>第一个 copy block</strong>做 <code>h += guided_hint</code>（hint 出口也是 zero conv）。</li>
+        <li><strong>权重初始化：</strong><code>tool_transfer_control.py</code> 从 SD checkpoint 复制 encoder 权重到 ControlNet——copy 的 $\Theta_c$ 起点 = 预训练 $\Theta$，不是随机。</li>
+        <li><strong>Sudden convergence：</strong>zero conv 使早期 $control \approx 0$；当 <code>zero_module</code> 权重被梯度推离 0，条件信号突然进入 skip → 与 Fig.4 现象一致。</li>
+      </ul>
+    </section>
+
+    <h2 class="section-title" id="experiments">4. Experiments</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>We train ControlNet on multiple conditions: <span class="hl-evidence">Canny edges, HED soft edges, depth (MiDaS), normal maps, semantic segmentation, human pose (OpenPose), lineart, anime lineart, scribbles</span>. All use locked SD v1.5; condition-specific ControlNet trained separately on paired datasets.</p>
+        <p>Qualitative results show strong alignment between condition maps and generated structure while preserving SD photorealism and prompt following. Notably, ControlNet works with <span class="hl-evidence">empty prompts</span> — structure from condition alone drives generation.</p>
+      </div>
+      <div class="col-translation">
+        <p>在多种条件上训练 ControlNet：<strong>Canny、HED 软边缘、深度（MiDaS）、法线、语义分割、人体姿态（OpenPose）、线稿、动漫线稿、涂鸦</strong>等。均基于锁定 SD v1.5；每种条件单独训 ControlNet。</p>
+        <p>定性结果显示条件图与生成结构强对齐，同时保留 SD 真实感与 prompt 遵循。尤其可在<strong>空 prompt</strong>下仅靠条件结构生成。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color:#0d6efd;">
+          <span class="tag">条件覆盖</span>
+          <table class="exp-table">
+            <thead><tr><th>Condition</th><th>Detector / Source</th><th>Dataset scale</th></tr></thead>
+            <tbody>
+              <tr class="is-ours"><td>Canny</td><td>OpenCV Canny</td><td>fill50k (~50k)</td></tr>
+              <tr class="is-ours"><td>Depth</td><td>MiDaS</td><td>~3M LAION pairs</td></tr>
+              <tr class="is-ours"><td>Pose</td><td>OpenPose</td><td>~200k human pairs</td></tr>
+              <tr class="is-ours"><td>Segmentation</td><td>Uniformer / ADE20K</td><td>~164k</td></tr>
+            </tbody>
+          </table>
+          <ul class="exp-detail">
+            <li><strong>论点↔证据：</strong>同一架构跨 9+ 条件类型复用，证明 locked-copy + zero conv 是通用配方而非 Canny 特化。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 6：多种条件 + 空 Prompt 定性结果</h3>
+      <figure>
+        <img src="assets/controlnet/fig6.jpg" alt="ControlNet various conditions empty prompt qualitative">
+        <figcaption>Fig.6：Canny / depth / pose / seg 等条件下，即使 prompt 为空也能生成与条件对齐的图像——空间结构由 ControlNet 独立驱动。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Comparison to baselines:</strong> vs <span class="hl-counter">PITI</span>, <span class="hl-counter">Sketch-Guided Diffusion</span>, <span class="hl-counter">Taming Transformers</span> on edge/pose-conditioned generation. ControlNet achieves better structure fidelity, fewer artifacts, and preserves base SD quality. User study favors ControlNet on controllability and aesthetic quality.</p>
+        <p><strong>Ablations:</strong> Removing zero conv (random init) causes training instability and damages pretrained model. Training without locked weights leads to catastrophic forgetting of text capability.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>基线对比：</strong>与 PITI、Sketch-Guided Diffusion、Taming Transformers 在边缘/姿态条件生成上对比。ControlNet 结构保真更好、伪影更少、保留 SD 质量；用户研究在可控性与美学上偏好 ControlNet。</p>
+        <p><strong>消融：</strong>去掉 zero conv（随机初始化）训练不稳定且损害预训练；不锁权重则文本能力灾难性遗忘。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#6f42c1;">
+          <span class="tag">消融逻辑</span>
+          <h4>论证技巧</h4>
+          <p>两个消融分别验证 zero conv（无损启动）与 locked $\Theta$（保文本）——缺一不可，支撑设计三件套。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 5：与 PITI / Sketch-Guided / Taming 对比</h3>
+      <figure>
+        <img src="assets/controlnet/fig5.jpg" alt="ControlNet vs PITI Sketch-Guided Taming comparison">
+        <figcaption>Fig.5：相同条件下 ControlNet vs PITI / Sketch-Guided Diffusion / Taming Transformers——ControlNet 边缘/姿态对齐更准、细节更自然、伪影更少。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="conclusion">5. Conclusion</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>We presented <span class="hl-thesis">ControlNet</span>, enabling additive fine-grained spatial control for large pretrained diffusion models. By locking original weights, duplicating encoder blocks, and connecting via <span class="hl-method">zero convolutions</span>, we train on small datasets without damaging the base model.</p>
+        <p>ControlNet supports diverse conditions, multi-control composition, and integrates seamlessly with Stable Diffusion. The approach has become a standard tool in open-source generative AI pipelines (ComfyUI, A1111, etc.).</p>
+      </div>
+      <div class="col-translation">
+        <p>我们提出 ControlNet，为大型预训练扩散模型提供可叠加的细粒度空间控制。锁定原权重、复制编码器块、经 zero conv 连接，可在小数据集训练而不损害基座。</p>
+        <p>ControlNet 支持多样条件、多控制组合，与 Stable Diffusion 无缝集成，已成为开源生成 AI 流水线（ComfyUI、A1111 等）的标准工具。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#ffc107;">
+          <span class="tag">总结</span>
+          <h4>逻辑角色</h4>
+          <p>论证链终点——从「文本难控空间」到「即插即用多条件控制」闭环；强调工程影响力（开源生态采纳）。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="summary" id="notation">
+      <h2>符号速查表</h2>
+      <table class="notation">
+        <thead><tr><th>符号</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td>$x,\; y$</td><td>U-Net 块输入 / 输出特征图</td></tr>
+          <tr><td>$\mathcal{F}(\cdot;\,\Theta)$</td><td>预训练 locked 网络块（SD 原权重，无梯度）</td></tr>
+          <tr><td>$\mathcal{F}(\cdot;\,\Theta_c)$</td><td>ControlNet 可训练副本（encoder + middle 镜像）</td></tr>
+          <tr><td>$c$</td><td>空间条件图（Canny / depth / pose / seg 等）</td></tr>
+          <tr><td>$Z(\cdot;\,\Theta_z)$</td><td>Zero convolution：1×1 conv，权重/偏置初始化为 0</td></tr>
+          <tr><td>$y_c$</td><td>注入条件后的块输出（式 3.1 简化形式）</td></tr>
+          <tr><td>$\epsilon_\theta$</td><td>SD U-Net 噪声预测网络（整体锁定）</td></tr>
+          <tr><td>$z_t$</td><td>扩散 timestep $t$ 的 latent 噪声状态</td></tr>
+          <tr><td>$w_c$</td><td>推理时 ControlNet 残差控制权重</td></tr>
+          <tr><td>CFG / CFG-RW</td><td>Classifier-Free Guidance；带分辨率加权的 CFG 组合策略</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="summary" id="overview">
+      <h2>论证结构总览</h2>
+      <div class="skeleton">
+        问题（SD 文本强但难精确控构图/姿态/边缘）<br/>
+        → 论点（锁 $\Theta$ + 可训练副本 $\Theta_c$ + zero conv 渐进注入 → 不破坏预训练）<br/>
+        → 方法（ControlNet block 式；挂载 SD encoder + middle；训练仅更新 CN；推理 CFG + $w_c$ + 多 CN 求和）<br/>
+        → 证据（9+ 条件类型；小数据 fill50k；sudden convergence Fig.4；vs PITI/Sketch/Taming Fig.5；空 prompt Fig.6）<br/>
+        → 消融（无 zero conv → 不稳定；不锁 → 遗忘文本）<br/>
+        → 结论（开源生态标准插件，ICCV 2023）
+      </div>
+      <h4>核心主张（一句话）</h4>
+      <p>通过锁定预训练 U-Net 并复制可训练编码器支路，以零初始化 1×1 卷积渐进注入空间条件，ControlNet 在不损害大扩散模型原有能力的前提下实现多样、可组合、小数据可训的细粒度空间控制。</p>
+      <div class="strength"><strong>论证最强处：</strong>zero conv 提供可证明的 $t=0$ 无损恒等；locked + copy 设计清晰可消融；同一架构跨 Canny/depth/pose/seg 等 9+ 条件验证通用性；开源代码与权重推动大规模复现。</div>
+      <div class="weakness"><strong>论证最弱处：</strong>用户研究样本与定量指标（FID/LPIPS 全表）相对定性为主；CFG-RW 等推理 trick 超参敏感；多 ControlNet 求和缺乏理论最优组合；深度/分割等条件依赖外部检测器质量；未系统讨论版权与 deepfake 风险。</div>
+      <p style="margin-top:1rem;font-size:0.85rem;color:var(--muted);">来源：<a href="https://arxiv.org/abs/2302.05543">arXiv:2302.05543</a> · <a href="https://github.com/lllyasviel/ControlNet" target="_blank" rel="noopener">github.com/lllyasviel/ControlNet</a> · 生成工具：paper-logic-reading skill（三栏版）</p>
+    </section>
+
+    <section class="summary faq" id="faq">
+      <h2>🧩 结构化十问（AI 解构）</h2>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.75rem;">让 AI 当助教，从十个角度提取论文骨架。</p>
+      <details open>
+        <summary>Q1 · 论文试图解决什么问题？</summary>
+        <div class="answer">大型文生图扩散模型（Stable Diffusion）只能从文本粗粒度控制内容，<strong>无法精确指定</strong>边缘、深度、姿态、分割等区域结构。目标：在不损害预训练模型质量的前提下，添加<strong>可训练、可组合</strong>的空间条件控制（§1）。</div>
+      </details>
+      <details>
+        <summary>Q2 · 这是否是一个新问题？</summary>
+        <div class="answer">条件扩散与图像引导生成（PITI、Sketch-Guided 等）已有，但「锁大模型 + 全 encoder 副本 + zero conv 无损启动 + 小数据训多种条件」的组合是 ControlNet 的独特贡献；与 LoRA/Adapter 的轻量微调路线 orthogonal。</div>
+      </details>
+      <details>
+        <summary>Q3 · 要验证什么科学假设？</summary>
+        <div class="answer">假设：① zero conv 保证初始行为等于原模型；② 仅训 ControlNet 副本不会灾难性遗忘文本能力；③ 同一 locked-copy 架构可泛化到 Canny/depth/pose/seg 等；④ 小数据集（~50k）足够学会条件对齐。</div>
+      </details>
+      <details>
+        <summary>Q4 · 有哪些相关研究？如何归类？</summary>
+        <div class="answer">
+          <ul>
+            <li><strong>图像引导扩散：</strong>PITI、Sketch-Guided Diffusion、Taming Transformers</li>
+            <li><strong>轻量微调：</strong>LoRA、Adapter、Hypernetwork</li>
+            <li><strong>空间条件：</strong>GLIGEN（bounding box）、Composer</li>
+            <li><strong>基座：</strong>Stable Diffusion / LDM</li>
+          </ul>
+          作者：Lvmin Zhang, Anyi Rao, Maneesh Agrawala（Stanford）。
+        </div>
+      </details>
+      <details>
+        <summary>Q5 · 解决方案的关键是什么？</summary>
+        <div class="answer">三件套：① <strong>Lock</strong> $\Theta$，$y=\mathcal{F}(x;\Theta)$ 不变；② <strong>Trainable copy</strong> $\Theta_c$ 镜像 SD encoder + middle；③ <strong>Zero conv</strong> $Z$ 连接两路，初始 $y_c=y$。条件 $c$ 经小 encoder 注入副本，残差 skip 到 SD decoder。</div>
+      </details>
+      <details>
+        <summary>Q6 · 实验是如何设计的？</summary>
+        <div class="answer">每种条件单独训 ControlNet（SD v1.5 locked）；定性网格 + 与 PITI/Sketch/Taming 对比（Fig.5）；空 prompt 实验（Fig.6）；消融 zero conv / locked weights；用户研究评可控性与美学；报告 sudden convergence 训练曲线（Fig.4）。</div>
+      </details>
+      <details>
+        <summary>Q7 · 用什么数据集评估？代码开源吗？</summary>
+        <div class="answer">Canny fill50k、depth ~3M LAION pairs、pose ~200k、seg ~164k 等；条件由 OpenCV Canny、MiDaS、OpenPose、Uniformer 等预处理器生成。代码与预训练权重开源：<a href="https://github.com/lllyasviel/ControlNet" target="_blank" rel="noopener">github.com/lllyasviel/ControlNet</a>。</div>
+      </details>
+      <details>
+        <summary>Q8 · 实验结果是否很好支持了假设？</summary>
+        <div class="answer">较好支持：多条件定性对齐强；vs 基线 Fig.5 更优；消融验证 zero conv 与 lock 必要；sudden convergence 与 zero init 理论一致。保留：部分条件依赖 3M 级数据；定量指标不如定性丰富；多 CN 组合为启发式求和。</div>
+      </details>
+      <details>
+        <summary>Q9 · 这篇论文到底有什么贡献？</summary>
+        <div class="answer">① ControlNet 架构（locked copy + zero conv）；② 证明小数据可训且不损 SD；③ 9+ 条件类型统一配方；④ sudden convergence 现象分析；⑤ 开源生态事实标准（ComfyUI/A1111）；⑥ ICCV 2023。</div>
+      </details>
+      <details>
+        <summary>Q10 · 下一步可以做什么？</summary>
+        <div class="answer">自然延伸：与 SDXL/SD3/DiT 等新骨干结合；学习最优多条件融合；端到端训条件编码器；视频 ControlNet；理论分析 sudden convergence；控制强度自适应调度；版权/检测/水印缓解 deepfake 滥用。</div>
+      </details>
+    </section>
+
+    <section class="summary deepdive" id="deepdive">
+      <h2>🔬 深挖追问</h2>
+      <div class="block">
+        <h4>第一性原理 · 本质</h4>
+        <p>文生图扩散模型的「控制接口」原本只有文本 cross-attention——<strong>全局、语义级</strong>。空间结构（边缘/深度/姿态）需要<strong>像素/特征级</strong>注入。ControlNet 的本质是：把预训练 U-Net 当作<strong>固定先验</strong>，另开一条可学习「结构通道」，用 zero init 保证通道初始关闭，渐进打开——类似在已调好的收音机上并联一个可控均衡器，而非重新设计整机。</p>
+      </div>
+      <div class="block">
+        <h4>第一性原理 · Zero Conv 为何有效</h4>
+        <p>随机初始化旁路会在 step 0 就扰动 $\mathcal{F}(x;\Theta)$ 的输出，破坏预训练流形。Zero conv 使 $\partial y_c / \partial c = 0$ 在初始，梯度先更新 $\Theta_c$ 内部表示，待 $Z$ 权重非零后条件才泄漏——这解释了<strong>突然收敛</strong>：不是线性学习，而是阈值式「通道打开」。</p>
+      </div>
+      <div class="block">
+        <h4>第一性原理 · 与 LoRA 对比</h4>
+        <p>LoRA 低秩分解 $\Delta W = BA$，参数量小但表达能力受限。ControlNet 复制<strong>完整 encoder</strong>（~50% U-Net 参数），容量大，适合复杂空间条件；代价是每条件一套权重。二者可叠加：LoRA 改风格，ControlNet 控结构。</p>
+      </div>
+      <div class="block crit">
+        <h4>批判性思维 · 我们还没问的根本问题（盲区）</h4>
+        <ul>
+          <li><strong>条件检测器依赖：</strong>Canny/depth/pose 质量上限由 OpenCV/MiDaS/OpenPose 决定——错误条件图会强制生成错误结构。</li>
+          <li><strong>多 CN 求和：</strong>线性叠加缺乏理论保证，可能出现条件冲突（pose 与 depth 不一致）时的不可预测行为。</li>
+          <li><strong>Sudden convergence 风险：</strong>训练需监控临界步，过早停止可能永远学不会；不同条件临界步差异大。</li>
+          <li><strong>文本-控制竞争：</strong>$w_c$ 过大时结构压过 prompt 语义；CFG-RW 缓解但超参敏感，无自动调度。</li>
+          <li><strong>版权与滥用：</strong>pose/edge 控制降低仿冒门槛；论文未提供技术层缓解。</li>
+          <li><strong>新骨干迁移：</strong>SDXL/Flux/DiT 架构变化（无 U-Net skip）需重新设计挂载点——ControlNet 并非 architecture-agnostic。</li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+  <div id="lightbox" role="dialog" aria-modal="true" aria-label="放大查看">
+    <span class="lb-close" aria-hidden="true">&times;</span>
+    <div class="lb-content"></div>
+    <div class="lb-cap"></div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad:true, theme:'neutral', flowchart:{ htmlLabels:true } });</script>
+  <script>
+    function syncScrollPad(){var h=document.querySelector('.sticky-head');if(h)document.documentElement.style.scrollPaddingTop=(h.offsetHeight+8)+'px';}
+    window.addEventListener('load',syncScrollPad);window.addEventListener('resize',syncScrollPad);syncScrollPad();
+    (function(){var lb=document.getElementById('lightbox'),content=lb.querySelector('.lb-content'),cap=lb.querySelector('.lb-cap');
+    function findZoomTarget(n){var el=n.closest?n.closest('img,svg'):null;return el&&el.closest('.diagram,.figure-row,.mermaid')?el:null;}
+    function nearestCaption(el){var fig=el.closest('figure')||el.closest('.diagram')||el.closest('.figure-row');var c=fig&&fig.querySelector('figcaption');return c?c.textContent.trim():'';}
+    function openLightbox(node,caption){content.innerHTML='';var clone=node.cloneNode(true);clone.style.cursor='default';clone.style.boxShadow='none';
+    var r=node.getBoundingClientRect(),vw=window.innerWidth*0.96,vh=window.innerHeight*0.92,w=r.width||600,h=r.height||400,scale=Math.min(vw/w,vh/h);
+    if(!isFinite(scale)||scale<=0)scale=1;clone.style.width=Math.round(w*scale)+'px';clone.style.height=Math.round(h*scale)+'px';
+    clone.style.maxWidth=clone.style.maxHeight='none';content.appendChild(clone);cap.textContent=caption||'';lb.classList.add('open');document.body.style.overflow='hidden';}
+    function closeLightbox(){lb.classList.remove('open');content.innerHTML='';document.body.style.overflow='';}
+    document.addEventListener('click',function(e){if(lb.classList.contains('open')){closeLightbox();return;}var el=findZoomTarget(e.target);if(el){e.preventDefault();e.stopPropagation();openLightbox(el,nearestCaption(el));}});
+    document.addEventListener('keydown',function(e){if(e.key==='Escape'&&lb.classList.contains('open'))closeLightbox();});})();
+  </script>
+</body>
+</html>

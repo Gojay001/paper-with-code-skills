@@ -40,3 +40,12 @@ tar -xzf .cache/ddpm/source.tar.gz -C .cache/ddpm/
 反驳：承认 NLL 不如自回归模型；主动讨论 rate-distortion 与「无损码长浪费在不可感知细节」
 结论：扩散模型是通用生成工具，归纳偏置适合图像
 ```
+
+## 带 `#code` 的范例
+
+| 论文 | HTML | 模式 |
+|------|------|------|
+| ControlNet | `paper-reading/controlnet.html` | 单核心：locked copy、zero conv、训练 glue |
+| CogVideoX | `paper-reading/cogvideox.html` | 多模块：3D VAE、full attention、Frame Pack、两阶段训练 |
+
+写法见 `skills/paper-logic-reading/references/code-section-snippet.md`。

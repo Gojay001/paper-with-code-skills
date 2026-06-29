@@ -103,6 +103,22 @@
     .deepdive .block h4 { color: var(--navy); margin-bottom: 0.3rem; }
     .deepdive .block ul { margin: 0.3rem 0 0 1.1rem; }
     .deepdive .block li { margin-bottom: 0.3rem; font-size: 0.9rem; }
+    /* 代码对照（有官方 repo 时；见 references/code-section-snippet.md） */
+    .code-section { background:#fff; border:1px solid var(--border); border-radius:8px; padding:1.5rem 1.75rem; margin:2rem 0; }
+    .code-section h3 { color:var(--navy); font-size:1.05rem; margin:1.5rem 0 0.75rem; }
+    .code-section h3:first-of-type { margin-top:0; }
+    .code-section p, .code-section li { font-size:0.9rem; line-height:1.75; margin-bottom:0.5rem; }
+    .code-section ul { margin:0.5rem 0 0.75rem 1.25rem; }
+    .code-block { font-family:'IBM Plex Mono','IBM Plex Sans',monospace; font-size:0.78rem; line-height:1.65; background:#1e293b; color:#e2e8f0; padding:1rem 1.15rem; border-radius:6px; overflow-x:auto; margin:0.75rem 0; white-space:pre; tab-size:2; }
+    .code-block .cm { color:#94a3b8; font-style:italic; }
+    .code-block .kw { color:#7dd3fc; }
+    .code-block .fn { color:#fde68a; }
+    .code-block .str { color:#86efac; }
+    .code-note { font-size:0.82rem; color:var(--muted); margin:0.35rem 0 1rem; padding-left:0.75rem; border-left:3px solid #0d9488; }
+    .code-map { width:100%; border-collapse:collapse; margin:0.75rem 0; font-size:0.82rem; }
+    .code-map th, .code-map td { border:1px solid var(--border); padding:0.4rem 0.55rem; text-align:left; vertical-align:top; }
+    .code-map th { background:var(--paper); color:var(--navy); font-weight:600; }
+    .code-map code { font-size:0.78rem; background:var(--paper); padding:0.1rem 0.3rem; border-radius:3px; }
     @media (max-width: 1100px) {
       .col-labels { display: none; }
       .row { grid-template-columns: 1fr; }
@@ -132,8 +148,8 @@
     </header>
 
     <nav class="chapter-nav">
-      <!-- <a href="#feynman">速读</a> <a href="#abstract">Abstract</a> … <a href="#faq">十问</a> <a href="#deepdive">深挖</a> -->
-      <!-- 按论文章节添加锚点，首尾分别接「速读」与「十问/深挖」 -->
+      <!-- <a href="#feynman">速读</a> <a href="#abstract">Abstract</a> … <a href="#code">代码</a> … <a href="#faq">十问</a> -->
+      <!-- 有官方 repo 时在 Method 与 Experiments 之间加 #code；见 references/code-section-snippet.md -->
     </nav>
   </div>
 
@@ -188,6 +204,23 @@
         <div class="analysis-detail"><h4>设计取舍</h4><p>…</p></div>
       </div>
     </div>
+    -->
+
+    <!-- 代码对照（Method 之后、Experiments 之前；list 有官方 repo 时写）
+    <section class="code-section" id="code">
+      <h2 class="section-title" style="margin-top:0;border:none;padding:0;">💻 代码对照 — {核心机制一句话}</h2>
+      <p>官方实现：<a href="…">github…</a> · 核心在 <code>path/to.py</code></p>
+      <table class="code-map">
+        <thead><tr><th>论文</th><th>代码</th></tr></thead>
+        <tbody><tr><td>符号/模块</td><td><code>Class.method</code></td></tr></tbody>
+      </table>
+      <h3>① {子主题}</h3>
+      <div class="code-block"><span class="cm"># 伪代码或 repo 摘录</span>
+def forward(...):
+    ...</div>
+      <p class="code-note">对应论文式 …；与实现差异 …</p>
+    </section>
+    范例：paper-reading/controlnet.html（单机制）、paper-reading/cogvideox.html（多模块+训练）
     -->
 
     <!-- 实验：实验细节块 + 指标对比表 示例

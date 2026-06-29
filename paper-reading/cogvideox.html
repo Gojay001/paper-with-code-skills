@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CogVideoX — Text-to-Video Diffusion Models with An Expert Transformer · 逻辑精读</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+  <style>
+    :root { --navy:#1a2744; --paper:#faf8f5; --thesis:#fff3cd; --concept:#f8d7da; --evidence:#cfe2ff; --counter:#d1e7dd; --method:#e2d9f3; --text:#2c2c2c; --muted:#6c757d; --border:#e8e4df; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'IBM Plex Sans',sans-serif; background:var(--paper); color:var(--text); line-height:1.6; }
+    .sticky-head { position:sticky; top:0; z-index:100; }
+    .top-nav { background:var(--navy); color:#fff; padding:1rem 2rem; }
+    .top-nav h1 { font-size:1.25rem; font-weight:600; }
+    .top-nav h1 a { color:#fff; text-decoration:none; border-bottom:1px dotted rgba(255,255,255,0.5); }
+    .top-nav h1 a:hover { border-bottom-style:solid; }
+    .top-nav .meta { font-size:0.85rem; opacity:0.85; margin-top:0.25rem; }
+    .legend { display:flex; flex-wrap:wrap; gap:0.75rem; margin-top:0.75rem; font-size:0.8rem; }
+    .legend span { padding:0.15rem 0.5rem; border-radius:3px; color:#2c2c2c; }
+    .chapter-nav { background:#fff; border-bottom:1px solid var(--border); padding:0.75rem 2rem; overflow-x:auto; white-space:nowrap; box-shadow:0 2px 6px rgba(0,0,0,0.08); }
+    .chapter-nav a { color:var(--navy); text-decoration:none; margin-right:1.25rem; font-size:0.9rem; font-weight:500; }
+    .chapter-nav a:hover { text-decoration:underline; }
+    main { max-width:1680px; margin:0 auto; padding:2rem; }
+    .section-title { font-size:1.5rem; color:var(--navy); margin:2rem 0 1rem; padding-bottom:0.5rem; border-bottom:2px solid var(--navy); }
+    .col-labels { display:grid; grid-template-columns:1.1fr 1fr 1fr; gap:1.5rem; margin-bottom:0.5rem; font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); }
+    .row { display:grid; grid-template-columns:1.1fr 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem; align-items:start; }
+    .col-original { font-family:'Lora',serif; font-size:0.95rem; line-height:1.75; }
+    .col-original p { margin-bottom:0.75rem; }
+    .col-translation { font-size:0.92rem; line-height:1.75; color:#333; }
+    .col-translation p { margin-bottom:0.75rem; }
+    .analysis-card { background:#fff; border-left:4px solid var(--navy); padding:1rem 1.25rem; border-radius:0 6px 6px 0; box-shadow:0 1px 3px rgba(0,0,0,0.06); font-size:0.9rem; }
+    .analysis-card .tag { display:inline-block; font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.03em; margin-bottom:0.5rem; color:var(--navy); }
+    .analysis-card h4 { font-size:0.85rem; color:var(--muted); margin:0.75rem 0 0.25rem; }
+    .analysis-card p { margin-bottom:0.5rem; }
+    .analysis-card.deep { border-left-width:5px; }
+    .analysis-detail { margin:0.75rem 0; padding-top:0.5rem; border-top:1px dashed var(--border); }
+    .analysis-detail:first-of-type { border-top:none; }
+    .exp-detail { list-style:none; margin:0.5rem 0; }
+    .exp-detail li { margin-bottom:0.4rem; }
+    .exp-detail li strong { color:var(--navy); }
+    .exp-table { width:100%; border-collapse:collapse; margin:0.75rem 0; font-size:0.82rem; }
+    .exp-table th, .exp-table td { border:1px solid var(--border); padding:0.35rem 0.5rem; text-align:left; }
+    .exp-table th { background:var(--paper); color:var(--navy); font-weight:600; }
+    .exp-table tr.is-ours { background:var(--evidence); }
+    .exp-table tr.is-ours td { font-weight:600; }
+    .notation { width:100%; border-collapse:collapse; margin:0.75rem 0; font-size:0.88rem; background:#fff; }
+    .notation th, .notation td { border:1px solid var(--border); padding:0.4rem 0.6rem; text-align:left; }
+    .notation th { background:var(--paper); color:var(--navy); font-weight:600; }
+    .notation td:first-child { width:22%; white-space:nowrap; }
+    .diagram { margin:0.75rem 0; }
+    .diagram img, .diagram svg { max-width:100%; height:auto; display:block; border:1px solid var(--border); border-radius:4px; background:#fff; }
+    .diagram figcaption { font-size:0.78rem; color:var(--muted); margin-top:0.35rem; }
+    .figure-row { margin:1.5rem 0; padding:1.25rem; background:#fff; border:1px solid var(--border); border-radius:8px; }
+    .figure-row figure { margin:0; text-align:center; }
+    .figure-row img, .figure-row svg { max-width:100%; height:auto; display:inline-block; }
+    .figure-row figcaption { font-size:0.82rem; color:var(--muted); margin-top:0.5rem; }
+    .figure-row h3 { color:var(--navy); font-size:1rem; margin-bottom:0.75rem; }
+    .mermaid { background:#fff; border:1px solid var(--border); border-radius:4px; padding:0.5rem; margin:0.5rem 0; text-align:center; }
+    .diagram img, .diagram svg, .figure-row img, .figure-row svg { cursor:zoom-in; transition:box-shadow .15s; }
+    .diagram img:hover, .diagram svg:hover, .figure-row img:hover, .figure-row svg:hover { box-shadow:0 0 0 2px #0d9488; }
+    #lightbox { position:fixed; inset:0; background:rgba(10,12,20,0.92); display:none; align-items:center; justify-content:center; z-index:1000; cursor:zoom-out; padding:3vh 3vw; }
+    #lightbox.open { display:flex; }
+    #lightbox .lb-content { display:flex; align-items:center; justify-content:center; }
+    #lightbox .lb-content img, #lightbox .lb-content svg { display:block; background:#fff; border-radius:6px; box-shadow:0 8px 40px rgba(0,0,0,0.5); }
+    #lightbox .lb-close { position:fixed; top:1rem; right:1.5rem; color:#fff; font-size:2rem; line-height:1; opacity:0.8; }
+    #lightbox .lb-cap { position:fixed; bottom:1.2rem; left:0; right:0; text-align:center; color:#e8e4df; font-size:0.8rem; padding:0 2rem; }
+    .hl-thesis { background:var(--thesis); padding:0 2px; }
+    .hl-concept { background:var(--concept); padding:0 2px; }
+    .hl-evidence { background:var(--evidence); padding:0 2px; }
+    .hl-counter { background:var(--counter); padding:0 2px; }
+    .hl-method { background:var(--method); padding:0 2px; }
+    .summary { background:#fff; border:1px solid var(--border); border-radius:8px; padding:2rem; margin-top:3rem; }
+    .summary h2 { color:var(--navy); margin-bottom:1rem; }
+    .summary .skeleton { font-family:'IBM Plex Sans',monospace; background:var(--paper); padding:1rem; border-radius:4px; margin:1rem 0; line-height:1.9; }
+    .summary .strength, .summary .weakness { padding:0.75rem 1rem; border-radius:4px; margin:0.5rem 0; }
+    .summary .strength { background:var(--counter); }
+    .summary .weakness { background:var(--concept); }
+    .feynman { background:#fff; border:1px solid var(--border); border-left:5px solid #0d9488; border-radius:0 8px 8px 0; padding:1.25rem 1.5rem; margin:1.5rem 0 2rem; }
+    .feynman h2 { color:#0d9488; font-size:1.15rem; margin-bottom:0.35rem; }
+    .feynman .tldr-meta { font-size:0.78rem; color:var(--muted); margin-bottom:0.6rem; }
+    .feynman p { font-size:0.95rem; line-height:1.85; margin-bottom:0.6rem; }
+    .faq details { background:#fff; border:1px solid var(--border); border-radius:6px; margin:0.5rem 0; }
+    .faq details[open] { box-shadow:0 1px 4px rgba(0,0,0,0.06); }
+    .faq summary { cursor:pointer; font-weight:600; color:var(--navy); padding:0.7rem 0.9rem; list-style:none; font-size:0.92rem; }
+    .faq summary::-webkit-details-marker { display:none; }
+    .faq summary::before { content:'▸'; color:#0d9488; margin-right:0.5rem; }
+    .faq details[open] summary::before { content:'▾'; }
+    .faq .answer { padding:0 0.9rem 0.85rem 1.8rem; font-size:0.9rem; line-height:1.8; color:#333; }
+    .deepdive .block { margin:0.9rem 0; padding:0.85rem 1.1rem; border-radius:4px; background:var(--paper); border-left:3px solid #6f42c1; }
+    .deepdive .block.crit { border-left-color:#dc3545; background:#fdf0f1; }
+    .deepdive .block h4 { color:var(--navy); margin-bottom:0.3rem; }
+    .deepdive .block ul { margin:0.3rem 0 0 1.1rem; }
+    .deepdive .block li { margin-bottom:0.3rem; font-size:0.9rem; }
+    .code-section { background:#fff; border:1px solid var(--border); border-radius:8px; padding:1.5rem 1.75rem; margin:2rem 0; }
+    .code-section h3 { color:var(--navy); font-size:1.05rem; margin:1.5rem 0 0.75rem; }
+    .code-section h3:first-of-type { margin-top:0; }
+    .code-section p, .code-section li { font-size:0.9rem; line-height:1.75; margin-bottom:0.5rem; }
+    .code-section ul { margin:0.5rem 0 0.75rem 1.25rem; }
+    .code-block { font-family:'IBM Plex Mono','IBM Plex Sans',monospace; font-size:0.78rem; line-height:1.65; background:#1e293b; color:#e2e8f0; padding:1rem 1.15rem; border-radius:6px; overflow-x:auto; margin:0.75rem 0; white-space:pre; tab-size:2; }
+    .code-block .cm { color:#94a3b8; font-style:italic; }
+    .code-block .kw { color:#7dd3fc; }
+    .code-block .fn { color:#fde68a; }
+    .code-block .str { color:#86efac; }
+    .code-note { font-size:0.82rem; color:var(--muted); margin:0.35rem 0 1rem; padding-left:0.75rem; border-left:3px solid #0d9488; }
+    .code-map { width:100%; border-collapse:collapse; margin:0.75rem 0; font-size:0.82rem; }
+    .code-map th, .code-map td { border:1px solid var(--border); padding:0.4rem 0.55rem; text-align:left; vertical-align:top; }
+    .code-map th { background:var(--paper); color:var(--navy); font-weight:600; }
+    .code-map code { font-size:0.78rem; background:var(--paper); padding:0.1rem 0.3rem; border-radius:3px; }
+    @media (max-width:1100px) {
+      .col-labels { display:none; }
+      .row { grid-template-columns:1fr; }
+      .row > div::before { display:block; font-size:0.7rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); margin-bottom:0.35rem; }
+      .col-original::before { content:'原文'; }
+      .col-translation::before { content:'翻译'; }
+      .col-analysis::before { content:'解析'; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sticky-head">
+    <header class="top-nav">
+      <h1><a href="https://arxiv.org/abs/2408.06072" target="_blank" rel="noopener">CogVideoX — Text-to-Video Diffusion Models with An Expert Transformer</a></h1>
+      <div class="meta">DeepLearning-Paper-with-Code · Video Generation · arXiv(2024) / ICLR(2025) · Yang et al. (Tsinghua / Zhipu AI)</div>
+      <div class="legend">
+        <span class="hl-thesis">核心论点</span>
+        <span class="hl-concept">关键概念</span>
+        <span class="hl-evidence">实证证据</span>
+        <span class="hl-counter">让步/反驳</span>
+        <span class="hl-method">方法论</span>
+      </div>
+    </header>
+    <nav class="chapter-nav">
+      <a href="#feynman">速读</a>
+      <a href="#abstract">Abstract</a>
+      <a href="#intro">Introduction</a>
+      <a href="#related">Related Work</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#code">代码</a>
+      <a href="#training">Training</a>
+      <a href="#data">Data</a>
+      <a href="#experiments">Experiments</a>
+      <a href="#conclusion">Conclusion</a>
+      <a href="#notation">符号表</a>
+      <a href="#overview">总览</a>
+      <a href="#faq">十问</a>
+      <a href="#deepdive">深挖</a>
+    </nav>
+  </div>
+  <main>
+    <section class="feynman" id="feynman">
+      <h2>🎮 费曼一分钟（通俗速读）</h2>
+      <div class="tldr-meta">通俗速读 · 先建立模糊认知，再读正文</div>
+      <p>文生视频 = 扩散 + DiT，但旧模型动作小、时长短、叙事难连贯。CogVideoX 四件套：<strong>3D 因果 VAE</strong>（时空 8×8×4 压缩，减 flicker）+ <strong>Expert Transformer</strong>（文本/视频 Expert AdaLN + 3D full attention 替代 2D+1D 分离注意力）+ <strong>Multi-Resolution Frame Pack</strong>（混时长/分辨率 batch 训练）+ <strong>密集 caption 流水线</strong>（Panda70M → CogVLM 帧 caption → GPT-4 汇总 → CogVLM2-Caption）。产出 768×1360、16fps、10 秒视频；开源 2B/5B T2V 与 I2V。</p>
+    </section>
+
+    <section class="figure-row">
+      <h3>📄 原文 Teaser：长时高分辨率文生视频样例</h3>
+      <figure>
+        <img src="assets/cogvideox/fig1.jpg" alt="CogVideoX 长时高动作文生视频示例">
+        <figcaption>Teaser：CogVideoX 可生成动作连贯、语义丰富的长时高分辨率视频（768×1360，16fps，10s）。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="abstract">Abstract</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>We present <span class="hl-thesis">CogVideoX</span>, a large-scale text-to-video diffusion transformer that generates 10-second videos aligned with text prompts at 16 fps and 768×1360 resolution. Previous models often struggled with limited motion and short durations.</p>
+        <p>We introduce a <span class="hl-method">3D VAE</span> for spatiotemporal compression, an <span class="hl-method">expert transformer</span> with expert adaptive LayerNorm for text-video fusion, and <span class="hl-method">progressive training</span> with multi-resolution frame packing. An effective text-video preprocessing pipeline and video captioning model significantly improve quality and semantic alignment. CogVideoX achieves SOTA on automated benchmarks and human evaluation. Code and weights are released.</p>
+      </div>
+      <div class="col-translation">
+        <p>我们提出 <strong>CogVideoX</strong>——大型文生视频扩散 Transformer，可生成与文本对齐的 10 秒视频（16fps，768×1360）。此前模型常动作有限、时长短。</p>
+        <p>引入<strong>3D VAE</strong>做时空压缩、带 Expert AdaLN 的<strong>Expert Transformer</strong>融合文本-视频、以及含 multi-resolution frame pack 的<strong>渐进训练</strong>。有效预处理与 video caption 模型显著提升质量与语义对齐。自动评测与人类评估 SOTA。代码与权重公开。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#ffc107;">
+          <span class="tag">概括主张</span>
+          <h4>段落功能</h4>
+          <p>宣告「3D VAE + Expert DiT + 训练/数据流水线」四件套，承诺长时、高动作、高分辨率、开源商用级 T2V。</p>
+          <h4>逻辑角色</h4>
+          <p>论证链起点：旧 T2V 局限 → 架构+训练+数据三管齐下 → SOTA + 开源。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="intro">1. Introduction</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>Text-to-video has advanced via <span class="hl-concept">Transformers</span> and <span class="hl-concept">diffusion models</span> (CogVideo, Phenaki, Make-A-Video, DiT/Sora). Yet achieving <span class="hl-counter">long-term consistent video with dynamic plots</span> remains unclear — e.g., generating "lightning splits a rock, a person jumps out."</p>
+        <p>Challenges: efficiently modeling high-dim video, aligning video with text semantics, and constructing high-quality text-video pairs for training.</p>
+      </div>
+      <div class="col-translation">
+        <p>文生视频在 Transformer 与扩散模型推动下进展迅速（CogVideo、Phenaki、Make-A-Video、DiT/Sora），但<strong>长时一致、情节动态</strong>仍难——如「闪电劈开岩石、人从中跳出」类 prompt。</p>
+        <p>挑战：高效建模高维视频、文本-视频语义对齐、构建高质量 text-video 训练对。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#1a2744;">
+          <span class="tag">引出问题</span>
+          <h4>段落功能</h4>
+          <p>承接 Sora 时代背景，点明「长叙事 + 大动作」仍是 open problem；三路挑战对应后文 VAE / Expert Transformer / 数据流水线。</p>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-original">
+        <p>We introduce <span class="hl-thesis">CogVideoX</span>: <span class="hl-method">3D causal VAE</span> compresses video spatiotemporally; <span class="hl-method">expert Transformer</span> with expert AdaLN fuses text and video; <span class="hl-method">progressive training</span> (multi-resolution frame pack, resolution curriculum) plus <span class="hl-method">Explicit Uniform Sampling</span> stabilizes diffusion training.</p>
+        <p>A video captioning pipeline (Panda70M → CogVLM frame captions → GPT-4 summary → LLaMA2/CogVLM2-Caption) recaptions ~35M clips. We train <span class="hl-evidence">2B and 5B</span> models; 5B achieves SOTA on automated and human benchmarks (Fig. radar).</p>
+      </div>
+      <div class="col-translation">
+        <p>我们提出 CogVideoX：<strong>3D 因果 VAE</strong>时空压缩；<strong>Expert Transformer</strong>（Expert AdaLN）融合文本-视频；<strong>渐进训练</strong>（frame pack、分辨率课程）+ <strong>Explicit Uniform Sampling</strong> 稳定扩散训练。</p>
+        <p>video caption 流水线重标注约 3500 万片段。训 <strong>2B/5B</strong> 模型；5B 在自动与人类评测 SOTA（雷达图）。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#ffc107;">
+          <span class="tag">提出论点</span>
+          <h4>论证技巧</h4>
+          <p>四模块一一对应四挑战；强调<strong>开源商用级</strong>（首个 open commercial-grade T2V）作为工程贡献。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文雷达图：开源 T2V 多维度对比</h3>
+      <figure>
+        <img src="assets/cogvideox/fig6.png" alt="CogVideoX radar chart vs open T2V models">
+        <figcaption>Intro 雷达图：CogVideoX-5B/2B 在 Human Action、Dynamic Degree、Multiple Objects 等维度领先或具竞争力；体现可扩展性。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="architecture">2. Architecture — 3D VAE &amp; Expert Transformer</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>Given video-text pair, a <span class="hl-method">3D causal VAE</span> compresses video to latents $z_{\text{vision}}$; T5 encodes text to $z_{\text{text}}$. Concatenated sequence passes through <span class="hl-method">expert transformer</span> blocks; output unpatchified and decoded to video.</p>
+        <p><strong>3D VAE:</strong> 3D conv compresses <span class="hl-evidence">8×8×4</span> (spatial×spatial×temporal). Temporally causal conv (padding at past only) prevents future leakage. Context parallel on temporal dim for long videos. Variant B: 16 latent channels, flickering ↓ vs 2D VAE baseline.</p>
+      </div>
+      <div class="col-translation">
+        <p>视频-文本对经 <strong>3D 因果 VAE</strong> 得 latent $z_{\text{vision}}$；T5 编码文本得 $z_{\text{text}}$。拼接后过 expert transformer；输出 unpatchify 再 VAE 解码。</p>
+        <p><strong>3D VAE：</strong>3D 卷积实现 <strong>8×8×4</strong> 压缩。时间因果卷积（仅向过去 padding）避免未来信息泄漏；长视频用 context parallel。选用 variant B（16 通道），flicker 低于 SDXL 2D VAE 基线。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#0d6efd;">
+          <span class="tag">3D VAE</span>
+          <h4>设计取舍</h4>
+          <p>比逐帧 2D VAE 更减 flicker、更高压缩比；过激进压缩（16×16×8）即使加通道也难收敛——选 8×8×4 为 sweet spot。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 2：CogVideoX 整体架构（MAIN）</h3>
+      <figure>
+        <img src="assets/cogvideox/fig2.png" alt="CogVideoX overall architecture expert transformer">
+        <figcaption>Fig.2：3D VAE 编解码 + T5 文本 + 拼接序列 → Expert Transformer DiT 堆叠 → 去噪 latent → 解码视频。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure：3D Causal VAE 结构与 Context Parallel</h3>
+      <figure>
+        <img src="assets/cogvideox/fig3.jpg" alt="CogVideoX 3D causal VAE structure">
+        <figcaption>3D VAE：(a) encoder/decoder + KL 正则，8×8×4 压缩；(b) 时间因果卷积的 context parallel 通信（每 rank 传 $k{-}1$ 帧）。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Expert Transformer:</strong> Latent shape $T\times H\times W\times C$ patchified to length $\frac{T}{q}\cdot\frac{H}{p}\cdot\frac{W}{p}$. <span class="hl-method">3D-RoPE</span>: independent 1D-RoPE on $(x,y,t)$ with channel split 3/8, 3/8, 2/8.</p>
+        <p><span class="hl-method">Expert AdaLN</span>: Vision Expert AdaLN and Text Expert AdaLN apply diffusion timestep modulation separately — aligns modalities without dual transformers (vs MMDiT). <span class="hl-method">3D full attention</span> over concatenated text+video tokens (not separated 2D+1D attention).</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>Expert Transformer：</strong>latent patchify 成序列。<strong>3D-RoPE</strong>：对 $(x,y,t)$ 独立 1D-RoPE，通道比 3/8、3/8、2/8。</p>
+        <p><strong>Expert AdaLN</strong>：视觉/文本各用 Expert AdaLN 做 timestep 调制——比 MMDiT 双 Transformer 更省参。对拼接 token 做 <strong>3D full attention</strong>（非 2D+1D 分离注意力）。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color:#6f42c1;">
+          <span class="tag">Expert DiT</span>
+          <div class="analysis-detail">
+            <h4>3D Full Attention vs 2D+1D（Fig. attention）</h4>
+            <p>分离时空注意力时，帧 $i{+}1$ 的人头无法直接 attend 帧 $i$ 的同物体——大动作一致性差。Full 3D attention + FlashAttention 可扩展。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure：分离时空注意力的不一致问题</h3>
+      <figure>
+        <img src="assets/cogvideox/fig5.jpg" alt="separated spatial temporal attention inconsistency">
+        <figcaption>分离 2D+1D 注意力：相邻帧同一物体（如人头）无法直接 attend，信息需经背景间接传递 → 生成不一致。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <section class="code-section" id="code">
+      <h2 class="section-title" style="margin-top:0;border:none;padding:0;">💻 代码对照 — 3D VAE · 3D Attention · Frame Pack · 训练流程</h2>
+      <p>官方仓库：<a href="https://github.com/THUDM/CogVideo" target="_blank" rel="noopener">github.com/THUDM/CogVideo</a>（SAT 训练栈）· 推理常用 <a href="https://github.com/huggingface/diffusers" target="_blank" rel="noopener">diffusers</a> 的 <code>CogVideoXPipeline</code>。下文对照论文与 <code>sat/vae_modules/</code>、<code>sat/dit_video_concat.py</code>、<code>sat/data_video.py</code>。</p>
+
+      <h3>① 3D 因果 VAE — 压缩率与因果卷积</h3>
+      <p><strong>总压缩 8×8×4</strong>（像素 → latent）：encoder 有 3 级 spatial downsample（各 2× → 8×），前 2 级同时压时间维（各 2× → 4×）。配置见 <code>cogvideox_5b.yaml</code>：<code>ch_mult: [1,2,2,4]</code>、<code>temporal_compress_times: 4</code>、<code>z_channels: 16</code>。</p>
+      <table class="code-map">
+        <thead><tr><th>阶段</th><th>像素空间</th><th>latent 空间（VAE 后）</th><th>DiT token 网格（patch=2）</th></tr></thead>
+        <tbody>
+          <tr><td>例：480×720，49 帧</td><td>$T{=}49,\; H{=}480,\; W{=}720$</td><td>$T'{=}13,\; H'{=}60,\; W'{=}90$（约 8×8×4）</td><td>$\text{rope}_T{=}13,\; \text{rope}_H{=}30,\; \text{rope}_W{=}45$</td></tr>
+          <tr><td>压缩来源</td><td>—</td><td><code>ContextParallelEncoder3D</code> 前 2 级 <code>compress_time=True</code></td><td><code>ImagePatchEmbeddingMixin</code> 对 latent 做 $2{\times}2$ patch（时间维 patch=1）</td></tr>
+        </tbody>
+      </table>
+      <p class="code-note"><strong>关于「时间 ×4」：</strong>用户常把 <code>time_compressed_rate: 4</code> 与 VAE 时间压缩混淆——二者一致：VAE 把帧数压到约 $T' = \lfloor(T-1)/4\rfloor + 1$，故原始帧数需满足 <strong>4k+1</strong>（代码里 <code>nearest_smaller_4k_plus_1</code>）。</p>
+
+      <p><strong>因果卷积：</strong><code>ContextParallelCausalConv3d</code> 只在时间维过去侧 padding（<code>pad_mode="first"</code>），当前帧不窥视未来帧 → 自回归解码友好、减少时序泄漏。</p>
+      <div class="code-block"><span class="cm"># vae_modules/cp_enc_dec.py — Encoder 下采样逻辑（简化）</span>
+<span class="kw">for</span> i_level <span class="kw">in</span> range(num_resolutions - <span class="str">1</span>):
+    compress_time = (i_level &lt; log2(temporal_compress_times))  <span class="cm"># 前 2 级：时空同压</span>
+    down.downsample = DownSample3D(..., compress_time=compress_time)
+    <span class="cm"># compress_time=True → avg_pool1d(kernel=2) 压 T；同时 spatial 2×</span></div>
+
+      <h3>② 图像 / 单帧视频 — encode &amp; decode</h3>
+      <p>训练把<strong>图像当 T=1 的视频</strong>混入 batch。推理 I2V 时输入首帧，后续帧由 DiT 生成。</p>
+      <ul>
+        <li><strong>VAE：</strong>单帧张量形状 <code>[B, C, T=1, H, W]</code>，走同一 <code>VideoAutoencoderInferenceWrapper.encode/decode</code>；时间维仅 1 帧，因果卷积退化为普通 3D conv。</li>
+        <li><strong>帧数约束：</strong>多帧视频必须 <code>T % 4 == 1</code>（如 49、81）；不足时用<strong>末帧重复</strong> pad（见 Frame Pack）。</li>
+        <li><strong>位置编码：</strong><code>Basic3DPositionEmbeddingMixin</code> 在 <code>images.shape[1]==1</code> 时只取空间位置表（<code>text_length + H×W</code>），不按完整时间轴展开。</li>
+        <li><strong>论文 patchify：</strong>当时间 patch $q&gt;1$ 时，在序列开头 repeat 第一帧，使图文联合训练时图像与短视频 token 布局一致（<code>model.tex</code>）。</li>
+      </ul>
+      <div class="code-block"><span class="cm"># 伪代码 — 像素 ↔ latent（DiT 训练/推理共用）</span>
+<span class="cm"># x: [B, 3, T, H, W]  取值约 [-1, 1]</span>
+z = vae.encode(x)           <span class="cm"># [B, 16, T', H/8, W/8]  冻结权重</span>
+z_noisy = add_noise(z, t)   <span class="cm"># 扩散加噪在 latent 上</span>
+v_pred = dit(z_noisy, t, text)  <span class="cm"># Expert Transformer 预测 v</span>
+z_hat = denoise_step(...)
+video = vae.decode(z_hat)   <span class="cm"># [B, 3, T, H, W]</span></div>
+      <p class="code-note">DiT 阶段 <code>first_stage_config</code> 加载 <code>3d-vae.pt</code> 且 <code>loss_config: Identity</code> —— <strong>VAE 不参与 DiT 反传</strong>，与 LDM 相同两阶段范式。</p>
+
+      <h3>③ 3D Full Attention — 机制与伪代码</h3>
+      <p>对比 <strong>2D+1D</strong>：先做帧内 spatial attention，再做跨帧 temporal attention——相邻帧同一物体 token 不直接相连（Fig.5）。<strong>3D Full</strong> 把文本 token 与所有时空 patch token 拼成一条序列，做一次标准多头 self-attention；视频 token 的 Q/K 经 <strong>3D-RoPE</strong> 注入 $(t,y,x)$ 相对位置。</p>
+      <div class="code-block"><span class="cm"># dit_video_concat.py — AdaLNMixin.layer_forward（核心逻辑简化）</span>
+text_h, img_h = hidden[:, :n_text], hidden[:, n_text:]   <span class="cm"># Expert AdaLN 分路调制</span>
+text_h = modulate(LN(text_h), text_shift, text_scale)
+img_h  = modulate(LN(img_h),  img_shift,  img_scale)
+seq = cat([text_h, img_h], dim=<span class="str">1</span>)              <span class="cm"># [B, n_text + T·H·W, D]</span>
+
+Q, K, V = linear(seq)                                   <span class="cm"># 同一套 W_q,W_k,W_v</span>
+Q_vid, K_vid = rotary3d(Q[:, n_text:], K[:, n_text:])   <span class="cm"># 仅视频 token 加 3D-RoPE</span>
+attn = softmax(Q @ K^T / sqrt(d)) @ V                   <span class="cm"># 全连接：文本↔任意帧任意位置</span>
+<span class="cm"># 文本 token 可 attend 到第 i 帧物体 → 第 i+1 帧同位置（大动作一致）</span></div>
+      <p>复杂度：序列长度 $L = n_{\text{text}} + T' \cdot H' \cdot W'$（再除以 patch²）。5B 配置 768×1360×10s 时 $L$ 可达 70 万级（附录），依赖 FlashAttention + 激活检查点。</p>
+
+      <h3>④ Frame Pack — len &lt; max 与 len &gt; max 怎么处理？</h3>
+      <p>每个 training step 为 batch 设定统一目标帧数 <code>num_frames</code>（由当前 stage 的 max duration × fps 决定，如 6s×8fps=49）。<code>sat/data_video.py</code>：</p>
+      <div class="code-block"><span class="kw">def</span> <span class="fn">pad_last_frame</span>(tensor, num_frames):
+    <span class="kw">if</span> len(tensor) &lt; num_frames:
+        pad_len = num_frames - len(tensor)
+        last = tensor[-<span class="str">1</span>]
+        pad = last.unsqueeze(<span class="str">0</span>).expand(pad_len, ...)
+        <span class="kw">return</span> cat([tensor, pad], dim=<span class="str">0</span>)   <span class="cm"># ⬅ 短于目标：末帧重复，不用黑帧</span>
+    <span class="kw">else</span>:
+        <span class="kw">return</span> tensor[:num_frames]            <span class="cm"># ⬆ 长于目标：均匀采样后仍超长则截断前 num_frames 帧</span></div>
+      <ul>
+        <li><strong>len &lt; num_frames（短视频 / 图像）：</strong>用<strong>最后一帧复制</strong>填满（官方 issue #643 确认：预训练工程选择，非 zero pad）。图像经采样后 $T{=}1$，再 pad 到 batch 统一长度。</li>
+        <li><strong>len &gt; num_frames（长视频）：</strong><code>load_video</code> 先在时间轴上<strong>均匀抽帧</strong>到目标数量；若仍 $\ge$ num_frames 则 <code>tensor[:num_frames]</code> <strong>截断</strong>。不会把整段长视频塞进单次 forward。</li>
+        <li><strong>过短整段丢弃：</strong><code>process_fn_video</code> 若 <code>duration &lt; num_frames/fps</code> 则 skip 该样本。</li>
+        <li><strong>与 Patch'n Pack 关系：</strong>论文层面对不同分辨率再 pack 进同形状 batch；SAT 实现里主要靠「每 stage 固定 num_frames + 上述 pad/truncate」达成 mixed-duration，配合 3D RoPE 外推取位置表前段。</li>
+      </ul>
+
+      <h3>⑤ VAE 与 DiT — 两阶段训练（非端到端联合）</h3>
+      <p>论文 §VAE + 附录明确：<strong>先单独训 3D VAE，再冻结训 CogVideoX DiT</strong>。VAE 自身亦分两阶段。</p>
+      <div class="code-block"><span class="cm"># 阶段 A — 3D Causal VAE（独立 job，vae_modules/autoencoder.py）</span>
+<span class="kw">for</span> step <span class="kw">in</span> vae_steps:
+    x = batch[<span class="str">"video"</span>]                    <span class="cm"># [B,3,T,H,W]</span>
+    z, x_rec, reg = vae(x)
+    loss = L1(x, x_rec) + LPIPS(x, x_rec) + KL(reg)
+    <span class="kw">if</span> step &gt; disc_start: loss += GAN(x, x_rec)
+    <span class="cm"># A1: 256², 17 帧；A2: context parallel 拉长到 161 帧微调</span>
+save(<span class="str">"3d-vae.pt"</span>)
+
+<span class="cm"># 阶段 B — CogVideoX DiT（cogvideox_5b.yaml，VAE 冻结）</span>
+vae.load(<span class="str">"3d-vae.pt"</span>); vae.eval(); freeze(vae)
+<span class="kw">for</span> step <span class="kw">in</span> dit_steps:
+    frames = pad_last_frame(load_video(...), num_frames)  <span class="cm"># 数据</span>
+    z = vae.encode(frames)              <span class="cm"># no_grad，latent 扩散</span>
+    z_t = q_sample(z, t)
+    v_pred = dit(z_t, t, t5(text))
+    loss = ||v - v_pred||²
+    <span class="cm"># B1→B2→B3→B4: 256→480→768 分辨率；末 10k step HQ 子集微调</span></div>
+      <table class="code-map">
+        <thead><tr><th>阶段</th><th>训练对象</th><th>分辨率 / 时长</th><th>备注</th></tr></thead>
+        <tbody>
+          <tr><td>A1 VAE</td><td>Encoder+Decoder+判别器</td><td>256²，17 帧</td><td>L1+LPIPS+KL，后加 GAN</td></tr>
+          <tr><td>A2 VAE</td><td>同上</td><td>context parallel，161 帧</td><td>扩展长视频重建</td></tr>
+          <tr><td>B1–B3 DiT</td><td>Expert Transformer + T5 冻结</td><td>256→480→768，6s→10s</td><td>Frame Pack + v-pred + Uniform Sampling</td></tr>
+          <tr><td>B4 FT</td><td>DiT</td><td>768×1360，10s</td><td>top 20% 干净数据，去字幕/水印</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <h2 class="section-title" id="training">3. Training — Frame Pack &amp; Progressive Curriculum</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>Mix images and videos (image = 1-frame video). Diffusion uses <span class="hl-method">v-prediction</span> + zero SNR schedule (LDM-style).</p>
+        <p><strong>Multi-Resolution Frame Pack:</strong> Inspired by Patch'n Pack — pack videos of different durations/resolutions into same batch shape. <span class="hl-method">3D RoPE extrapolation</span> (extend position table front portion per video) preserves detail vs interpolation.</p>
+        <p><strong>Pad / truncate rule (code):</strong> Shorter clips → <span class="hl-method">repeat last frame</span> to <code>num_frames</code>; longer → uniform subsample then <span class="hl-method">truncate</span> to first <code>num_frames</code>. See <a href="#code">代码 §④</a>.</p>
+        <p><strong>Progressive training:</strong> 256px → 512px → 768px; short side resize, aspect ratio preserved; final HQ fine-tune on top 20% clean subset.</p>
+      </div>
+      <div class="col-translation">
+        <p>图文混合训练（图=单帧视频）。扩散用 <strong>v-prediction</strong> + zero SNR 调度。</p>
+        <p><strong>Multi-Resolution Frame Pack：</strong>不同长度/分辨率视频 pack 进同 batch。<strong>3D RoPE 外推</strong>（按分辨率取表前段）保细节。</p>
+        <p><strong>Pad / 截断（代码）：</strong>短于目标 → <strong>末帧重复</strong> 填满；长于目标 → 均匀抽帧后 <strong>截断</strong> 前 <code>num_frames</code> 帧。详见 <a href="#code">代码 §④</a>。</p>
+        <p><strong>渐进训练：</strong>256→512→768px；保宽高比；末阶段 20% 高质量子集微调。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#0d6efd;">
+          <span class="tag">训练策略</span>
+          <h4>逻辑角色</h4>
+          <p>Frame Pack 解决固定帧数训练的「双模态分裂」与数据浪费；<code>pad_last_frame</code> 用末帧重复（非黑帧）避免引入假运动静止段。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure：Mixed-Duration Training &amp; Frame Pack</h3>
+      <figure>
+        <img src="assets/cogvideox/fig4.jpg" alt="CogVideoX multi resolution frame pack">
+        <figcaption>Frame Pack：同 batch 内 pack 不同时长/分辨率视频，充分利用数据、增强泛化。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Explicit Uniform Sampling:</strong> Standard DDPM samples $t$ uniformly per rank — empirically non-uniform, loss fluctuates (loss magnitude varies by $t$). Split $[1,T]$ into $n$ intervals ($n$ = data-parallel ranks); each rank samples uniformly within its interval → stable loss (Fig. ablation).</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>Explicit Uniform Sampling：</strong>常规每 rank 随机采 $t$ 实际不够均匀、loss 波动大。将 $[1,T]$ 划为 $n$ 段（$n$=并行 rank 数），每 rank 在各自区间均匀采样 → loss 更稳、收敛更快。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#6f42c1;">
+          <span class="tag">采样技巧</span>
+          <h4>论证技巧</h4>
+          <p>工程向但可消融：各 timestep 单独 loss 均下降——不是某一 $t$ 的 trick，而是全局训练动力学改善。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="data">4. Data — Filtering &amp; Dense Captioning</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>~<span class="hl-evidence">35M</span> filtered single-shot clips (~6s avg) + <span class="hl-evidence">2B</span> aesthetic-filtered images (LAION-5B, COYO-700M).</p>
+        <p><strong>Video filtering:</strong> 6 negative categories (Editing, Lack of Motion Connectivity, Low Quality, Lecture Type, Text Dominated, Noisy Screenshots) — Video-LLaMA classifiers + optical flow + aesthetic dynamic thresholds.</p>
+        <p><strong>Dense caption pipeline:</strong> Panda70M short caption → CogVLM per-frame dense caption → GPT-4 summary → LLaMA2 fine-tune for scale → <span class="hl-method">CogVLM2-Caption</span> end-to-end model (also enables video-to-video via caption).</p>
+      </div>
+      <div class="col-translation">
+        <p>约 <strong>3500 万</strong>过滤单镜头片段（均 ~6s）+ <strong>20 亿</strong>美学过滤图像。</p>
+        <p><strong>视频过滤：</strong>6 类负样本（剪辑/无运动连贯/低质/讲座/文字主导/屏幕录制）+ 光流与美学动态阈值。</p>
+        <p><strong>密集 caption：</strong>Panda70M 短 caption → CogVLM 帧级 dense caption → GPT-4 汇总 → LLaMA2 规模化 → <strong>CogVLM2-Caption</strong> 端到端（亦可 video-to-video）。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#ffc107;">
+          <span class="tag">数据论点</span>
+          <h4>段落功能</h4>
+          <p>文生视频瓶颈常在<strong>caption 质量</strong>而非仅算力——CogVideoX 把数据工程（过滤+重标注）与模型设计并列论证。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure：Dense Video Caption 流水线</h3>
+      <figure>
+        <img src="assets/cogvideox/fig7.jpg" alt="CogVideoX dense video caption pipeline">
+        <figcaption>Caption 流水线：Panda70M 短视频 caption → 抽帧 CogVLM dense 图像 caption → GPT-4 汇总 → LLaMA2 微调加速。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="experiments">5. Experiments</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Ablations:</strong> 3D RoPE beats sinusoidal absolute PE (faster loss convergence). <span class="hl-evidence">Expert AdaLN</span> beats no-expert and MMDiT (same params) on FVD &amp; CLIP4Clip. <span class="hl-evidence">3D full attention</span> beats 2D+1D (lower FVD early; 2D+1D unstable at 5B). <span class="hl-evidence">Explicit Uniform Sampling</span> stabilizes loss per timestep.</p>
+        <p><strong>VAE:</strong> Ours 3D VAE — flickering 85.5, PSNR 29.1 vs Open-Sora 92.4/28.5 on WebVid 17-frame 256².</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>消融：</strong>3D RoPE 优于正弦绝对位置编码。Expert AdaLN 优于无 expert 与同参 MMDiT（FVD、CLIP4Clip）。3D full attention 优于 2D+1D（5B 时后者易崩溃）。Explicit Uniform Sampling 稳定各 timestep loss。</p>
+        <p><strong>VAE：</strong>本 3D VAE flickering 85.5、PSNR 29.1，优于 Open-Sora 等开源 3D VAE。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#6f42c1;">
+          <span class="tag">消融链</span>
+          <h4>论证技巧</h4>
+          <p>架构选择均有 loss/FVD 曲线支撑——Expert AdaLN 是「够用且省参」相对 MMDiT 的关键论据。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure：WebVid 消融（FVD / CLIP4Clip）</h3>
+      <figure>
+        <img src="assets/cogvideox/fig8.png" alt="CogVideoX ablation FVD CLIP4Clip">
+        <figcaption>消融：Expert AdaLN vs MMDiT vs 无 expert；3D full vs 2D+1D；Uniform Sampling——CogVideoX 设计在 FVD/CLIP4Clip 上均占优。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Automated metrics (Table 2):</strong> On VBench-aligned dimensions + Dynamic Quality + GPT4o-MTScore, <span class="hl-evidence">CogVideoX-5B</span> wins 5/7 metrics; <span class="hl-evidence">CogVideoX-2B</span> best on Dynamic Degree (66.39) and competitive elsewhere. Baselines: T2V-Turbo, AnimateDiff, VideoCrafter2, OpenSora, Show-1, Gen-2, Pika, LaVie-2.</p>
+        <p><strong>Human eval vs Kling (2024.7):</strong> CogVideoX-5B wins on Sensory Quality (0.722), Instruction Following (0.495), Physics Simulation (0.667), Cover Quality (0.712); total 2.74 vs Kling 2.17.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>自动指标（表 2）：</strong>CogVideoX-5B 在 7 项中 5 项最佳；2B 在 Dynamic Degree 最高（66.39）。基线含 T2V-Turbo、AnimateDiff、VideoCrafter2、OpenSora、Show-1、Gen-2、Pika、LaVie-2。</p>
+        <p><strong>人类评测 vs Kling：</strong>CogVideoX-5B 在感官质量、指令遵循、物理仿真、封面质量全胜；总分 2.74 vs Kling 2.17。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color:#0d6efd;">
+          <span class="tag">主结果</span>
+          <table class="exp-table">
+            <thead><tr><th>Model</th><th>Human Action</th><th>Dynamic Degree</th><th>Multiple Objects</th><th>Dynamic Quality</th><th>GPT4o-MT</th></tr></thead>
+            <tbody>
+              <tr><td>OpenSora V1.2</td><td>85.8</td><td>47.22</td><td>58.41</td><td>63.7</td><td>2.52</td></tr>
+              <tr><td>LaVie-2</td><td>96.4</td><td>31.11</td><td>64.88</td><td>—</td><td>2.46</td></tr>
+              <tr class="is-ours"><td>CogVideoX-2B</td><td>96.6</td><td><strong>66.39</strong></td><td>57.68</td><td>57.7</td><td>3.09</td></tr>
+              <tr class="is-ours"><td>CogVideoX-5B</td><td><strong>96.8</strong></td><td>62.22</td><td><strong>70.95</strong></td><td><strong>69.5</strong></td><td><strong>3.36</strong></td></tr>
+            </tbody>
+          </table>
+          <ul class="exp-detail">
+            <li><strong>论点↔证据：</strong>强调 Dynamic Degree / Dynamic Quality / GPT4o-MT——避免「静态视频刷分」；5B 在复杂动态场景领先。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="conclusion">6. Conclusion</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>We present <span class="hl-thesis">CogVideoX</span>, a SOTA text-to-video diffusion model with 3D VAE and Expert Transformer, generating coherent long videos with significant motion. We explore scaling laws and aim for larger models and longer, higher-quality generation.</p>
+      </div>
+      <div class="col-translation">
+        <p>我们提出 CogVideoX——SOTA 文生视频扩散模型，以 3D VAE + Expert Transformer 生成动作丰富、时序连贯的长视频。正探索 scaling law，目标更大模型与更长更高质量生成。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#ffc107;">
+          <span class="tag">总结</span>
+          <h4>逻辑角色</h4>
+          <p>闭环：长叙事 T2V 难题 → 架构+训练+数据三件套 → 开源 2B/5B 商用级 → scaling 展望。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="summary" id="notation">
+      <h2>符号速查表</h2>
+      <table class="notation">
+        <thead><tr><th>符号</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td>$T,H,W,C$</td><td>视频 latent 帧数 / 高 / 宽 / 通道</td></tr>
+          <tr><td>$z_{\text{vision}}, z_{\text{text}}$</td><td>patchify 后视频 token 序列；T5 文本 embedding 序列</td></tr>
+          <tr><td>3D VAE</td><td>时空 8×8×4 因果 VAE，KL + LPIPS + GAN 训练</td></tr>
+          <tr><td>Expert AdaLN</td><td>视觉/文本分支独立 adaptive LayerNorm（timestep 调制）</td></tr>
+          <tr><td>3D-RoPE</td><td>对 $(x,y,t)$ 三分量 RoPE，通道 3/8+3/8+2/8</td></tr>
+          <tr><td>Frame Pack</td><td>同 batch pack 不同时长/分辨率视频（Patch'n Pack 思路）</td></tr>
+          <tr><td>Explicit Uniform Sampling</td><td>各 DP rank 负责 $t$ 区间分段均匀采样</td></tr>
+          <tr><td>v-prediction</td><td>扩散目标预测 velocity $v$（非 $\epsilon$）</td></tr>
+          <tr><td>FVD / CLIP4Clip</td><td>视频 Fréchet 距离；文本-视频 CLIP 对齐分</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="summary" id="overview">
+      <h2>论证结构总览</h2>
+      <div class="skeleton">
+        问题（T2V 动作小、时长短、叙事难连贯；数据 caption 差）<br/>
+        → 论点（3D VAE 降维减 flicker + Expert DiT 深融合 + 渐进/Frame Pack 训练 + 密集 caption 数据）<br/>
+        → 方法（3D causal VAE 8×8×4；Expert AdaLN + 3D full attention + 3D-RoPE；v-pred + zero SNR；Explicit Uniform Sampling）<br/>
+        → 数据（35M 过滤 clip + 2B 图；6 类负样本过滤；Panda→CogVLM→GPT-4→CogVLM2-Caption）<br/>
+        → 证据（消融 Fig.8；Table 2 七指标；人类评测 vs Kling；VAE PSNR/flicker）<br/>
+        → 结论（开源 2B/5B T2V+I2V；ICLR 2025）
+      </div>
+      <h4>核心主张（一句话）</h4>
+      <p>通过 3D 因果 VAE、Expert Transformer（Expert AdaLN + 3D 全注意力）与渐进式 multi-resolution 训练，配合大规模 dense video caption 流水线，CogVideoX 在开源文生视频中实现长时、高动作、高分辨率且文本对齐的 SOTA 生成。</p>
+      <div class="strength"><strong>论证最强处：</strong>架构-训练-数据三线并列且均有消融；Dynamic Degree/Quality 指标针对「静态刷分」；开源 5B 商用级权重；人类评测正面刚 Kling。</div>
+      <div class="weakness"><strong>论证最弱处：</strong>部分 VBench 维度（aesthetic/imaging）非最优；训练细节（算力、步数）主要在附录；caption 流水线依赖 GPT-4/CogVLM 闭源组件；10s/768p 推理成本未充分量化。</div>
+      <p style="margin-top:1rem;font-size:0.85rem;color:var(--muted);">来源：<a href="https://arxiv.org/abs/2408.06072">arXiv:2408.06072</a> · <a href="https://github.com/THUDM/CogVideo" target="_blank" rel="noopener">github.com/THUDM/CogVideo</a> · 生成工具：paper-logic-reading skill（三栏版）</p>
+    </section>
+
+    <section class="summary faq" id="faq">
+      <h2>🧩 结构化十问（AI 解构）</h2>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.75rem;">让 AI 当助教，从十个角度提取论文骨架。</p>
+      <details open>
+        <summary>Q1 · 论文试图解决什么问题？</summary>
+        <div class="answer">DiT 时代文生视频仍难生成<strong>长时、动作大、叙事连贯</strong>的视频；网络视频 caption 短/不准限制语义对齐。目标：10 秒、768×1360、16fps、与 prompt 强对齐（§1）。</div>
+      </details>
+      <details>
+        <summary>Q2 · 这是否是一个新问题？</summary>
+        <div class="answer">CogVideo、Make-A-Video、OpenSora 等已有 T2V；CogVideoX 独特在 <strong>3D causal VAE + Expert AdaLN DiT + Frame Pack + dense caption 工业化流水线</strong> 组合，并首个开源商用级 5B T2V。</div>
+      </details>
+      <details>
+        <summary>Q3 · 要验证什么科学假设？</summary>
+        <div class="answer">① 3D VAE 比 2D 逐帧编码减 flicker 且更高压缩；② Expert AdaLN 足够融合图文，无需 MMDiT 双塔；③ 3D full attention 优于 2D+1D 于大动作一致；④ dense caption 显著提升 text-video 对齐。</div>
+      </details>
+      <details>
+        <summary>Q4 · 有哪些相关研究？</summary>
+        <div class="answer">CogVideo/Phenaki（Transformer T2V）；Make-A-Video/Video LDM；DiT/Sora；AnimateDiff（2D+1D）；MMDiT/SD3；OpenSora/HunyuanVideo 等开源 T2V。作者：清华 + 智谱 AI。</div>
+      </details>
+      <details>
+        <summary>Q5 · 解决方案的关键是什么？</summary>
+        <div class="answer">四件套：3D causal VAE（8×8×4）→ Expert Transformer（3D-RoPE + Expert AdaLN + 3D full attention）→ 渐进训练 + Frame Pack + Uniform Sampling → 过滤 + dense recaption（CogVLM2-Caption）。</div>
+      </details>
+      <details>
+        <summary>Q6 · 实验是如何设计的？</summary>
+        <div class="answer">WebVid 消融（FVD/CLIP4Clip/loss 曲线）；VBench 子集 + Dynamic Quality + GPT4o-MT vs 8 开源/闭源基线；人类四维评分 vs Kling；VAE 重建 flicker/PSNR 对比。</div>
+      </details>
+      <details>
+        <summary>Q7 · 用什么数据集？代码开源吗？</summary>
+        <div class="answer">~35M 过滤单镜头 + 2B 美学图；6 类负样本过滤。代码/权重：<a href="https://github.com/THUDM/CogVideo" target="_blank" rel="noopener">github.com/THUDM/CogVideo</a>（2B/5B T2V + I2V + VAE + CogVLM2-Caption）。</div>
+      </details>
+      <details>
+        <summary>Q8 · 实验结果是否支持假设？</summary>
+        <div class="answer">较好支持：消融验证 RoPE/Expert/3D attention/Uniform Sampling；5B 七指标五冠；人类评测胜 Kling。保留：部分 aesthetic 维度非第一；依赖外部 caption 模型。</div>
+      </details>
+      <details>
+        <summary>Q9 · 主要贡献？</summary>
+        <div class="answer">① 3D causal VAE + Expert DiT 架构；② Frame Pack + 渐进训练 + Uniform Sampling；③ dense video caption 流水线；④ 开源商用级 2B/5B；⑤ ICLR 2025。</div>
+      </details>
+      <details>
+        <summary>Q10 · 下一步？</summary>
+        <div class="answer">更大模型/更长视频 scaling law；更高 VAE 压缩比；端到端 caption 去 GPT-4 依赖；音视频联合（CogVideoX 后续线）；降低 768p 10s 推理成本。</div>
+      </details>
+    </section>
+
+    <section class="summary deepdive" id="deepdive">
+      <h2>🔬 深挖追问</h2>
+      <div class="block">
+        <h4>第一性原理 · 视频 vs 图像扩散</h4>
+        <p>视频生成难在<strong>时间维</strong>：token 数 $\propto T\times H\times W$。CogVideoX 先 VAE 压时空，再在 token 序列上做 DiT——与 Sora 同范式，但公开了 VAE 结构、Expert AdaLN 与数据流水线细节。</p>
+      </div>
+      <div class="block">
+        <h4>第一性原理 · Expert AdaLN vs MMDiT</h4>
+        <p>MMDiT 用双 Transformer 分别处理图文再交互；CogVideoX 拼接 token 后<strong>单塔</strong>，仅用 Expert AdaLN 分模态调制——参数更少、更接近 LLM  scaling 路径；消融显示同参下 FVD 更优。</p>
+      </div>
+      <div class="block">
+        <h4>第一性原理 · 数据即模型</h4>
+        <p>35M clip 若用原始短视频 caption，模型学不到「闪电劈石、人跳出」级叙事。Dense caption 把<strong>数据工程</strong>升格为与架构同级贡献——后续 HunyuanVideo/Wan 亦强调 caption/filter。</p>
+      </div>
+      <div class="block crit">
+        <h4>批判性思维 · 盲区</h4>
+        <ul>
+          <li><strong>指标博弈：</strong>VBench 部分维度偏好静态高保真；作者主动加 Dynamic Quality/GPT4o-MT 但仍难覆盖叙事正确性。</li>
+          <li><strong>Caption 闭环：</strong>训练 caption 来自 GPT-4/CogVLM 蒸馏，分布偏移与幻觉 caption 风险未量化。</li>
+          <li><strong>算力透明度：</strong>5B 全阶段训练 GPU·day 披露有限，复现门槛仍高。</li>
+          <li><strong>2D+1D 遗留：</strong>社区 AnimateDiff 生态仍广；CogVideoX 全 3D attention 推理更贵。</li>
+          <li><strong>版权：</strong>35M 网络视频 + 2B 图，合规与 opt-out 未讨论。</li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+  <div id="lightbox" role="dialog" aria-modal="true" aria-label="放大查看">
+    <span class="lb-close" aria-hidden="true">&times;</span>
+    <div class="lb-content"></div>
+    <div class="lb-cap"></div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad:true, theme:'neutral', flowchart:{ htmlLabels:true } });</script>
+  <script>
+    function syncScrollPad(){var h=document.querySelector('.sticky-head');if(h)document.documentElement.style.scrollPaddingTop=(h.offsetHeight+8)+'px';}
+    window.addEventListener('load',syncScrollPad);window.addEventListener('resize',syncScrollPad);syncScrollPad();
+    (function(){var lb=document.getElementById('lightbox'),content=lb.querySelector('.lb-content'),cap=lb.querySelector('.lb-cap');
+    function findZoomTarget(n){var el=n.closest?n.closest('img,svg'):null;return el&&el.closest('.diagram,.figure-row,.mermaid')?el:null;}
+    function nearestCaption(el){var fig=el.closest('figure')||el.closest('.diagram')||el.closest('.figure-row');var c=fig&&fig.querySelector('figcaption');return c?c.textContent.trim():'';}
+    function openLightbox(node,caption){content.innerHTML='';var clone=node.cloneNode(true);clone.style.cursor='default';clone.style.boxShadow='none';
+    var r=node.getBoundingClientRect(),vw=window.innerWidth*0.96,vh=window.innerHeight*0.92,w=r.width||600,h=r.height||400,scale=Math.min(vw/w,vh/h);
+    if(!isFinite(scale)||scale<=0)scale=1;clone.style.width=Math.round(w*scale)+'px';clone.style.height=Math.round(h*scale)+'px';
+    clone.style.maxWidth=clone.style.maxHeight='none';content.appendChild(clone);cap.textContent=caption||'';lb.classList.add('open');document.body.style.overflow='hidden';}
+    function closeLightbox(){lb.classList.remove('open');content.innerHTML='';document.body.style.overflow='';}
+    document.addEventListener('click',function(e){if(lb.classList.contains('open')){closeLightbox();return;}var el=findZoomTarget(e.target);if(el){e.preventDefault();e.stopPropagation();openLightbox(el,nearestCaption(el));}});
+    document.addEventListener('keydown',function(e){if(e.key==='Escape'&&lb.classList.contains('open'))closeLightbox();});})();
+  </script>
+</body>
+</html>

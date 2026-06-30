@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wan2.1 — Open and Advanced Large-Scale Video Generative Models · 逻辑精读</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+  <style>
+    :root { --navy:#1a2744; --paper:#faf8f5; --thesis:#fff3cd; --concept:#f8d7da; --evidence:#cfe2ff; --counter:#d1e7dd; --method:#e2d9f3; --text:#2c2c2c; --muted:#6c757d; --border:#e8e4df; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'IBM Plex Sans',sans-serif; background:var(--paper); color:var(--text); line-height:1.6; }
+    .sticky-head { position:sticky; top:0; z-index:100; }
+    .top-nav { background:var(--navy); color:#fff; padding:1rem 2rem; }
+    .top-nav h1 { font-size:1.25rem; font-weight:600; }
+    .top-nav h1 a { color:#fff; text-decoration:none; border-bottom:1px dotted rgba(255,255,255,0.5); }
+    .top-nav h1 a:hover { border-bottom-style:solid; }
+    .top-nav .meta { font-size:0.85rem; opacity:0.85; margin-top:0.25rem; }
+    .legend { display:flex; flex-wrap:wrap; gap:0.75rem; margin-top:0.75rem; font-size:0.8rem; }
+    .legend span { padding:0.15rem 0.5rem; border-radius:3px; color:#2c2c2c; }
+    .chapter-nav { background:#fff; border-bottom:1px solid var(--border); padding:0.75rem 2rem; overflow-x:auto; white-space:nowrap; box-shadow:0 2px 6px rgba(0,0,0,0.08); }
+    .chapter-nav a { color:var(--navy); text-decoration:none; margin-right:1.25rem; font-size:0.9rem; font-weight:500; }
+    .chapter-nav a:hover { text-decoration:underline; }
+    main { max-width:1680px; margin:0 auto; padding:2rem; }
+    .section-title { font-size:1.5rem; color:var(--navy); margin:2rem 0 1rem; padding-bottom:0.5rem; border-bottom:2px solid var(--navy); }
+    .col-labels { display:grid; grid-template-columns:1.1fr 1fr 1fr; gap:1.5rem; margin-bottom:0.5rem; font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); }
+    .row { display:grid; grid-template-columns:1.1fr 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem; align-items:start; }
+    .col-original { font-family:'Lora',serif; font-size:0.95rem; line-height:1.75; }
+    .col-original p { margin-bottom:0.75rem; }
+    .col-translation { font-size:0.92rem; line-height:1.75; color:#333; }
+    .col-translation p { margin-bottom:0.75rem; }
+    .analysis-card { background:#fff; border-left:4px solid var(--navy); padding:1rem 1.25rem; border-radius:0 6px 6px 0; box-shadow:0 1px 3px rgba(0,0,0,0.06); font-size:0.9rem; }
+    .analysis-card .tag { display:inline-block; font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.03em; margin-bottom:0.5rem; color:var(--navy); }
+    .analysis-card h4 { font-size:0.85rem; color:var(--muted); margin:0.75rem 0 0.25rem; }
+    .analysis-card p { margin-bottom:0.5rem; }
+    .analysis-card.deep { border-left-width:5px; }
+    .analysis-detail { margin:0.75rem 0; padding-top:0.5rem; border-top:1px dashed var(--border); }
+    .analysis-detail:first-of-type { border-top:none; }
+    .exp-detail { list-style:none; margin:0.5rem 0; }
+    .exp-detail li { margin-bottom:0.4rem; }
+    .exp-detail li strong { color:var(--navy); }
+    .exp-table { width:100%; border-collapse:collapse; margin:0.75rem 0; font-size:0.82rem; }
+    .exp-table th, .exp-table td { border:1px solid var(--border); padding:0.35rem 0.5rem; text-align:left; }
+    .exp-table th { background:var(--paper); color:var(--navy); font-weight:600; }
+    .exp-table tr.is-ours { background:var(--evidence); }
+    .exp-table tr.is-ours td { font-weight:600; }
+    .notation { width:100%; border-collapse:collapse; margin:0.75rem 0; font-size:0.88rem; background:#fff; }
+    .notation th, .notation td { border:1px solid var(--border); padding:0.4rem 0.6rem; text-align:left; }
+    .notation th { background:var(--paper); color:var(--navy); font-weight:600; }
+    .notation td:first-child { width:22%; white-space:nowrap; }
+    .diagram { margin:0.75rem 0; }
+    .diagram img, .diagram svg { max-width:100%; height:auto; display:block; border:1px solid var(--border); border-radius:4px; background:#fff; }
+    .diagram figcaption { font-size:0.78rem; color:var(--muted); margin-top:0.35rem; }
+    .figure-row { margin:1.5rem 0; padding:1.25rem; background:#fff; border:1px solid var(--border); border-radius:8px; }
+    .figure-row figure { margin:0; text-align:center; }
+    .figure-row img, .figure-row svg { max-width:100%; height:auto; display:inline-block; }
+    .figure-row figcaption { font-size:0.82rem; color:var(--muted); margin-top:0.5rem; }
+    .figure-row h3 { color:var(--navy); font-size:1rem; margin-bottom:0.75rem; }
+    .mermaid { background:#fff; border:1px solid var(--border); border-radius:4px; padding:0.5rem; margin:0.5rem 0; text-align:center; }
+    .diagram img, .diagram svg, .figure-row img, .figure-row svg { cursor:zoom-in; transition:box-shadow .15s; }
+    .diagram img:hover, .diagram svg:hover, .figure-row img:hover, .figure-row svg:hover { box-shadow:0 0 0 2px #0d9488; }
+    #lightbox { position:fixed; inset:0; background:rgba(10,12,20,0.92); display:none; align-items:center; justify-content:center; z-index:1000; cursor:zoom-out; padding:3vh 3vw; }
+    #lightbox.open { display:flex; }
+    #lightbox .lb-content { display:flex; align-items:center; justify-content:center; }
+    #lightbox .lb-content img, #lightbox .lb-content svg { display:block; background:#fff; border-radius:6px; box-shadow:0 8px 40px rgba(0,0,0,0.5); }
+    #lightbox .lb-close { position:fixed; top:1rem; right:1.5rem; color:#fff; font-size:2rem; line-height:1; opacity:0.8; }
+    #lightbox .lb-cap { position:fixed; bottom:1.2rem; left:0; right:0; text-align:center; color:#e8e4df; font-size:0.8rem; padding:0 2rem; }
+    .hl-thesis { background:var(--thesis); padding:0 2px; }
+    .hl-concept { background:var(--concept); padding:0 2px; }
+    .hl-evidence { background:var(--evidence); padding:0 2px; }
+    .hl-counter { background:var(--counter); padding:0 2px; }
+    .hl-method { background:var(--method); padding:0 2px; }
+    .summary { background:#fff; border:1px solid var(--border); border-radius:8px; padding:2rem; margin-top:3rem; }
+    .summary h2 { color:var(--navy); margin-bottom:1rem; }
+    .summary .skeleton { font-family:'IBM Plex Sans',monospace; background:var(--paper); padding:1rem; border-radius:4px; margin:1rem 0; line-height:1.9; }
+    .summary .strength, .summary .weakness { padding:0.75rem 1rem; border-radius:4px; margin:0.5rem 0; }
+    .summary .strength { background:var(--counter); }
+    .summary .weakness { background:var(--concept); }
+    .feynman { background:#fff; border:1px solid var(--border); border-left:5px solid #0d9488; border-radius:0 8px 8px 0; padding:1.25rem 1.5rem; margin:1.5rem 0 2rem; }
+    .feynman h2 { color:#0d9488; font-size:1.15rem; margin-bottom:0.35rem; }
+    .feynman .tldr-meta { font-size:0.78rem; color:var(--muted); margin-bottom:0.6rem; }
+    .feynman p { font-size:0.95rem; line-height:1.85; margin-bottom:0.6rem; }
+    .faq details { background:#fff; border:1px solid var(--border); border-radius:6px; margin:0.5rem 0; }
+    .faq details[open] { box-shadow:0 1px 4px rgba(0,0,0,0.06); }
+    .faq summary { cursor:pointer; font-weight:600; color:var(--navy); padding:0.7rem 0.9rem; list-style:none; font-size:0.92rem; }
+    .faq summary::-webkit-details-marker { display:none; }
+    .faq summary::before { content:'▸'; color:#0d9488; margin-right:0.5rem; }
+    .faq details[open] summary::before { content:'▾'; }
+    .faq .answer { padding:0 0.9rem 0.85rem 1.8rem; font-size:0.9rem; line-height:1.8; color:#333; }
+    .deepdive .block { margin:0.9rem 0; padding:0.85rem 1.1rem; border-radius:4px; background:var(--paper); border-left:3px solid #6f42c1; }
+    .deepdive .block.crit { border-left-color:#dc3545; background:#fdf0f1; }
+    .deepdive .block h4 { color:var(--navy); margin-bottom:0.3rem; }
+    .deepdive .block ul { margin:0.3rem 0 0 1.1rem; }
+    .deepdive .block li { margin-bottom:0.3rem; font-size:0.9rem; }
+    .code-section { background:#fff; border:1px solid var(--border); border-radius:8px; padding:1.5rem 1.75rem; margin:2rem 0; }
+    .code-section h3 { color:var(--navy); font-size:1.05rem; margin:1.5rem 0 0.75rem; }
+    .code-section h3:first-of-type { margin-top:0; }
+    .code-section p, .code-section li { font-size:0.9rem; line-height:1.75; margin-bottom:0.5rem; }
+    .code-section ul { margin:0.5rem 0 0.75rem 1.25rem; }
+    .code-block { font-family:'IBM Plex Mono','IBM Plex Sans',monospace; font-size:0.78rem; line-height:1.65; background:#1e293b; color:#e2e8f0; padding:1rem 1.15rem; border-radius:6px; overflow-x:auto; margin:0.75rem 0; white-space:pre; tab-size:2; }
+    .code-block .cm { color:#94a3b8; font-style:italic; }
+    .code-block .kw { color:#7dd3fc; }
+    .code-block .fn { color:#fde68a; }
+    .code-block .str { color:#86efac; }
+    .code-note { font-size:0.82rem; color:var(--muted); margin:0.35rem 0 1rem; padding-left:0.75rem; border-left:3px solid #0d9488; }
+    .code-map { width:100%; border-collapse:collapse; margin:0.75rem 0; font-size:0.82rem; }
+    .code-map th, .code-map td { border:1px solid var(--border); padding:0.4rem 0.55rem; text-align:left; vertical-align:top; }
+    .code-map th { background:var(--paper); color:var(--navy); font-weight:600; }
+    .code-map code { font-size:0.78rem; background:var(--paper); padding:0.1rem 0.3rem; border-radius:3px; }
+    .ref-list { list-style:none; margin:0; padding:0; }
+    .ref-list li { margin-bottom:0.6rem; padding:0.75rem 1rem; background:var(--paper); border:1px solid var(--border); border-radius:6px; font-size:0.9rem; line-height:1.65; }
+    .ref-list li:last-child { margin-bottom:0; }
+    .ref-list a { color:#0d9488; font-weight:500; text-decoration:none; }
+    .ref-list a:hover { text-decoration:underline; }
+    .ref-list .ref-note { display:block; font-size:0.82rem; color:var(--muted); margin-top:0.25rem; }
+    .ref-list .ref-tag { display:inline-block; font-size:0.72rem; font-weight:600; color:var(--navy); background:#e2e8f0; padding:0.1rem 0.4rem; border-radius:3px; margin-right:0.35rem; vertical-align:baseline; }
+    @media (max-width:1100px) {
+      .col-labels { display:none; }
+      .row { grid-template-columns:1fr; }
+      .row > div::before { display:block; font-size:0.7rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); margin-bottom:0.35rem; }
+      .col-original::before { content:'原文'; }
+      .col-translation::before { content:'翻译'; }
+      .col-analysis::before { content:'解析'; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sticky-head">
+    <header class="top-nav">
+      <h1><a href="https://arxiv.org/abs/2503.20314" target="_blank" rel="noopener">Wan — Open and Advanced Large-Scale Video Generative Models (Wan2.1)</a></h1>
+      <div class="meta">DeepLearning-Paper-with-Code · Video Generation · arXiv(2025) · Wan Team, Alibaba Group</div>
+      <div class="legend">
+        <span class="hl-thesis">核心论点</span>
+        <span class="hl-concept">关键概念</span>
+        <span class="hl-evidence">实证证据</span>
+        <span class="hl-counter">让步/反驳</span>
+        <span class="hl-method">方法论</span>
+      </div>
+    </header>
+    <nav class="chapter-nav">
+      <a href="#feynman">速读</a>
+      <a href="#abstract">Abstract</a>
+      <a href="#intro">Introduction</a>
+      <a href="#architecture">Architecture</a>
+      <a href="#code">代码</a>
+      <a href="#training">Training</a>
+      <a href="#data">Data</a>
+      <a href="#experiments">Experiments</a>
+      <a href="#applications">Applications</a>
+      <a href="#conclusion">Conclusion</a>
+      <a href="#notation">符号表</a>
+      <a href="#overview">总览</a>
+      <a href="#faq">十问</a>
+      <a href="#deepdive">深挖</a>
+      <a href="#refs-external">外链</a>
+    </nav>
+  </div>
+  <main>
+    <section class="feynman" id="feynman">
+      <h2>🎮 费曼一分钟（通俗速读）</h2>
+      <div class="tldr-meta">通俗速读 · 先建立模糊认知，再读正文</div>
+      <p>开源文生视频（HunyuanVideo、CogVideoX、Mochi）与闭源 Sora 仍有性能/能力/效率差距。<strong>Wan2.1</strong> = 阿里 Wan 团队全栈技术报告 + 开源：<strong>Wan-VAE</strong>（3D 因果、4×8×8 压缩、127M 参数 + feature cache 流式编解码）+ <strong>DiT + Flow Matching</strong>（umT5 文本、3D RoPE 全时空注意力、共享 timestep MLP 省 25% 参）+ <strong>十亿级图文视频预训练</strong>（256→480→720 分辨率课程）+ <strong>Wan-Bench 自动评测</strong>。提供 <strong>1.3B</strong>（8.19GB VRAM 消费级）与 <strong>14B</strong> 两档；覆盖 T2V/I2V/编辑/个性化/相机/实时/音频等 8+ 下游。首个能在视频里生成<strong>中英文视觉文字</strong>的开源模型。</p>
+    </section>
+
+    <section class="figure-row">
+      <h3>📄 原文：与 SOTA 开源/闭源模型对比</h3>
+      <figure>
+        <img src="assets/wan21/fig1.png" alt="Wan benchmark comparison">
+        <figcaption>Abstract 前对比图：Wan 在 benchmark 与人类评估中优于多数开源模型，与闭源方案具竞争力。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="abstract">Abstract</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>This report presents <span class="hl-thesis">Wan</span>, a comprehensive open suite of video foundation models on the <span class="hl-method">diffusion transformer + flow matching</span> paradigm.</p>
+        <p>Four features: <span class="hl-evidence">Leading Performance</span> — 14B trained on billions of images/videos, scaling laws, beats open &amp; many commercial models on Wan-Bench; <span class="hl-evidence">Comprehensiveness</span> — 1.3B &amp; 14B, 8+ tasks including I2V, editing, personalization; first model generating <span class="hl-concept">Chinese &amp; English visual text</span> in video; <span class="hl-evidence">Consumer Efficiency</span> — 1.3B needs only 8.19 GB VRAM; <span class="hl-evidence">Openness</span> — full code &amp; weights at github.com/Wan-Video/Wan2.1.</p>
+      </div>
+      <div class="col-translation">
+        <p>本报告发布开源视频基础模型套件 <strong>Wan</strong>，基于扩散 Transformer + Flow Matching。</p>
+        <p>四特点：<strong>领先性能</strong>（14B、千亿 token 级数据、Wan-Bench 超开源与部分商业模型）；<strong>全面</strong>（1.3B/14B、8+ 任务、视频内中英文视觉文字）；<strong>消费级效率</strong>（1.3B 仅需 8.19GB 显存）；<strong>开放</strong>（代码权重全开源）。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#ffc107;">
+          <span class="tag">概括主张</span>
+          <h4>段落功能</h4>
+          <p>定位「开源 Sora 级」技术报告：不只 T2V，而是 VAE+DiT+数据+评测+应用全链路公开。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="intro">1. Introduction</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>Since <span class="hl-concept">Sora</span>, video generation advanced rapidly; open models (HunyuanVideo, Mochi, CogVideoX) narrowed the gap but three gaps remain: <span class="hl-counter">suboptimal performance</span>, <span class="hl-counter">limited capabilities</span> (mostly T2V only), <span class="hl-counter">insufficient efficiency</span> for creators with limited GPUs.</p>
+      </div>
+      <div class="col-translation">
+        <p>Sora 之后视频生成快速进步；HunyuanVideo、Mochi、CogVideoX 等开源缩小差距，但仍有：<strong>性能不足</strong>、<strong>能力单一</strong>（多仅 T2V）、<strong>效率不够</strong>（算力门槛高）。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#1a2744;">
+          <span class="tag">引出问题</span>
+          <p>三重 gap → Wan 用 scaling + 多任务 + 小模型三条线同时回应。</p>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-original">
+        <p><span class="hl-thesis">Wan</span> follows <span class="hl-method">DiT + Flow Matching</span> (like SD3/HunyuanVideo): cross-attention for text, <span class="hl-method">full spatio-temporal attention</span>, scaled to <span class="hl-evidence">14B</span> on $\mathcal{O}(1)$ trillion tokens from billions of images/videos.</p>
+        <p>Downstream: I2V, instruction editing, zero-shot personalization, real-time generation, audio, etc. A <span class="hl-evidence">1.3B</span> model runs on consumer GPUs (8.19G VRAM) while beating many larger open models.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>Wan</strong> 走 DiT + Flow Matching 路线：文本 cross-attn、全时空注意力、14B 规模 + 万亿级 token 训练。</p>
+        <p>扩展 I2V、编辑、个性化、实时、音频等；<strong>1.3B</strong> 仅需 8.19G 显存且超多数更大开源模型。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#ffc107;">
+          <span class="tag">提出论点</span>
+          <p>与 CogVideoX 同属 DiT 视频线，但 Wan 强调<strong>全栈透明</strong>（数据流水线、Wan-Bench、8 任务）+ <strong>双规格开源</strong>。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure：Wan 生成样例（大动作 / 中英文文字 / 多任务）</h3>
+      <figure>
+        <img src="assets/wan21/fig2.jpg" alt="Wan video generation examples">
+        <figcaption>Intro Fig.2：大运动、高保真、视频内中英文文字、T2V/I2V/编辑等能力展示。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="architecture">2. Model Design — Wan-VAE &amp; DiT</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Wan-VAE:</strong> 3D causal VAE compresses $V \in \mathbb{R}^{(1+T)\times H \times W \times 3}$ to latent $[1{+}T/4,\; H/8,\; W/8]$ with <span class="hl-evidence">16 channels</span> — total <span class="hl-method">4×8×8</span> spatiotemporal compression. First frame spatial-only (MagViT-v2 style). RMSNorm replaces GroupNorm for causality + feature cache.</p>
+        <p>127M params; 3-stage training: 2D image VAE → inflate to 3D on low-res 5-frame video → GAN fine-tune on HQ video. Reconstruction PSNR competitive; <span class="hl-evidence">2.5× faster</span> than HunyuanVideo VAE at same hardware.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>Wan-VAE：</strong>3D 因果 VAE，视频 $V$ 压到 $[1{+}T/4, H/8, W/8]$、16 通道，总压缩 <strong>4×8×8</strong>。首帧仅空间压缩。RMSNorm + feature cache 保因果与效率。</p>
+        <p>127M 参数；三阶段训练（2D 图 VAE → 3D 低分短视频 → GAN 微调）。重建质量 competitive；同硬件比 HunyuanVideo VAE 快 <strong>2.5 倍</strong>。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color:#0d6efd;">
+          <span class="tag">Wan-VAE</span>
+          <div class="analysis-detail">
+            <h4>与 CogVideoX / HunyuanVideo VAE</h4>
+            <p>压缩率同为 <strong>16 通道 · 4×8×8</strong>（Wan 记法：时间×高×宽；CogVideoX 记法 8×8×4 为空间×空间×时间，数值等价）。差异在<strong>工程化与推理</strong>，见下表与 §Feature Cache。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:1.25rem 1.5rem;margin:1.5rem 0;">
+      <h3 style="color:var(--navy);font-size:1.05rem;margin-bottom:0.75rem;">Wan-VAE vs CogVideoX 3D VAE — 异同对照</h3>
+      <table class="exp-table">
+        <thead><tr><th>维度</th><th>CogVideoX（ICLR 2025）</th><th>Wan-VAE（Wan2.1 报告 §4.1）</th></tr></thead>
+        <tbody>
+          <tr><td>时空压缩</td><td>8×8×4，16 latent 通道；$T'=\lfloor(T{-}1)/4\rfloor{+}1$</td><td>4×8×8（同率）；输入格式 <strong>1+T</strong> 帧 → latent <strong>1+T/4</strong></td></tr>
+          <tr><td>因果性</td><td>3D 因果卷积，仅向过去 padding；防 future leak</td><td>同；且为 feature cache 前置条件</td></tr>
+          <tr><td>首帧处理</td><td>论文强调 3D 统一编码；训练帧数 4k+1</td><td><strong>首帧仅空间压缩</strong>（MagViT-v2），利于 T2I / 单帧 I2V 与图数据 inflate</td></tr>
+          <tr><td>归一化</td><td>典型 3D VAE 用 GroupNorm（跨帧统计）</td><td><strong>GroupNorm → RMSNorm</strong>：不混未来帧统计，与 chunk 推理兼容（报告明确动机）</td></tr>
+          <tr><td>模型体量</td><td>未强调极小 VAE；训练用 Context Parallel 扩长视频</td><td><strong>127M</strong> 参；上采样层输入通道减半 → 推理显存 <strong>−33%</strong></td></tr>
+          <tr><td>训练策略</td><td>两阶段：256²×17 帧 → CP 161 帧 + GAN（SAT 开源）</td><td>三阶段：<strong>2D 图 VAE</strong> → inflate 3D（128²×5 帧）→ 多分辨率 + 3D GAN</td></tr>
+          <tr><td>长视频推理</td><td>训练侧 temporal Context Parallel（多卡切时间维）</td><td>推理侧 <strong>feature cache</strong>：单卡 chunk 编解码，每 chunk ≤4 帧，$O(1)$ 历史缓存</td></tr>
+          <tr><td>相对指标</td><td>WebVid 17 帧 flicker 85.5 / PSNR 29.1（自报）</td><td>720×720×25 帧：PSNR competitive；同硬件重建 <strong>2.5× 快于 HunyuanVideo</strong>（报告 Fig. vae_psnr）</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:0.88rem;color:#333;margin-top:0.75rem;line-height:1.75;"><strong>改进归纳（相对 CogVideoX 一代开源 VAE）：</strong>① 不提高压缩率的前提下把 VAE 做<strong>更小更快</strong>（127M + cache），把算力让给 14B DiT；② RMSNorm + cache 使<strong>任意长视频单卡流式</strong>编解码可行（CogVideoX 论文侧重多卡 CP 训练，未描述同等 cache）；③ 2D→3D inflate + 首帧空间特化，降低视频 VAE 冷启动成本；④ 重建在<strong>文字/高运动</strong>场景上报告定性优于同级 VAE（Fig. vae_visual）。</p>
+      <p style="font-size:0.82rem;color:var(--muted);margin-top:0.5rem;">注意：二者 latent 网格可对接同类 DiT（patch (1,2,2)）；Wan 选 Flow Matching + cross-attn DiT，CogVideoX 选 Expert AdaLN + 3D full attention —— <strong>VAE 层改进独立於 DiT 设计</strong>。</p>
+    </section>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure：Wan-VAE 框架（4×8×8 压缩）</h3>
+      <figure>
+        <img src="assets/wan21/fig3.png" alt="Wan-VAE architecture">
+        <figcaption>Fig VAE：橙=2×时空压缩，绿=2×空间压缩；总 4×8×8。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure：Feature Cache 机制</h3>
+      <figure>
+        <img src="assets/wan21/fig8.png" alt="Wan-VAE feature cache">
+        <figcaption>Fig vae_cache：(a) 普通因果卷积层 — 跨 chunk 保留 2 帧特征；(b) 2× 时间下采样 — 非首 chunk 保留 1 帧。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <section style="background:#fff;border:1px solid var(--border);border-left:4px solid #0d9488;border-radius:0 8px 8px 0;padding:1.25rem 1.5rem;margin:1.5rem 0;">
+      <h3 style="color:var(--navy);font-size:1.05rem;margin-bottom:0.6rem;">Feature Cache 机制详解</h3>
+      <p style="font-size:0.9rem;line-height:1.8;margin-bottom:0.6rem;"><strong>问题：</strong>3D 因果卷积核大小为 3（时间维），计算第 $t$ 帧输出需要 $t{-}2,t{-}1,t$ 三帧特征。若一次 encode 全长视频，显存 $\propto T$；若按 chunk 切分但<strong>无缓存</strong>，chunk 边界处缺少历史帧 → 与整段编码不一致，出现接缝伪影。</p>
+      <p style="font-size:0.9rem;line-height:1.8;margin-bottom:0.6rem;"><strong>思路：</strong>按 latent 时间步切 chunk。像素侧每 chunk 最多 <strong>4 帧</strong>（首 chunk 1 帧，后续各 4 帧），与 4× 时间压缩对齐，得 $1{+}T/4$ 个 latent 帧。每个 chunk 前向时，把<strong>上一 chunk 末尾的特征图</strong>写入 cache，拼到当前 chunk 时间维前面，再喂给 <code>CausalConv3d</code> —— 等价于「全序列一次卷积」，但峰值显存只与 chunk 大小相关。</p>
+
+      <div style="background:var(--paper);border:1px dashed var(--border);border-radius:6px;padding:1rem 1.15rem;margin:1rem 0;">
+        <h4 style="color:var(--navy);font-size:0.92rem;margin-bottom:0.5rem;">常见误解：chunk 为什么是 4 帧，不是 3 帧？</h4>
+        <p style="font-size:0.88rem;line-height:1.75;margin-bottom:0.6rem;"><strong>核大小 3</strong> 与 <strong>chunk 大小 4</strong> 是两件独立的事，不要混为一谈：</p>
+        <table class="code-map" style="margin:0.5rem 0;">
+          <thead><tr><th>概念</th><th>数值</th><th>由什么决定</th></tr></thead>
+          <tbody>
+            <tr><td>因果 Conv3d 时间核 $k_t$</td><td><strong>3</strong></td><td>输出第 $t$ 帧需 $t{-}2,t{-}1,t$ → feature cache 存 <strong>2</strong> 帧（<code>CACHE_T=2</code>）</td></tr>
+            <tr><td>像素 chunk 大小</td><td><strong>1, 4, 4, …</strong></td><td>VAE 时间维 <strong>4× 压缩</strong> + 首帧仅空间压 → 每个 latent 步对应 1 或 4 像素帧</td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:0.85rem;color:var(--muted);line-height:1.7;margin-top:0.5rem;">chunk=4 来自<strong>压缩拓扑</strong>（一个 $z_i$ 吃掉 4 像素帧）；cache=2 来自<strong>卷积感受野</strong>（跨 chunk 衔接）。chunk 内 4 帧足够完成该 latent 步的全部因果卷积与时间下采样；若只切 3 帧会少算 1 帧，latent 与整段 encode 不一致。</p>
+      </div>
+
+      <div class="diagram" style="margin:1.25rem 0;">
+        <figcaption style="font-size:0.82rem;color:var(--navy);font-weight:600;margin-bottom:0.6rem;">图例 A — 像素 chunk ↔ latent 时间步（4× 时间压缩）</figcaption>
+        <svg viewBox="0 0 720 200" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;display:block;border:1px solid var(--border);border-radius:6px;background:#fff;">
+          <defs>
+            <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#64748b"/></marker>
+          </defs>
+          <!-- pixel frames -->
+          <text x="12" y="28" font-size="11" fill="#64748b" font-family="IBM Plex Sans,sans-serif">像素帧</text>
+          <rect x="60" y="12" width="44" height="32" rx="4" fill="#fff3cd" stroke="#ca8a04" stroke-width="1.5"/>
+          <text x="82" y="32" text-anchor="middle" font-size="12" fill="#1a2744" font-family="IBM Plex Sans,sans-serif">0</text>
+          <rect x="108" y="12" width="44" height="32" rx="4" fill="#e2d9f3" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="130" y="32" text-anchor="middle" font-size="12" fill="#1a2744" font-family="IBM Plex Sans,sans-serif">1</text>
+          <rect x="152" y="12" width="44" height="32" rx="4" fill="#e2d9f3" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="174" y="32" text-anchor="middle" font-size="12" fill="#1a2744" font-family="IBM Plex Sans,sans-serif">2</text>
+          <rect x="196" y="12" width="44" height="32" rx="4" fill="#e2d9f3" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="218" y="32" text-anchor="middle" font-size="12" fill="#1a2744" font-family="IBM Plex Sans,sans-serif">3</text>
+          <rect x="240" y="12" width="44" height="32" rx="4" fill="#e2d9f3" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="262" y="32" text-anchor="middle" font-size="12" fill="#1a2744" font-family="IBM Plex Sans,sans-serif">4</text>
+          <rect x="296" y="12" width="44" height="32" rx="4" fill="#d1e7dd" stroke="#0d9488" stroke-width="1.5"/>
+          <text x="318" y="32" text-anchor="middle" font-size="12" fill="#1a2744" font-family="IBM Plex Sans,sans-serif">5</text>
+          <rect x="340" y="12" width="44" height="32" rx="4" fill="#d1e7dd" stroke="#0d9488" stroke-width="1.5"/>
+          <text x="362" y="32" text-anchor="middle" font-size="12" fill="#1a2744" font-family="IBM Plex Sans,sans-serif">6</text>
+          <rect x="384" y="12" width="44" height="32" rx="4" fill="#d1e7dd" stroke="#0d9488" stroke-width="1.5"/>
+          <text x="406" y="32" text-anchor="middle" font-size="12" fill="#1a2744" font-family="IBM Plex Sans,sans-serif">7</text>
+          <rect x="428" y="12" width="44" height="32" rx="4" fill="#d1e7dd" stroke="#0d9488" stroke-width="1.5"/>
+          <text x="450" y="32" text-anchor="middle" font-size="12" fill="#1a2744" font-family="IBM Plex Sans,sans-serif">8</text>
+          <text x="490" y="32" font-size="11" fill="#64748b" font-family="IBM Plex Sans,sans-serif">…</text>
+          <!-- chunk brackets -->
+          <path d="M 58 52 H 104" stroke="#ca8a04" stroke-width="2" fill="none"/>
+          <text x="82" y="68" text-anchor="middle" font-size="10" fill="#ca8a04" font-family="IBM Plex Sans,sans-serif">chunk₀ · 1帧</text>
+          <path d="M 106 52 H 282" stroke="#7c3aed" stroke-width="2" fill="none"/>
+          <text x="194" y="68" text-anchor="middle" font-size="10" fill="#7c3aed" font-family="IBM Plex Sans,sans-serif">chunk₁ · 4帧 → 产出 z₁</text>
+          <path d="M 294 52 H 470" stroke="#0d9488" stroke-width="2" fill="none"/>
+          <text x="382" y="68" text-anchor="middle" font-size="10" fill="#0d9488" font-family="IBM Plex Sans,sans-serif">chunk₂ · 4帧 → 产出 z₂</text>
+          <!-- arrows down -->
+          <line x1="82" y1="78" x2="82" y2="108" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+          <line x1="194" y1="78" x2="194" y2="108" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+          <line x1="382" y1="78" x2="382" y2="108" stroke="#64748b" stroke-width="1.5" marker-end="url(#arr)"/>
+          <!-- latent -->
+          <text x="12" y="128" font-size="11" fill="#64748b" font-family="IBM Plex Sans,sans-serif">latent</text>
+          <rect x="60" y="112" width="44" height="32" rx="4" fill="#cfe2ff" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="82" y="132" text-anchor="middle" font-size="11" fill="#1a2744" font-family="IBM Plex Sans,sans-serif">z₀</text>
+          <rect x="170" y="112" width="44" height="32" rx="4" fill="#cfe2ff" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="192" y="132" text-anchor="middle" font-size="11" fill="#1a2744" font-family="IBM Plex Sans,sans-serif">z₁</text>
+          <rect x="358" y="112" width="44" height="32" rx="4" fill="#cfe2ff" stroke="#2563eb" stroke-width="1.5"/>
+          <text x="380" y="132" text-anchor="middle" font-size="11" fill="#1a2744" font-family="IBM Plex Sans,sans-serif">z₂</text>
+          <text x="500" y="132" font-size="11" fill="#64748b" font-family="IBM Plex Sans,sans-serif">… 共 1+T/4</text>
+          <!-- formula -->
+          <text x="60" y="168" font-size="11" fill="#334155" font-family="IBM Plex Sans,sans-serif">iter = 1 + (T−1)//4 　|　 首帧只空间压(MagViT-v2)　|　 后续每 4 像素帧 → 1 latent 步（encoder 两次 2× 时间下采样）</text>
+        </svg>
+        <figcaption style="font-size:0.78rem;color:var(--muted);margin-top:0.35rem;">例：9 像素帧 (0–8) → 3 个 latent (z₀,z₁,z₂)。chunk 边界由<strong>压缩率</strong>决定，不是 $k_t{=}3$。</figcaption>
+      </div>
+
+      <div class="diagram" style="margin:1.25rem 0;">
+        <figcaption style="font-size:0.82rem;color:var(--navy);font-weight:600;margin-bottom:0.6rem;">图例 B — 跨 chunk 因果卷积：$k_t{=}3$ 只需 cache 2 帧（与 chunk 内 4 帧并存）</figcaption>
+        <svg viewBox="0 0 720 220" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;height:auto;display:block;border:1px solid var(--border);border-radius:6px;background:#fff;">
+          <text x="20" y="36" font-size="11" fill="#64748b" font-family="IBM Plex Sans,sans-serif">chunk₁ 输入时间轴（encoder 某层特征，示意）</text>
+          <!-- cache from prev chunk -->
+          <rect x="40" y="48" width="56" height="40" rx="4" fill="#f8d7da" stroke="#dc3545" stroke-width="1.5" stroke-dasharray="4 2"/>
+          <text x="68" y="64" text-anchor="middle" font-size="9" fill="#991b1b" font-family="IBM Plex Sans,sans-serif">cache</text>
+          <text x="68" y="78" text-anchor="middle" font-size="9" fill="#991b1b" font-family="IBM Plex Sans,sans-serif">2帧历史</text>
+          <!-- chunk frames -->
+          <rect x="100" y="48" width="48" height="40" rx="4" fill="#e2d9f3" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="124" y="74" text-anchor="middle" font-size="11" fill="#1a2744" font-family="IBM Plex Sans,sans-serif">1</text>
+          <rect x="152" y="48" width="48" height="40" rx="4" fill="#e2d9f3" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="176" y="74" text-anchor="middle" font-size="11" fill="#1a2744" font-family="IBM Plex Sans,sans-serif">2</text>
+          <rect x="204" y="48" width="48" height="40" rx="4" fill="#e2d9f3" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="228" y="74" text-anchor="middle" font-size="11" fill="#1a2744" font-family="IBM Plex Sans,sans-serif">3</text>
+          <rect x="256" y="48" width="48" height="40" rx="4" fill="#e2d9f3" stroke="#7c3aed" stroke-width="1.5"/>
+          <text x="280" y="74" text-anchor="middle" font-size="11" fill="#1a2744" font-family="IBM Plex Sans,sans-serif">4</text>
+          <!-- conv window on frame 1 -->
+          <rect x="52" y="44" width="144" height="48" rx="4" fill="none" stroke="#0d9488" stroke-width="2"/>
+          <text x="124" y="108" text-anchor="middle" font-size="10" fill="#0d9488" font-family="IBM Plex Sans,sans-serif">CausalConv3d k_t=3：算帧1输出时窗口 = cache末2帧 + 帧1</text>
+          <!-- concat op -->
+          <text x="320" y="74" font-size="12" fill="#334155" font-family="IBM Plex Sans,monospace">cat(cache, chunk)</text>
+          <line x1="304" y1="68" x2="318" y2="68" stroke="#64748b" stroke-width="1.5"/>
+          <!-- no cache wrong -->
+          <text x="40" y="138" font-size="11" fill="#64748b" font-family="IBM Plex Sans,sans-serif">若无 cache（错误）：</text>
+          <rect x="40" y="148" width="48" height="36" rx="4" fill="#f1f5f9" stroke="#94a3b8" stroke-width="1"/>
+          <text x="64" y="170" text-anchor="middle" font-size="10" fill="#64748b" font-family="IBM Plex Sans,sans-serif">pad</text>
+          <rect x="92" y="148" width="48" height="36" rx="4" fill="#e2d9f3" stroke="#7c3aed" stroke-width="1"/>
+          <text x="116" y="170" text-anchor="middle" font-size="10" fill="#1a2744" font-family="IBM Plex Sans,sans-serif">1</text>
+          <text x="160" y="168" font-size="10" fill="#dc3545" font-family="IBM Plex Sans,sans-serif">← 零 pad 替代真实历史 → chunk 边界伪影</text>
+          <!-- with cache ok -->
+          <text x="40" y="198" font-size="11" fill="#64748b" font-family="IBM Plex Sans,sans-serif">有 cache（正确）：chunk 内仍 4 帧；仅边界用 2 帧历史特征，与整段 encode 一致</text>
+        </svg>
+        <figcaption style="font-size:0.78rem;color:var(--muted);margin-top:0.35rem;">图例 B 对应论文 Fig. vae_cache (a)：<code>CACHE_T=2</code> 来自 $k_t{-}1$，与 chunk 含 4 像素帧不矛盾。</figcaption>
+      </div>
+
+      <div class="diagram"><pre class="mermaid">flowchart LR
+  subgraph why4["chunk=4 来自 4× 时间压缩"]
+    P1["像素 1–4"] --> Z1["latent z₁"]
+    P2["像素 5–8"] --> Z2["latent z₂"]
+  end
+  subgraph why2["cache=2 来自 k_t=3"]
+    C["上一 chunk 末 2 帧特征"] --> CONV["CausalConv3d"]
+    CH["当前 chunk 首帧"] --> CONV
+  end</pre></div>
+      <p style="font-size:0.78rem;color:var(--muted);margin:-0.25rem 0 0.75rem;">两路逻辑正交：左 = 压缩拓扑决定<strong>一次 forward 吃几帧像素</strong>；右 = 卷积核决定<strong>跨 chunk 带几帧历史</strong>。</p>
+
+      <div style="background:#fff;border:1px solid var(--border);border-radius:6px;padding:1rem 1.15rem;margin:0.75rem 0 1rem;">
+        <h4 style="color:#0d9488;font-size:0.95rem;margin-bottom:0.6rem;">Feature Cache 的作用与优势</h4>
+        <p style="font-size:0.88rem;line-height:1.75;margin-bottom:0.65rem;"><strong>一句话：</strong>在<strong>分块流式</strong>跑 Wan-VAE 时，用 $O(1)$ 大小的历史特征缓存，换<strong>数值等价于整段 encode</strong> + <strong>峰值显存与视频长度解耦</strong>。</p>
+
+        <p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin:0.75rem 0 0.4rem;">作用（解决什么）</p>
+        <ul style="font-size:0.88rem;line-height:1.75;margin:0 0 0.75rem 1.25rem;">
+          <li><strong>跨 chunk 因果连续：</strong>因果 Conv3d 在 chunk 边界需要「过去帧」；cache 保存上一 chunk 末 1–2 帧<strong>中间特征</strong>（非原始像素），拼进当前 chunk，避免用零 pad 伪造历史。</li>
+          <li><strong>数值一致：</strong>chunk-wise + cache 的输出应与一次性喂入全长视频<strong> bitwise 级一致</strong>（理想实现下），无 chunk 接缝 flicker / latent 跳变。</li>
+          <li><strong>显存有界：</strong>每次 encoder 只处理 ≤4 像素帧（首 chunk 1 帧），激活峰值 $\approx O(HW)$，不随总帧数 $T$ 线性涨 → 长视频 / 高分辨率 decode 不 OOM。</li>
+          <li><strong>配合 RMSNorm：</strong>归一化不跨未来帧聚合统计；chunk 切分 + cache 与 RMSNorm 兼容（GroupNorm 跨帧统计会破坏因果 chunk 语义，报告因此替换）。</li>
+        </ul>
+
+        <p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin:0.75rem 0 0.4rem;">优势（相对其它做法）</p>
+        <table class="exp-table" style="margin:0.5rem 0 0.75rem;">
+          <thead><tr><th>方案</th><th>显存</th><th>长视频</th><th>与整段 encode 一致</th><th>单卡推理</th></tr></thead>
+          <tbody>
+            <tr><td>整段一次 encode/decode</td><td>$\propto T$ · 易 OOM</td><td>受 GPU 上限</td><td>✓ 基准</td><td>长片困难</td></tr>
+            <tr><td>chunk 切分、<strong>无</strong> cache</td><td>有界</td><td>可分段</td><td>✗ 边界伪影</td><td>✓</td></tr>
+            <tr class="is-ours"><td><strong>Wan feature cache</strong></td><td>有界（≤4 帧/chunk + 小 cache）</td><td>报告称可稳定<strong>任意长</strong></td><td>✓ 等价整段</td><td>✓ 127M VAE 单卡</td></tr>
+            <tr><td>训练侧 Context Parallel（CogVideoX 等）</td><td>多卡分摊 $T$</td><td>训练用</td><td>✓</td><td>推理未必实现同等 cache</td></tr>
+          </tbody>
+        </table>
+
+        <p style="font-size:0.85rem;font-weight:600;color:var(--navy);margin:0.75rem 0 0.4rem;">工程收益（报告 §4.1）</p>
+        <ul style="font-size:0.88rem;line-height:1.75;margin:0 0 0 1.25rem;">
+          <li><strong>吞吐：</strong>同硬件 VAE 重建比 HunyuanVideo <strong>2.5× 快</strong>（小模型 127M + cache 减峰值显存，高分辨率优势更大）。</li>
+          <li><strong>DiT 训练友好：</strong>VAE encode 更快 → 同样 GPU·hour 可过更多 latent，后续 14B DiT 数据吞吐受益。</li>
+          <li><strong>流式场景：</strong>实时生成 / 逐段 decode 时，可边生成边解码，不必等全长 latent 落盘。</li>
+          <li><strong>存储开销极小：</strong>每层 CausalConv3d 仅 cache 1–2 帧特征图（`feat_cache` 数组长度 = 层数），相对整段激活可忽略。</li>
+        </ul>
+
+        <div class="diagram" style="margin:0.75rem 0 0;"><pre class="mermaid">flowchart TB
+  subgraph pain["无 cache 的痛点"]
+    A1["长视频整段 encode"] --> OOM["显存 ∝ T"]
+    A2["chunk 无历史"] --> SEAM["边界伪影 / latent 不一致"]
+  end
+  subgraph gain["feature cache 收益"]
+    B1["chunk ≤4 帧"] --> MEM["峰值显存有界"]
+    B2["cache 1–2 帧特征"] --> EQ["≈ 整段 encode"]
+    B1 --> STREAM["任意长视频流式编解码"]
+    B2 --> STREAM
+  end</pre></div>
+        <p style="font-size:0.78rem;color:var(--muted);margin-top:0.35rem;">论文结论（§4.1 Efficient Inference）：*optimizes memory utilization, preserves feature coherence across chunk boundaries, supporting stable inference for infinite-length videos*。</p>
+      </div>
+
+      <table class="code-map" style="margin:0.75rem 0;">
+        <thead><tr><th>场景（论文 Fig. vae_cache）</th><th>缓存内容</th><th>首 chunk</th><th>后续 chunk</th></tr></thead>
+        <tbody>
+          <tr><td>(a) 普通因果 Conv3d，$k_t{=}3$，stride 1</td><td>保存<strong>最后 2 帧</strong>中间特征（<code>CACHE_T=2</code>）</td><td>时间维<strong>零填充 2 帧</strong> dummy</td><td><code>conv(cat(cache, chunk))</code>，再更新 cache</td></tr>
+          <tr><td>(b) 时间下采样 Conv3d，stride 2</td><td>保存<strong>最后 1 帧</strong>特征</td><td>无额外 pad</td><td>仅非首 chunk 在卷积前 cat 1 帧 cache，保证输出长度严格 ÷2</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:0.9rem;line-height:1.8;margin-bottom:0.5rem;"><strong>chunk 划分（与代码一致）：</strong>输入 $T$ 帧（$1{+}T$ 格式），<code>iter = 1 + (T-1)//4</code>；第 0 次取帧 <code>[:, :, 0:1]</code>，第 $i$ 次取 <code>[:, :, 1+4*(i-1) : 1+4*i]</code>，encoder 输出沿时间 concat → 完整 latent。</p>
+      <div class="code-block"><span class="cm"># 伪代码 — WanVAE_.encode + CausalConv3d（对应 wan/modules/vae.py）</span>
+CACHE_T = <span class="str">2</span>   <span class="cm"># 时间核 k=3 时需 2 帧历史</span>
+feat_cache = [None] * num_causal_conv_layers   <span class="cm"># 每层 CausalConv3d 一个槽位</span>
+
+<span class="kw">def</span> <span class="fn">causal_conv3d</span>(x_chunk, cache):
+    <span class="cm"># x_chunk: [B,C,t_chunk,H,W]；cache: 上一 chunk 末 CACHE_T 帧特征</span>
+    <span class="kw">if</span> cache <span class="kw">is</span> <span class="kw">None</span>:
+        x = zero_pad_time(x_chunk, pad=<span class="str">2</span>)   <span class="cm"># 首 chunk</span>
+    <span class="kw">else</span>:
+        x = concat_time(cache, x_chunk)           <span class="cm"># 用历史特征替代零 pad</span>
+    y = Conv3d(x)
+    new_cache = x[:, :, -CACHE_T:, :, :].clone()  <span class="cm"># 供下一 chunk</span>
+    <span class="kw">return</span> y, new_cache
+
+<span class="kw">def</span> <span class="fn">encode_video</span>(x):
+    <span class="cm"># x: [B,3,T,H,W]；按 1,4,4,4… 切分</span>
+    chunks = [x[:,:,:<span class="str">1</span>], x[:,:, <span class="str">1</span>:<span class="str">5</span>], x[:,:, <span class="str">5</span>:<span class="str">9</span>], ...]
+    latent_parts = []
+    <span class="kw">for</span> i, chunk <span class="kw">in</span> enumerate(chunks):
+        clear_or_reuse_feat_cache(feat_cache, i)  <span class="cm"># 层间共享 cache 数组，按 conv 下标更新</span>
+        z_i = encoder(chunk, feat_cache=feat_cache)
+        latent_parts.append(z_i)
+    <span class="kw">return</span> concat_time(latent_parts)   <span class="cm"># → [B,16,1+T/4,H/8,W/8]</span></div>
+      <p class="code-note" style="margin-bottom:0;">decode 同理：按<strong>每个 latent 时间步</strong>逐块解码（每步 1 个 latent 帧），复用同一套 <code>feat_cache</code>。效果：显存 bounded、chunk 边界连续、理论上可无限长视频 —— 报告 §4.1 称 "infinite-length videos"。完整实现见 <a href="#code">#code §②</a>。</p>
+    </section>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>DiT backbone:</strong> 3D patch embed $(1,2,2)$ → sequence length $L=(1{+}T/4)\cdot H/16 \cdot W/16$. <span class="hl-method">Cross-attention</span> embeds umT5 text; shared MLP predicts 6 AdaLN modulation params per block (≈25% param savings vs per-block MLP).</p>
+        <p><span class="hl-method">umT5-XXL</span> chosen for multilingual (CN/EN + visual text), composition quality, faster convergence vs unidirectional LLMs.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>DiT：</strong>3D patch $(1,2,2)$，序列长 $L=(1{+}T/4)\cdot H/16 \cdot W/16$。<strong>Cross-attention</strong> 注入 umT5 文本；共享 timestep MLP 预测 6 组 AdaLN 参数（省约 25% 参数）。</p>
+        <p><strong>umT5-XXL</strong>：多语（含视觉文字）、构图更好、收敛更快。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color:#6f42c1;">
+          <span class="tag">DiT 块</span>
+          <p>自注意力 + cross-attn + FFN；3D RoPE 在代码侧实现时空位置编码（见 #code）。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure：Wan 整体架构</h3>
+      <figure>
+        <img src="assets/wan21/fig4.png" alt="Wan overall architecture">
+        <figcaption>Wan-VAE + umT5 + DiT 扩散 Transformer 总览。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <section class="figure-row">
+      <figure>
+        <img src="assets/wan21/fig5.png" alt="Wan DiT block" style="max-width:320px;">
+        <figcaption>DiT Block：patchify → self-attn + cross-attn + FFN，timestep AdaLN 调制。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <section class="code-section" id="code">
+      <h2 class="section-title" style="margin-top:0;border:none;padding:0;">💻 代码对照 — Wan-VAE · WanModel · Flow 采样 · I2V</h2>
+      <p>官方推理仓库：<a href="https://github.com/Wan-Video/Wan2.1" target="_blank" rel="noopener">github.com/Wan-Video/Wan2.1</a>（<strong>仅推理</strong>，无训练代码）。核心在 <code>wan/modules/</code> 与 <code>wan/text2video.py</code>。</p>
+
+      <table class="code-map">
+        <thead><tr><th>论文</th><th>代码</th></tr></thead>
+        <tbody>
+          <tr><td>Wan-VAE 4×8×8、16 通道</td><td><code>wan/modules/vae.py</code> · <code>WanVAE</code> · <code>CausalConv3d</code></td></tr>
+          <tr><td>DiT + cross-attn</td><td><code>wan/modules/model.py</code> · <code>WanModel</code> · <code>WanAttentionBlock</code></td></tr>
+          <tr><td>umT5 文本</td><td><code>wan/modules/t5.py</code> · <code>T5EncoderModel</code></td></tr>
+          <tr><td>Flow Matching 采样</td><td><code>wan/utils/fm_solvers_unipc.py</code> · <code>FlowUniPCMultistepScheduler</code></td></tr>
+          <tr><td>I2V 条件拼接 + CLIP</td><td><code>WanI2V</code> · <code>WanI2VCrossAttention</code> · <code>wan/image2video.py</code></td></tr>
+          <tr><td>1.3B / 14B 配置</td><td><code>wan/configs/wan_t2v_1_3B.py</code> · <code>wan_t2v_14B.py</code></td></tr>
+        </tbody>
+      </table>
+
+      <h3>① Wan-VAE vs CogVideoX — 压缩率相同，工程路径不同</h3>
+      <p>二者 DiT 侧都消费 shape $\approx [16,\;1{+}T/4,\;H/8,\;W/8]$ 的 latent；CogVideoX SAT 里 <code>temporal_compress_times: 4</code>、<code>z_channels: 16</code> 与 Wan <code>z_dim=16</code>、stride $(4,8,8)$ 对齐。Wan 的增量在<strong>127M 小模型 + RMSNorm + feature cache 流式推理</strong>，而非更高压缩比。</p>
+      <table class="code-map">
+        <thead><tr><th>能力</th><th>CogVideoX <code>ContextParallelEncoder3D</code></th><th>Wan <code>WanVAE_</code></th></tr></thead>
+        <tbody>
+          <tr><td>长视频训练</td><td>多卡 Context Parallel，rank 间传 $k{-}1$ 帧 halo</td><td>报告未强调 CP；三阶段 inflate 训练</td></tr>
+          <tr><td>长视频推理</td><td>通常整段 latent 一次过 DiT；VAE 整段或按实现</td><td><code>encode</code> 显式 1+4+4… chunk + 每层 conv cache</td></tr>
+          <tr><td>单帧 / T2I</td><td><code>T=1</code> 同一 wrapper</td><td>首 chunk 仅 1 帧，与 MagViT-v2 首帧空间特化一致</td></tr>
+        </tbody>
+      </table>
+
+      <h3>② Feature Cache — chunk 划分与 CausalConv3d</h3>
+      <p>仓库常量 <code>CACHE_T = 2</code>（<code>wan/modules/vae.py</code>）。每个 <code>CausalConv3d</code> 在 encoder/decoder 中各占用 cache 数组的一个槽位；chunk 切换时 cache 在层间传递，chunk 内按层顺序更新。</p>
+      <div class="code-block"><span class="cm"># wan/modules/vae.py — CausalConv3d.forward（核心）</span>
+<span class="kw">def</span> forward(<span class="kw">self</span>, x, cache_x=<span class="kw">None</span>):
+    <span class="cm"># 时间维只在左侧 pad；cache_x 来自上一 chunk 末 2 帧</span>
+    <span class="kw">if</span> cache_x <span class="kw">is not</span> <span class="kw">None</span>:
+        x = torch.cat([cache_x, x], dim=<span class="str">2</span>)   <span class="cm"># 时间维 concat</span>
+    x = F.pad(x, causal_padding)                 <span class="cm"># 首 chunk 等价零 pad</span>
+    <span class="kw">return</span> Conv3d(x)
+
+<span class="cm"># WanVAE_.encode — chunk 循环（注释原文：1、4、4、4…）</span>
+t = x.shape[<span class="str">2</span>]
+iter_ = <span class="str">1</span> + (t - <span class="str">1</span>) // <span class="str">4</span>
+<span class="kw">for</span> i <span class="kw">in</span> range(iter_):
+    <span class="kw">if</span> i == <span class="str">0</span>:
+        chunk = x[:, :, :<span class="str">1</span>, :, :]
+    <span class="kw">else</span>:
+        chunk = x[:, :, <span class="str">1</span>+<span class="str">4</span>*(i-<span class="str">1</span>) : <span class="str">1</span>+<span class="str">4</span>*i, :, :]
+    out_i = encoder(chunk, feat_cache=_enc_feat_map, feat_idx=_enc_conv_idx)
+    out = concat_time(out, out_i)
+<span class="cm"># ResidualBlock 内：每层 conv 后 feat_cache[idx] = x[:,:,-CACHE_T:].clone()</span></div>
+      <p class="code-note">时间下采样 <code>downsample3d</code> 分支：cache 仅保留<strong>末 1 帧</strong>，且 <code>time_conv(cat(cache_last_frame, x))</code> —— 对应论文 Fig.(b)。上采样 <code>upsample3d</code> 对称维护 cache，解码时时间维逐 latent 步展开。</p>
+
+      <h3>③ WanVAE 推理 API</h3>
+      <div class="code-block"><span class="cm"># wan/modules/vae.py — WanVAE 封装（简化）</span>
+<span class="kw">class</span> <span class="fn">WanVAE</span>:
+    <span class="kw">def</span> encode(<span class="kw">self</span>, videos):  <span class="cm"># list of [C, T, H, W]</span>
+        <span class="kw">return</span> [<span class="kw">self</span>.model.encode(u.unsqueeze(<span class="str">0</span>), <span class="kw">self</span>.scale).squeeze(<span class="str">0</span>)
+                <span class="kw">for</span> u <span class="kw">in</span> videos]
+    <span class="kw">def</span> decode(<span class="kw">self</span>, zs):
+        <span class="kw">return</span> [<span class="kw">self</span>.model.decode(u.unsqueeze(<span class="str">0</span>), <span class="kw">self</span>.scale).clamp_(-<span class="str">1</span>, <span class="str">1</span>).squeeze(<span class="str">0</span>)
+                <span class="kw">for</span> u <span class="kw">in</span> zs]
+<span class="cm"># model.encode 内部：clear_cache() → chunk 循环 → clear_cache()</span></div>
+      <p class="code-note">每次 <code>encode/decode</code> 结束调用 <code>clear_cache()</code> 重置 <code>_enc_feat_map</code> / <code>_feat_map</code>。训练三阶段（2D→3D→GAN）<strong>未开源</strong>。</p>
+
+      <h3>④ WanModel — T2V / I2V 分支</h3>
+      <div class="code-block"><span class="cm"># wan/modules/model.py — 构造与 I2V forward 要点</span>
+cross_attn_type = <span class="str">'t2v_cross_attn'</span> <span class="kw">if</span> model_type == <span class="str">'t2v'</span> <span class="kw">else</span> <span class="str">'i2v_cross_attn'</span>
+<span class="kw">if</span> model_type <span class="kw">in</span> (<span class="str">'i2v'</span>, <span class="str">'flf2v'</span>):
+    <span class="kw">self</span>.img_emb = MLPProj(<span class="str">1280</span>, dim)  <span class="cm"># CLIP 视觉 token</span>
+
+<span class="kw">def</span> forward(<span class="kw">self</span>, x, t, context, seq_len, clip_fea=<span class="kw">None</span>, y=<span class="kw">None</span>):
+    <span class="kw">if</span> y <span class="kw">is not</span> <span class="kw">None</span>:
+        x = [torch.cat([u, v], dim=<span class="str">0</span>) <span class="kw">for</span> u, v <span class="kw">in</span> zip(x, y)]  <span class="cm"># channel 拼条件 latent+mask</span>
+    <span class="kw">if</span> clip_fea <span class="kw">is not</span> <span class="kw">None</span>:
+        context = torch.concat([<span class="kw">self</span>.img_emb(clip_fea), context], dim=<span class="str">1</span>)</div>
+      <p class="code-note">对应论文 I2V：$z_t$、$z_c$、mask 沿 channel 拼接；CLIP 特征经 decoupled cross-attn（I2V 双路 attn 再相加）。</p>
+
+      <h3>⑤ Flow Matching 推理采样</h3>
+      <div class="code-block"><span class="cm"># wan/text2video.py — CFG + UniPC（简化）</span>
+<span class="kw">for</span> t <span class="kw">in</span> timesteps:
+    pred_c = model(latents, t=t, context=context, seq_len=seq_len)[<span class="str">0</span>]
+    pred_u = model(latents, t=t, context=context_null, seq_len=seq_len)[<span class="str">0</span>]
+    pred = pred_u + guide_scale * (pred_c - pred_u)
+    latents = [scheduler.step(pred, t, latents[<span class="str">0</span>], ...)[<span class="str">0</span>].squeeze(<span class="str">0</span>)]
+videos = vae.decode(latents)  <span class="cm"># x0 = sample - sigma * flow_pred</span></div>
+      <p class="code-note">训练目标 $\mathcal{L}=\mathbb{E}\|u_\theta(x_t,c,t)-v_t\|^2$，$x_t=t x_1+(1-t)x_0$，$v_t=x_1-x_0$（Rectified Flow）——实现未公开，repo 仅有 <code>prediction_type="flow_prediction"</code> 采样侧。</p>
+
+      <h3>⑥ 1.3B vs 14B 规模（config）</h3>
+      <table class="code-map">
+        <thead><tr><th></th><th>1.3B T2V</th><th>14B T2V/I2V</th></tr></thead>
+        <tbody>
+          <tr><td><code>dim</code></td><td>1536</td><td>5120</td></tr>
+          <tr><td><code>num_layers</code></td><td>30</td><td>40</td></tr>
+          <tr><td><code>num_heads</code></td><td>12</td><td>40</td></tr>
+          <tr><td>文本编码</td><td colspan="2">UMT5-XXL encoder（512 token）</td></tr>
+          <tr><td>典型分辨率</td><td>480×832</td><td>720×1280 / 480×832</td></tr>
+        </tbody>
+      </table>
+
+      <div class="diagram"><pre class="mermaid">flowchart LR
+  T[Prompt] --> T5[UMT5 encode]
+  N[Gaussian noise] --> DIT[WanModel DiT]
+  T5 --> DIT
+  DIT --> Z[Latent x0]
+  Z --> VAE[Wan-VAE decode]
+  VAE --> V[Video MP4]</pre></div>
+    </section>
+
+    <h2 class="section-title" id="training">3. Training — Flow Matching &amp; Curriculum</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p><span class="hl-method">Flow matching</span> objective (RF): sample $t \sim \text{logit-normal}$, $x_t = t x_1 + (1-t)x_0$, target velocity $v_t = x_1 - x_0$, minimize $\|u_\theta(x_t,c_{\text{txt}},t) - v_t\|^2$ (Eq. rf_loss).</p>
+        <p><strong>Pre-training:</strong> 14B starts with <span class="hl-evidence">256px T2I</span> (cross-modal alignment) → joint image-video stages: (1) 256px image + 192px 5s video; (2) 480px; (3) 720px 5s clips. Avoids OOM from 81-frame 720p direct training.</p>
+        <p><strong>Post-training:</strong> same architecture, init from pre-train ckpt, 480/720 on curated post-train set. Optimizer: AdamW, bf16, lr $10^{-4}$ with FID/CLIP plateau decay.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>Flow Matching：</strong>logit-normal 采样 $t$，线性插值 $x_t$，回归速度场 $v_t=x_1-x_0$，MSE 损失。</p>
+        <p><strong>预训练：</strong>14B 先 256px 文生图 → 三阶段图文联合（256→480→720）。避免直接 81 帧 720p OOM。</p>
+        <p><strong>后训练：</strong>同架构微调高质量数据；AdamW bf16。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color:#6f42c1;">
+          <span class="tag">训练策略</span>
+          <ul class="exp-detail">
+            <li><strong>与 SD3 同族：</strong>RF + logit-normal $t$ 采样。</li>
+            <li><strong>与 CogVideoX 差异：</strong>Wan 强调先 T2I 再视频分辨率课程；CogVideoX 用 frame pack + 两阶段 VAE/DiT。</li>
+            <li><strong>复现：</strong>训练细节在报告内，代码未开源 → 见 #code 仅推理路径。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="data">4. Data Processing Pipeline</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>Principles: <span class="hl-method">high quality, diversity, scale</span> — billions of images/videos. Four-step cleaning: fundamental filters (OCR ratio, LAION aesthetic, NSFW, watermark, black border, overexposure, synthetic-image detector, blur, duration/resolution) remove ~50% candidates.</p>
+        <p>Semantic stage: motion quality, visual text mining, dense captioning (similar spirit to CogVideoX/Hunyuan — report details OCR-for-text-in-video pipeline).</p>
+      </div>
+      <div class="col-translation">
+        <p>原则：高质量、多样性、规模——十亿级图文视频。四步清洗：OCR 文字占比、美学、NSFW、水印、黑边、过曝、合成图检测、模糊、时长分辨率等，剔除约 50%。</p>
+        <p>语义阶段：运动质量、视觉文字挖掘、dense caption——与 CogVideoX 同类数据工程。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#198754;">
+          <span class="tag">数据即模型</span>
+          <p>「视频内中英文文字」能力依赖<strong>视觉文字数据挖掘</strong> + umT5 多语编码，不仅是 DiT 架构创新。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="experiments">5. Experiments — Wan-Bench</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p><span class="hl-evidence">Wan-Bench</span>: automated metrics aligned with human preferences — dynamic quality, image quality, instruction following (13+ dimensions in Table).</p>
+        <p>1035 prompts × models; <span class="hl-thesis">Wan 14B weighted score 0.724</span> beats open models and CN-TopA (0.693); competitive with Sora (0.700) on reported table. Human eval 700+ tasks: 14B wins on visual/motion/matching dimensions vs commercial baselines.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>Wan-Bench</strong>：与人偏好对齐的自动评测（动态、画质、指令遵循等 13 维）。</p>
+        <p>1035 prompt 公平对比；<strong>Wan 14B 加权 0.724</strong> 超开源与 CN-TopA；与 Sora 0.700 可比。人类评测 700+ 任务：14B 在视觉/运动/匹配维度领先。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color:#0d6efd;">
+          <span class="tag">实验</span>
+          <table class="exp-table">
+            <thead><tr><th>模型</th><th>Weighted Score</th><th>备注</th></tr></thead>
+            <tbody>
+              <tr><td>Sora</td><td>0.700</td><td>闭源</td></tr>
+              <tr><td>CN-TopA</td><td>0.693</td><td>商业</td></tr>
+              <tr class="is-ours"><td>Wan 14B</td><td>0.724</td><td>报告最优</td></tr>
+              <tr class="is-ours"><td>Wan 1.3B</td><td>0.689</td><td>接近 Top 商业</td></tr>
+              <tr><td>HunyuanVideo</td><td>0.673</td><td>开源</td></tr>
+              <tr><td>Mochi</td><td>0.639</td><td>开源</td></tr>
+            </tbody>
+          </table>
+          <p class="code-note" style="border:none;padding:0;margin-top:0.5rem;">自研 benchmark + 自评存在博弈风险；交叉外部 VBench 读者需自行核对。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文：Wan-Bench 维度示意</h3>
+      <figure>
+        <img src="assets/wan21/fig7.png" alt="Wan-Bench dimensions">
+        <figcaption>Wan-Bench 多维度评测框架（动态、物理、文字、相机等）。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="applications">6. Extended Applications</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>I2V:</strong> condition image as first frame; zero-padded future frames → VAE latent $z_c$; binary mask $M$; channel-concat $[z_t, z_c, m]$ into DiT; CLIP global context via decoupled cross-attention. Unified mask training for continuation, first-last-frame, interpolation.</p>
+        <p>Report also covers: video editing (VACE), T2I, personalization, camera motion control, real-time streaming, audio (V2A) — each with dedicated section &amp; figures.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>I2V：</strong>首帧条件 + 零填充未来帧 → $z_c$；mask $M$ 与 $z_t$ channel 拼接进 DiT；CLIP 全局 context。统一 mask 训练支持续写、首尾帧、插帧。</p>
+        <p>另含：视频编辑、T2I、个性化、相机控制、实时流式、音频生成等 8+ 任务章节。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#6f42c1;">
+          <span class="tag">多任务</span>
+          <p>基础 T2V 权重 + 任务特定微调/adapter — 开源 repo 含 <code>WanI2V</code>、<code>WanVace</code>、<code>WanFLF2V</code> 等入口。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure：Wan-I2V 框架</h3>
+      <figure>
+        <img src="assets/wan21/fig6.png" alt="Wan I2V framework">
+        <figcaption>I2V：mask 机制区分保留帧与生成帧，可扩展至续写/首尾帧。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="conclusion">7. Limitation &amp; Conclusion</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p><span class="hl-counter">Limitations:</span> large-motion fine detail still hard; 14B inference ~30 min/GPU without optimization; domain-specific (education/medical) weak.</p>
+        <p><span class="hl-thesis">Conclusion:</span> open Wan-VAE + DiT + data + Wan-Bench + 1.3B/14B; plan to scale data &amp; model further.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>局限：</strong>大运动细节仍难；14B 单卡推理约 30 分钟；垂直领域不足。</p>
+        <p><strong>结论：</strong>全栈开源推动社区；1.3B  democratize 创作；持续 scaling。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#dc3545;">
+          <span class="tag">诚实边界</span>
+          <p>报告自承效率瓶颈 — 与「消费级 1.3B」叙事形成产品分层：轻量推理 vs 质量旗舰 14B。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="summary" id="notation">
+      <h2>符号速查表</h2>
+      <table class="notation">
+        <thead><tr><th>符号</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td>$V$</td><td>输入视频 $(1{+}T)\times H\times W\times 3$</td></tr>
+          <tr><td>$x_1$</td><td>干净 latent（VAE 编码）</td></tr>
+          <tr><td>$x_0$</td><td>标准高斯噪声</td></tr>
+          <tr><td>$x_t$</td><td>Flow 插值 $t x_1 + (1-t)x_0$</td></tr>
+          <tr><td>$v_t$</td><td>真速度 $x_1 - x_0$</td></tr>
+          <tr><td>$c_{\text{txt}}$</td><td>umT5 文本 embedding（512 token）</td></tr>
+          <tr><td>$u_\theta$</td><td>DiT 预测速度场</td></tr>
+          <tr><td>$z_c, M$</td><td>I2V 条件 latent 与二值 mask</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="summary" id="overview">
+      <h2>论证结构总览</h2>
+      <div class="skeleton">开源 gap（性能/能力/效率）→ Wan-VAE + DiT + Flow + 数据 + Wan-Bench → 1.3B/14B + 8 任务 → 全栈开源</div>
+      <h4>核心主张（一句话）</h4>
+      <p>在 DiT+Flow 主线上用<strong>小 VAE、大 DiT、万亿 token 数据、自动评测</strong>把开源视频生成推到可与闭源竞争，并以 1.3B 降低门槛。</p>
+      <div class="strength"><strong>论证最强处：</strong>全链路透明（VAE 设计/cache、训练课程、Wan-Bench、多任务）；1.3B 8.19GB 可复现；视频内中英文文字差异化能力。</div>
+      <div class="weakness"><strong>论证最弱处：</strong>训练未开源；Wan-Bench 自研自评；14B 推理成本仍高；与 Wan2.2 等同系列后续版本需区分。</div>
+    </section>
+
+    <section class="summary faq" id="faq">
+      <h2>🧩 结构化十问（AI 解构）</h2>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.75rem;">据 arXiv:2503.20314 技术报告回答。</p>
+      <details open>
+        <summary>Q1 · 论文试图解决什么问题？</summary>
+        <div class="answer">缩小开源视频模型与闭源 Sora 等在<strong>性能、多任务能力、推理效率</strong>上的差距；提供可复现的全栈基础模型（§1）。</div>
+      </details>
+      <details open>
+        <summary>Q2 · 这是否是一个新问题？</summary>
+        <div class="answer">T2V 基础模型非新；新在<strong>全报告级开源</strong>（VAE+DiT+数据流水线+评测+8 任务）+ 视频内中英文视觉文字 + 1.3B 消费级规格并存。</div>
+      </details>
+      <details open>
+        <summary>Q3 · 要验证什么科学假设？</summary>
+        <div class="answer">DiT+Flow Matching 在十亿级图文视频上存在 scaling law；Wan-VAE 4×8×8 可在质量/速度间优于 Hunyuan/CogVideoX 同级 VAE；umT5 + 数据清洗可提升指令与文字生成（§4, §5）。</div>
+      </details>
+      <details open>
+        <summary>Q4 · 相关研究如何归类？</summary>
+        <div class="answer">Sora/HunyuanVideo/CogVideoX/Mochi（DiT 视频）；SD3（Flow Matching）；MagViT/Wan-VAE 因果 3D VAE 线。Wan 定位<strong>开源全集</strong>而非单点架构突破。</div>
+      </details>
+      <details open>
+        <summary>Q5 · 解决方案的关键是什么？</summary>
+        <div class="answer">① Wan-VAE（127M、cache、4×8×8）；② 14B DiT + RF 训练课程；③ 千亿级数据四步清洗 + dense caption；④ Wan-Bench 对齐人类偏好；⑤ 1.3B 蒸馏式小模型布局（§4–5）。</div>
+      </details>
+      <details open>
+        <summary>Q6 · 实验是如何设计的？</summary>
+        <div class="answer">Wan-Bench 1035 prompt × 多模型自动打分（13 维加权）；700+ 人类评测任务；VAE PSNR/latency 对比 200 视频；消融 adaLN 共享 MLP、文本编码器选择（§4.7, §4.1）。</div>
+      </details>
+      <details open>
+        <summary>Q7 · 数据集与代码是否开源？</summary>
+        <div class="answer">数据<strong>未</strong>公开原始集；处理流程在报告描述。代码+权重：<a href="https://github.com/Wan-Video/Wan2.1" target="_blank" rel="noopener">Wan-Video/Wan2.1</a>（推理）；训练代码未开源。</div>
+      </details>
+      <details open>
+        <summary>Q8 · 结果是否支持假设？</summary>
+        <div class="answer">较好支持：14B Wan-Bench 加权 0.724 领先表内开源与 CN-TopA；1.3B 0.689 仍强。但 benchmark 自研、闭源 Sora 测试协议不透明，需谨慎解读「全面超越」。</div>
+      </details>
+      <details open>
+        <summary>Q9 · 主要贡献是什么？</summary>
+        <div class="answer">开源 Wan2.1 全系列；Wan-VAE 与训练/数据/评测方法论公开；1.3B 低显存 T2V；视频内中英文文字；I2V/编辑/个性化等扩展验证基础模型泛化。</div>
+      </details>
+      <details open>
+        <summary>Q10 · 下一步工作？</summary>
+        <div class="answer">作者：继续 scaling 数据与模型、优化 14B 推理、社区垂直领域适配。社区：Wan2.2 已发布同报告 arXiv 线；蒸馏/少步采样、训练复现仍是空白。</div>
+      </details>
+    </section>
+
+    <section class="summary deepdive" id="deepdive">
+      <h2>🔬 深挖追问</h2>
+      <div class="block">
+        <h4>第一性原理 · Flow vs DDPM</h4>
+        <p>Wan 与 SD3/Hunyuan 同选 <strong>Rectified Flow</strong>：直线路径 $x_t=t x_1+(1-t)x_0$ 比 VP 扩散少步采样退化更慢 — 工程上与 DiT 大规模训练配套。</p>
+      </div>
+      <div class="block">
+        <h4>第一性原理 · 小 VAE 大 DiT</h4>
+        <p>127M VAE 把算力留给 14B DiT；feature cache 解决因果 3D 长序列推理 — 与「把压缩做激进、DiT 吃 token」的 Sora 叙事一致，但参数分配更透明。</p>
+      </div>
+      <div class="block">
+        <h4>第一性原理 · 开源 vs 报告</h4>
+        <p>推理开源 + 训练闭源 = <strong>半复现</strong>：可验证生成质量与 I2V 拼接逻辑，难复现 Wan-Bench 分数与 scaling 曲线。</p>
+      </div>
+      <div class="block crit">
+        <h4>批判性思维 · 盲区</h4>
+        <ul>
+          <li><strong>Wan-Bench 闭环：</strong>自研 prompt + 自研 scorer + 自家模型领先，需第三方 benchmark 交叉验证。</li>
+          <li><strong>列表混淆：</strong>Wan2.1/Wan2.2 共享同一 arXiv PDF — 读 list 时须看 repo 分支与 checkpoint 版本。</li>
+          <li><strong>30min/14B：</strong>与 1.3B「消费级」并存，实际创作仍可能只用小模型或云 API。</li>
+          <li><strong>数据合规：</strong>十亿级内部+公开视频，版权与 opt-out 未展开。</li>
+          <li><strong>视觉文字：</strong>能力突出但 OCR 过滤与文字生成数据比例未量化，难评估泛化边界。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="summary" id="refs-external">
+      <h2>📎 延伸阅读 · 外部解读</h2>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.85rem;line-height:1.7;">社区或第三方对 Wan2.1 的拆解、复现与观点文章。与本文精读（论文 + 官方 repo）互补；链接内容<strong>非官方</strong>，仅供对照阅读。</p>
+      <ul class="ref-list">
+        <li>
+          <span class="ref-tag">知乎专栏</span>
+          <a href="https://zhuanlan.zhihu.com/p/2049928803955300345" target="_blank" rel="noopener noreferrer">Wan2.1 相关技术解读</a>
+          <span class="ref-note">zhuanlan.zhihu.com/p/2049928803955300345 · 可补充架构细节、部署经验或与本文不同的侧重点。</span>
+        </li>
+      </ul>
+      <p style="font-size:0.78rem;color:var(--muted);margin-top:0.85rem;">有新文章可在本页 <code>#refs-external</code> 追加 <code>&lt;li&gt;</code>；建议标注来源平台与简要说明。</p>
+    </section>
+
+  </main>
+  <div id="lightbox" role="dialog" aria-modal="true" aria-label="放大查看">
+    <span class="lb-close" aria-hidden="true">&times;</span>
+    <div class="lb-content"></div>
+    <div class="lb-cap"></div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad:true, theme:'neutral', flowchart:{ htmlLabels:true } });</script>
+  <script>
+    function syncScrollPad(){var h=document.querySelector('.sticky-head');if(h)document.documentElement.style.scrollPaddingTop=(h.offsetHeight+8)+'px';}
+    window.addEventListener('load',syncScrollPad);window.addEventListener('resize',syncScrollPad);syncScrollPad();
+    (function(){var lb=document.getElementById('lightbox'),content=lb.querySelector('.lb-content'),cap=lb.querySelector('.lb-cap');
+    function findZoomTarget(n){var el=n.closest?n.closest('img,svg'):null;return el&&el.closest('.diagram,.figure-row,.mermaid')?el:null;}
+    function nearestCaption(el){var fig=el.closest('figure')||el.closest('.diagram')||el.closest('.figure-row');var c=fig&&fig.querySelector('figcaption');return c?c.textContent.trim():'';}
+    function openLightbox(node,caption){content.innerHTML='';var clone=node.cloneNode(true);clone.style.cursor='default';clone.style.boxShadow='none';
+    var r=node.getBoundingClientRect(),vw=window.innerWidth*0.96,vh=window.innerHeight*0.92,w=r.width||600,h=r.height||400,scale=Math.min(vw/w,vh/h);
+    if(!isFinite(scale)||scale<=0)scale=1;clone.style.width=Math.round(w*scale)+'px';clone.style.height=Math.round(h*scale)+'px';
+    clone.style.maxWidth=clone.style.maxHeight='none';content.appendChild(clone);cap.textContent=caption||'';lb.classList.add('open');document.body.style.overflow='hidden';}
+    function closeLightbox(){lb.classList.remove('open');content.innerHTML='';document.body.style.overflow='';}
+    document.addEventListener('click',function(e){if(lb.classList.contains('open')){closeLightbox();return;}var el=findZoomTarget(e.target);if(el){e.preventDefault();e.stopPropagation();openLightbox(el,nearestCaption(el));}});
+    document.addEventListener('keydown',function(e){if(e.key==='Escape'&&lb.classList.contains('open'))closeLightbox();});})();
+  </script>
+</body>
+</html>

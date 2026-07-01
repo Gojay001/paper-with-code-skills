@@ -38,6 +38,21 @@ After commit & push here → in blog repo **Gojay001.github.io** update submodul
 6. **Code section** — if list has official repo: follow [references/code-section-snippet.md](references/code-section-snippet.md); place after Method, before Experiments
 7. Validate: KaTeX, div balance, asset paths, lightbox screenshot (see below)
 8. **List links:** if list `Title` ≠ `{slug}` (e.g. `SD 1.x` vs `sd.html`), add `paper-reading/slug-aliases.json` entry, then in blog repo run `skills/sync-overview-from-list/scripts/sync-overview-from-list.py`
+9. **List row order:** when adding or moving a row in `paper-with-code-list.md`, insert it in **arxiv_id ascending** order within that `##` section (see below)
+
+## `paper-with-code-list.md` row order
+
+Within each `##` / `###` section table, sort rows by **arxiv_id** when the Paper column links to arXiv.
+
+| Rule | Detail |
+|------|--------|
+| Sort key | `YYYY.NNNNN` from `https://arxiv.org/abs/{id}` (or `/pdf/{id}`) in the **Paper** column |
+| Order | Ascending (older → newer): e.g. HunyuanVideo `2412.03603` **before** WISA `2503.08153` |
+| Same arxiv_id | Keep variants together in stable order (e.g. Wan2.1 → Wan2.2) |
+| No arXiv link | Rows without `arxiv.org/abs/` stay **after** all arxiv-linked rows; preserve relative order among them |
+| New paper | Do not append blindly — find the correct slot by arxiv_id and re-sort the section if needed |
+
+Example (Video Generation): CogVideoX `2408.06072` → FancyVideo `2408.08189` → HunyuanVideo `2412.03603` → WISA `2503.08153` → Open-Sora `2503.09642` → …
 
 ## Reusable lessons (SD 2026-06)
 
@@ -140,6 +155,7 @@ python3 -m venv .cache/.venv
 - [ ] If official repo: `#code` with `code-map` + ≥2 伪代码/摘录小节；`chapter-nav` 含「代码」
 - [ ] KaTeX 无 Tab 破坏（`$z_{\text{…}}$` 勿写成 `$z_{` + Tab + `ext{…}}$`）
 - [ ] If Title ≠ slug: `slug-aliases.json` + Overview sync (blog repo)
+- [ ] New/updated list row placed in **arxiv_id ascending** order within its section
 
 ## References
 

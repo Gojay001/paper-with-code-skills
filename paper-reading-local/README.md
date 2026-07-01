@@ -10,10 +10,9 @@
 
 ## 当前条目
 
-已发布至 `paper-reading/`：`pixart-alpha`、`pixart-delta`、`fancyvideo`（见 list）
+已发布至 `paper-reading/`：`pixart-alpha`、`pixart-delta`、`fancyvideo`、`wisa`
 
 | slug | 论文 | arXiv | 状态 |
 |------|------|-------|------|
 | `relactrl` | RelaCtrl | [2502.14377](https://arxiv.org/abs/2502.14377) | 本地 |
-| `wisa` | WISA | [2503.08153](https://arxiv.org/abs/2503.08153) | 本地 |
 | `lay2story` | Lay2Story | [2508.08949](https://arxiv.org/abs/2508.08949) | 本地 |

@@ -115,6 +115,7 @@ There are paper with code for CV / AIGC / LLM / VLM.
 | ----- | ----- | ---- | ---- |
 | [CogVideoX](https://gojay.top/paper-reading/cogvideox.html) | [CogVideoX: Text-to-Video Diffusion Models with An Expert Transformer](https://arxiv.org/abs/2408.06072) | arXiv(2024) / ICLR(2025) | [PyTorch](https://github.com/THUDM/CogVideo) |
 | [FancyVideo](https://gojay.top/paper-reading/fancyvideo.html) | [FancyVideo: Towards Dynamic and Consistent Video Generation via Cross-frame Textual Guidance](https://arxiv.org/abs/2408.08189) | arXiv(2024) / IJCAI(2025) | [PyTorch](https://github.com/360CVGroup/FancyVideo) |
+| [WISA](https://gojay.top/paper-reading/wisa.html) | [WISA: World Simulator Assistant for Physics-Aware Text-to-Video Generation](https://arxiv.org/abs/2503.08153) | arXiv(2025) / NeurIPS(2025) | [PyTorch](https://github.com/360CVGroup/WISA) |
 | HunyuanVideo | [HunyuanVideo: A Systematic Framework For Large Video Generative Models](https://arxiv.org/abs/2412.03603) | arXiv(2024) | [PyTorch](https://github.com/Tencent-Hunyuan/HunyuanVideo) |
 | Open-Sora 2.0 | [Open-Sora 2.0: Training a Commercial-Level Video Generation Model in $200k](https://arxiv.org/abs/2503.09642) | arXiv(2025) | [PyTorch](https://github.com/hpcaitech/Open-Sora) |
 | [Wan2.1](https://gojay.top/paper-reading/wan21.html) | [Wan: Open and Advanced Large-Scale Video Generative Models](https://arxiv.org/abs/2503.20314) | arXiv(2025) | [PyTorch](https://github.com/Wan-Video/Wan2.1) |

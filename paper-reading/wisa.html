@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WISA — World Simulator Assistant · 逻辑精读</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+  <style>
+    :root {
+      --navy: #1a2744;
+      --paper: #faf8f5;
+      --thesis: #fff3cd;
+      --concept: #f8d7da;
+      --evidence: #cfe2ff;
+      --counter: #d1e7dd;
+      --method: #e2d9f3;
+      --text: #2c2c2c;
+      --muted: #6c757d;
+      --border: #e8e4df;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'IBM Plex Sans', sans-serif; background: var(--paper); color: var(--text); line-height: 1.6; }
+    .sticky-head { position: sticky; top: 0; z-index: 100; }
+    .top-nav { background: var(--navy); color: #fff; padding: 1rem 2rem; }
+    .top-nav h1 { font-size: 1.25rem; font-weight: 600; }
+    .top-nav h1 a { color: #fff; text-decoration: none; border-bottom: 1px dotted rgba(255,255,255,0.5); }
+    .top-nav h1 a:hover { border-bottom-style: solid; }
+    .top-nav .meta { font-size: 0.85rem; opacity: 0.85; margin-top: 0.25rem; }
+    .legend { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.75rem; font-size: 0.8rem; }
+    .legend span { padding: 0.15rem 0.5rem; border-radius: 3px; color: #2c2c2c; }
+    .chapter-nav { background: #fff; border-bottom: 1px solid var(--border); padding: 0.75rem 2rem; overflow-x: auto; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+    .chapter-nav a { color: var(--navy); text-decoration: none; margin-right: 1.25rem; font-size: 0.9rem; font-weight: 500; }
+    .chapter-nav a:hover { text-decoration: underline; }
+    main { max-width: 1680px; margin: 0 auto; padding: 2rem; }
+    .section-title { font-size: 1.5rem; color: var(--navy); margin: 2rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--navy); }
+    .col-labels { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 0.5rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+    .row { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; align-items: start; }
+    .col-original { font-family: 'Lora', serif; font-size: 0.95rem; line-height: 1.75; }
+    .col-original p { margin-bottom: 0.75rem; }
+    .col-translation { font-size: 0.92rem; line-height: 1.75; color: #333; }
+    .col-translation p { margin-bottom: 0.75rem; }
+    .analysis-card { background: #fff; border-left: 4px solid var(--navy); padding: 1rem 1.25rem; border-radius: 0 6px 6px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.06); font-size: 0.9rem; }
+    .analysis-card .tag { display: inline-block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0.5rem; color: var(--navy); }
+    .analysis-card h4 { font-size: 0.85rem; color: var(--muted); margin: 0.75rem 0 0.25rem; }
+    .analysis-card p { margin-bottom: 0.5rem; }
+    .analysis-card.deep { border-left-width: 5px; }
+    .analysis-detail { margin: 0.75rem 0; padding-top: 0.5rem; border-top: 1px dashed var(--border); }
+    .exp-detail { list-style: none; margin: 0.5rem 0; }
+    .exp-detail li { margin-bottom: 0.4rem; }
+    .exp-detail li strong { color: var(--navy); }
+    .exp-table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.82rem; }
+    .exp-table th, .exp-table td { border: 1px solid var(--border); padding: 0.35rem 0.5rem; text-align: left; }
+    .exp-table th { background: var(--paper); color: var(--navy); font-weight: 600; }
+    .exp-table tr.is-ours { background: var(--evidence); }
+    .exp-table tr.is-ours td { font-weight: 600; }
+    .notation { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.88rem; background: #fff; }
+    .notation th, .notation td { border: 1px solid var(--border); padding: 0.4rem 0.6rem; text-align: left; }
+    .notation th { background: var(--paper); color: var(--navy); font-weight: 600; }
+    .notation td:first-child { width: 22%; white-space: nowrap; }
+    .diagram { margin: 0.75rem 0; }
+    .diagram img, .diagram svg { max-width: 100%; height: auto; display: block; border: 1px solid var(--border); border-radius: 4px; background: #fff; }
+    .diagram figcaption { font-size: 0.78rem; color: var(--muted); margin-top: 0.35rem; }
+    .figure-row { margin: 1.5rem 0; padding: 1.25rem; background: #fff; border: 1px solid var(--border); border-radius: 8px; }
+    .figure-row figure { margin: 0; text-align: center; }
+    .figure-row img, .figure-row svg { max-width: 100%; height: auto; display: inline-block; }
+    .figure-row figcaption { font-size: 0.82rem; color: var(--muted); margin-top: 0.5rem; }
+    .figure-row h3 { color: var(--navy); font-size: 1rem; margin-bottom: 0.75rem; }
+    .mermaid { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem; margin: 0.5rem 0; text-align: center; }
+    .diagram img, .diagram svg, .figure-row img, .figure-row svg { cursor: zoom-in; transition: box-shadow .15s; }
+    .diagram img:hover, .diagram svg:hover, .figure-row img:hover, .figure-row svg:hover { box-shadow: 0 0 0 2px #0d9488; }
+    #lightbox { position: fixed; inset: 0; background: rgba(10,12,20,0.92); display: none; align-items: center; justify-content: center; z-index: 1000; cursor: zoom-out; padding: 3vh 3vw; }
+    #lightbox.open { display: flex; }
+    #lightbox .lb-content { display: flex; align-items: center; justify-content: center; }
+    #lightbox .lb-content img, #lightbox .lb-content svg { display: block; background: #fff; border-radius: 6px; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
+    #lightbox .lb-close { position: fixed; top: 1rem; right: 1.5rem; color: #fff; font-size: 2rem; line-height: 1; opacity: 0.8; }
+    #lightbox .lb-cap { position: fixed; bottom: 1.2rem; left: 0; right: 0; text-align: center; color: #e8e4df; font-size: 0.8rem; padding: 0 2rem; }
+    .hl-thesis { background: var(--thesis); padding: 0 2px; }
+    .hl-concept { background: var(--concept); padding: 0 2px; }
+    .hl-evidence { background: var(--evidence); padding: 0 2px; }
+    .hl-counter { background: var(--counter); padding: 0 2px; }
+    .hl-method { background: var(--method); padding: 0 2px; }
+    .summary { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 2rem; margin-top: 3rem; }
+    .summary h2 { color: var(--navy); margin-bottom: 1rem; }
+    .summary .skeleton { font-family: 'IBM Plex Sans', monospace; background: var(--paper); padding: 1rem; border-radius: 4px; margin: 1rem 0; line-height: 1.9; }
+    .summary .strength, .summary .weakness { padding: 0.75rem 1rem; border-radius: 4px; margin: 0.5rem 0; }
+    .summary .strength { background: var(--counter); }
+    .summary .weakness { background: var(--concept); }
+    .feynman { background: #fff; border: 1px solid var(--border); border-left: 5px solid #0d9488; border-radius: 0 8px 8px 0; padding: 1.25rem 1.5rem; margin: 1.5rem 0 2rem; }
+    .feynman h2 { color: #0d9488; font-size: 1.15rem; margin-bottom: 0.35rem; }
+    .feynman .tldr-meta { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.6rem; }
+    .feynman p { font-size: 0.95rem; line-height: 1.85; margin-bottom: 0.6rem; }
+    .faq details { background: #fff; border: 1px solid var(--border); border-radius: 6px; margin: 0.5rem 0; }
+    .faq details[open] { box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .faq summary { cursor: pointer; font-weight: 600; color: var(--navy); padding: 0.7rem 0.9rem; list-style: none; font-size: 0.92rem; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::before { content: '▸'; color: #0d9488; margin-right: 0.5rem; }
+    .faq details[open] summary::before { content: '▾'; }
+    .faq .answer { padding: 0 0.9rem 0.85rem 1.8rem; font-size: 0.9rem; line-height: 1.8; color: #333; }
+    .deepdive .block { margin: 0.9rem 0; padding: 0.85rem 1.1rem; border-radius: 4px; background: var(--paper); border-left: 3px solid #6f42c1; }
+    .deepdive .block.crit { border-left-color: #dc3545; background: #fdf0f1; }
+    .deepdive .block h4 { color: var(--navy); margin-bottom: 0.3rem; }
+    .deepdive .block ul { margin: 0.3rem 0 0 1.1rem; }
+    .deepdive .block li { margin-bottom: 0.3rem; font-size: 0.9rem; }
+    .code-section { background:#fff; border:1px solid var(--border); border-radius:8px; padding:1.5rem 1.75rem; margin:2rem 0; }
+    .code-section h3 { color:var(--navy); font-size:1.05rem; margin:1.5rem 0 0.75rem; }
+    .code-section h3:first-of-type { margin-top:0; }
+    .code-section p, .code-section li { font-size:0.9rem; line-height:1.75; margin-bottom:0.5rem; }
+    .code-section ul { margin:0.5rem 0 0.75rem 1.25rem; }
+    .code-block { font-family:'IBM Plex Mono','IBM Plex Sans',monospace; font-size:0.78rem; line-height:1.65; background:#1e293b; color:#e2e8f0; padding:1rem 1.15rem; border-radius:6px; overflow-x:auto; margin:0.75rem 0; white-space:pre; tab-size:2; }
+    .code-block .cm { color:#94a3b8; font-style:italic; }
+    .code-block .kw { color:#7dd3fc; }
+    .code-block .fn { color:#fde68a; }
+    .code-block .str { color:#86efac; }
+    .code-note { font-size:0.82rem; color:var(--muted); margin:0.35rem 0 1rem; padding-left:0.75rem; border-left:3px solid #0d9488; }
+    .code-map { width:100%; border-collapse:collapse; margin:0.75rem 0; font-size:0.82rem; }
+    .code-map th, .code-map td { border:1px solid var(--border); padding:0.4rem 0.55rem; text-align:left; vertical-align:top; }
+    .code-map th { background:var(--paper); color:var(--navy); font-weight:600; }
+    .code-map code { font-size:0.78rem; background:var(--paper); padding:0.1rem 0.3rem; border-radius:3px; }
+    @media (max-width: 1100px) {
+      .col-labels { display: none; }
+      .row { grid-template-columns: 1fr; }
+      .row > div::before {
+        display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+        letter-spacing: 0.05em; color: var(--muted); margin-bottom: 0.35rem;
+      }
+      .col-original::before { content: '原文'; }
+      .col-translation::before { content: '翻译'; }
+      .col-analysis::before { content: '解析'; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sticky-head">
+    <header class="top-nav">
+      <h1><a href="https://arxiv.org/abs/2503.08153" target="_blank" rel="noopener">WISA — World Simulator Assistant for Physics-Aware Text-to-Video Generation</a></h1>
+      <div class="meta">DeepLearning-Paper-with-Code · Video Generation · arXiv(2025) / NeurIPS(2025) · SYSU &amp; 360 AI Research</div>
+      <div class="legend">
+        <span class="hl-thesis">核心论点</span>
+        <span class="hl-concept">关键概念</span>
+        <span class="hl-evidence">实证证据</span>
+        <span class="hl-counter">让步/反驳</span>
+        <span class="hl-method">方法论</span>
+      </div>
+    </header>
+    <nav class="chapter-nav">
+      <a href="#feynman">速读</a>
+      <a href="#abstract">Abstract</a>
+      <a href="#intro">Introduction</a>
+      <a href="#data">WISA-32K</a>
+      <a href="#method">Method</a>
+      <a href="#code">代码</a>
+      <a href="#experiments">Experiments</a>
+      <a href="#conclusion">Conclusion</a>
+      <a href="#notation">符号表</a>
+      <a href="#overview">总览</a>
+      <a href="#faq">十问</a>
+      <a href="#deepdive">深挖</a>
+    </nav>
+  </div>
+
+  <main>
+
+    <section class="feynman" id="feynman">
+      <h2>🎮 费曼一分钟（通俗速读）</h2>
+      <div class="tldr-meta">通俗速读 · 先建立模糊认知，再读正文</div>
+      <p>Sora、Kling、CogVideoX 能生成逼真视频，但常违反物理：橡皮擦越擦字越黑、苹果落水没有溅起水花、液体运动像随机噪声。根因是<strong>抽象物理定律</strong>与<strong>像素生成</strong>之间缺桥梁——模型只学「画面像什么」，没学「过程该怎么演化」。</p>
+      <p><strong>WISA</strong>（World Simulator Assistant）做两件事：① 把物理知识拆成三层结构化条件——<strong>文本物理描述</strong>（补全 prompt）、<strong>定性 29 类物理标签</strong>（碰撞/熔化/折射…）、<strong>定量属性</strong>（运动密度、时间/温度范围）；② 在 CogVideoX-5B 等基座上插入 <strong>MoPA</strong>（每类物理一个 attention head 专家）和 <strong>Physical Classifier</strong>（逼模型「认出」场景里有哪些物理现象）。配套数据集 <strong>WISA-32K</strong>：人工采集 3.2 万条「物理现象清晰可见」的短片，GPT-4o mini 自动标注。</p>
+      <p>关键数字：基座 <strong>CogVideoX-5B</strong> · VideoPhy SA <strong>0.67</strong>（+0.07）PC <strong>0.38</strong>（+0.05）· 推理 <strong>220s</strong> vs PhyT2V <strong>1800s</strong> · 参数 +<strong>3.5%</strong>、推理 +<strong>5%</strong>。</p>
+    </section>
+
+    <section class="figure-row">
+      <h3>📄 Teaser：WISA-32K 覆盖 17 类物理现象</h3>
+      <figure>
+        <img src="assets/wisa/fig_intro.jpg" alt="WISA-32K 17 类物理现象示意">
+        <figcaption>动力学 / 热力学 / 光学三大分支下 17 类常见物理现象（碰撞、刚性体运动、熔化、反射等）。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="abstract">Abstract</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>Recent T2V models (SoRA, Kling) show potential for <span class="hl-thesis">world simulators</span>, but struggle to grasp <span class="hl-concept">abstract physical principles</span> and generate videos adhering to physical laws — due to lack of clear physical guidance.</p>
+        <p>We introduce <span class="hl-thesis">WISA</span>, decomposing physical principles into <span class="hl-method">textual descriptions</span>, <span class="hl-method">qualitative categories</span>, and <span class="hl-method">quantitative properties</span>. Key designs: <span class="hl-concept">MoPA</span> and <span class="hl-concept">Physical Classifier</span>. Dataset <span class="hl-evidence">WISA-32K</span>: 32,000 videos, 17 physical laws across dynamics, thermodynamics, optics. Considerable improvement on <span class="hl-evidence">VideoPhy</span>.</p>
+      </div>
+      <div class="col-translation">
+        <p>SoRA、Kling 等 T2V 有构建世界模拟器的潜力，但难以理解抽象物理原理、生成符合物理定律的视频——缺清晰物理引导。</p>
+        <p>提出 WISA：物理原理分解为文本描述、定性类别、定量属性；MoPA + Physical Classifier 嵌入生成。WISA-32K 含 3.2 万视频、17 类物理定律。VideoPhy 显著提升。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #ffc107;">
+          <span class="tag">概括主张</span>
+          <p>双贡献：<strong>框架</strong>（结构化物理条件 + MoPA/Classifier）+ <strong>数据</strong>（WISA-32K）。与 PhyT2V 等「推理时迭代改 prompt」不同，WISA 走<strong>训练时物理先验注入</strong>路线，推理几乎无额外开销。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="intro">1. Introduction</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p><span class="hl-counter">Gap:</span> Physical laws are abstract language; generative models map text → visual appearance. The <span class="hl-concept">reasoning chain</span> from principle to phenomenon is missing — worse in video where <span class="hl-concept">temporal order</span> of events must hold.</p>
+        <p><span class="hl-method">Three-level decomposition:</span> (1) <strong>Textual physical description</strong> — concatenated with caption before text encoder; (2) <strong>Qualitative categories</strong> — 17 phenomena × 3 branches → 29 labels incl. motion/state auxiliaries; <span class="hl-method">MoPA</span> assigns one expert head per category; (3) <strong>Quantitative properties</strong> — density, time range, temperature → AdaLN embeddings.</p>
+        <p><span class="hl-counter">Data problem:</span> General datasets (Koala-36M, OpenVid) entangle multiple weak physical cues — water flow as background, not primary subject (Fig. data_compare).</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>鸿沟：</strong>物理定律是抽象语言；生成模型做文本→外观映射。原理到现象的推理链缺失；视频还需保持事件时序。</p>
+        <p><strong>三层分解：</strong>① 文本物理描述拼进 caption；② 定性 29 类标签 + MoPA 每类一头；③ 定量密度/时间/温度经 AdaLN 注入。</p>
+        <p><strong>数据问题：</strong>通用数据集中物理现象弱耦合、多过程交织——如 Koala 里水流只是背景，模型难学流体定律。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #0d9488;">
+          <span class="tag">问题设定</span>
+          <h4>与 PhyT2V / Cosmos 对比</h4>
+          <p><strong>PhyT2V：</strong>生成后 VLM 打分 → 改 prompt 多轮（~9× 推理时延）。<strong>WISA：</strong>训练内化物理，220s 单次生成。<strong>Cosmos：</strong>世界模型路线但 PC 低（0.18），时序混乱。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 Figure：Koala-36M vs WISA-32K 数据对比</h3>
+      <figure>
+        <img src="assets/wisa/fig_data_compare.jpg" alt="通用场景视频与 WISA-32K 物理突出视频对比">
+        <figcaption>上：Koala 通用场景——物理过程弱、多现象耦合；下：WISA-32K——单一物理现象清晰可辨。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="data">2. WISA-32K</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>17 phenomena</strong> under Dynamics (6): Collision, Rigid Body, Elastic, Liquid, Gas, Deformation; Thermodynamics (6): Melting, Solidification, Vaporization, Liquefaction, Explosion, Combustion; Optics (5): Reflection, Refraction, Scattering, Interference/Diffraction, Unnatural Light.</p>
+        <p><strong>Pipeline:</strong> Manual collection (32K, no on-screen text) → PySceneDetect shot split → aesthetic filter → <span class="hl-method">Qwen2-VL</span> caption (256 tokens) → <span class="hl-method">GPT-4o mini</span> structured annotation (5 rounds qualitative + 3 rounds quantitative).</p>
+        <p><strong>29 qualitative categories</strong> = 17 phenomena + 3 "no obvious X" + 9 visual/motion state tags. <strong>Quantitative:</strong> motion density, time span, temperature span (scientific notation in model).</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>17 类现象：</strong>动力学 6（碰撞、刚体、弹性、液体、气体、形变）；热力学 6（熔化、凝固、汽化、液化、爆炸、燃烧）；光学 5（反射、折射、散射、干涉衍射、非自然光源）。</p>
+        <p><strong>流水线：</strong>人工采集 → 镜头切分 → 美学过滤 → Qwen2-VL 描述 → GPT-4o mini 结构化标注。</p>
+        <p>定性共 29 类；定量含运动密度、时间范围、温度范围。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #6f42c1;">
+          <span class="tag">数据工程</span>
+          <p>Caption-based 标注 vs 多模态直标：准确率 76% vs 78%，但 token 成本约 <strong>2k vs 10k/样本</strong>——性价比选 caption 路线。项目页后续扩展为 WISA-80K，论文主实验用 32K。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 Figure：WISA-32K 数据流水线</h3>
+      <figure>
+        <img src="assets/wisa/fig_method_data_pipe.jpg" alt="WISA-32K 采集与标注流水线">
+        <figcaption>定义 17 类 → 人工采集 32K → 切分/过滤 → Qwen2-VL caption → GPT-4o mini 三层物理标注。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="method">3. Method</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Base:</strong> CogVideoX-5B. <strong>Text descriptions</strong> → concat with caption, use frozen text encoder semantics.</p>
+        <p><strong>Physical Module (MoPA):</strong> $P_c \in \mathbb{R}^{C}$, $C{=}29$. Multi-head self-attention with $h{=}C$ heads; $\hat{P_c} = \mathrm{Random}(P_c)$ noise (flip 0↔1 w.p. 0.2); $F_o = \mathrm{Linear}(\mathrm{Reshape}(F_h \odot \hat{P_c}))$.</p>
+        <p><strong>Quantitative:</strong> time/temperature in scientific notation → linear map → concat timestep → <span class="hl-method">AdaLN</span> into denoising features.</p>
+        <p><strong>Placement:</strong> One Physical Module <em>after the last</em> DiT block only (+3.5% params).</p>
+      </div>
+      <div class="col-translation">
+        <p>基座 CogVideoX-5B。文本物理描述与 caption 拼接进文本编码器。</p>
+        <p><strong>MoPA：</strong>29 维类别向量；MHSA 输出 $F_h$ 与扰动后的 $\hat{P_c}$ 逐元素乘，再线性还原维度——只激活相关物理专家头。</p>
+        <p>定量属性科学计数法编码后经 AdaLN 注入。Physical Module 仅插在<strong>最后一个</strong> Transformer block 之后。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #0d6efd;">
+          <span class="tag">MoPA 机制</span>
+          <p>受 MoH（Mixture-of-Heads）启发：每个 head = 一类物理专家。Random 扰动缓解标注噪声（错标/漏标）。Attention map 可视化（Fig. atten_map）：刚体运动 expert 聚焦摆锤区域，非动力学 expert 看静态背景——专家分工成立。</p>
+          <p>详见 <a href="#code">代码 §②</a> 中 <code>PhysAttnProcessor_2_0</code> 的 soft_priori 逻辑。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Physical Classifier:</strong> Multi-label BCE on $P_c$; predicted $f_c$ from denoising features + sigmoid.</p>
+        <p>$$L = L_{\mathrm{diffusion}} + \lambda L_{pc} / (1 + L_{pc}.\mathrm{detach})$$</p>
+        <p>Classifier forces the model to <span class="hl-concept">recognize</span> abstract categories, not only generate pixels — auxiliary task stabilizes physics learning.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>Physical Classifier：</strong>多标签 BCE；从去噪特征预测 29 维概率。</p>
+        <p>总损失：扩散损失 + 自适应加权的分类损失（$L_{pc}$ 大时权重自动缩小，防 dominate）。</p>
+        <p>分类器迫使模型「理解」物理类别，而非纯像素拟合。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card">
+          <span class="tag">消融支撑</span>
+          <p>去掉 Physical Module：SA 0.64 PC 0.33；去掉 Classifier：SA 0.66 PC 0.36；完整 WISA：0.67 / 0.38。两者均贡献 PC，Classifier 对 SA 也有帮助。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 Figure：WISA 整体架构</h3>
+      <figure>
+        <img src="assets/wisa/fig_fig_method.png" alt="WISA Physical Module 与 Physical Classifier 架构">
+        <figcaption>三层物理条件分别注入：文本描述→caption 拼接；定性类别→MoPA；定量属性→AdaLN。末层后插 Physical Module + Classifier。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <div class="diagram">
+      <pre class="mermaid">flowchart LR
+  subgraph inputs [物理条件三层]
+    T[文本物理描述]
+    Q[定性 29 类 P_c]
+    V[定量 密度/时间/温度]
+  end
+  T --> TE[Text Encoder + Caption]
+  Q --> MoPA[MoPA 专家头门控]
+  V --> AdaLN[Quantify AdaLN]
+  TE --> DiT[CogVideoX DiT Blocks]
+  DiT --> PM[Physical Module]
+  MoPA --> PM
+  AdaLN --> PM
+  PM --> PC[Physical Classifier]
+  PC --> Loss["L_diff + λ·L_pc/(1+L_pc)"]
+  PM --> VAE[VAE Decode]</pre>
+      <figcaption>自绘：WISA 条件注入与损失流（点击 Mermaid 图可放大）。</figcaption>
+    </div>
+
+    <section class="code-section" id="code">
+      <h2 class="section-title" style="margin-top:0;border:none;padding:0;">💻 代码对照 — MoPA · Classifier · CogVideoX 集成</h2>
+      <p>官方仓库：<a href="https://github.com/360CVGroup/WISA" target="_blank" rel="noopener">github.com/360CVGroup/WISA</a>（基于 <code>finetrainers</code>，支持 CogVideoX / Wan2.1）。数据：<a href="https://huggingface.co/qihoo360/WISA" target="_blank" rel="noopener">HuggingFace qihoo360/WISA</a>。</p>
+
+      <h3>① 论文模块 → 代码文件映射</h3>
+      <table class="code-map">
+        <thead><tr><th>论文</th><th>代码路径</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>MoPA / Random 扰动</td><td><code>finetrainers/models/wisa.py</code> · <code>PhysAttnProcessor_2_0</code></td><td>soft_priori：0↔1 以 0.2 概率翻转，0 默认 0.1</td></tr>
+          <tr><td>Physical Module</td><td><code>PhysAwareBlock</code> in <code>transformer_cogvideox_wisa.py</code></td><td>末层后 <code>phys_attn</code> + AdaLN scale/shift</td></tr>
+          <tr><td>定量 AdaLN</td><td><code>QuantifyPrioriEmbedding</code></td><td>科学计数法 → sin/cos 频域嵌入</td></tr>
+          <tr><td>Physical Classifier</td><td><code>phys_classifier</code> + <code>phys_token</code></td><td>prepend 可学习 token，BCE loss</td></tr>
+          <tr><td>训练入口</td><td><code>train.py</code> · <code>wisa_specification.py</code></td><td>SFT on WISA-32K/80K</td></tr>
+          <tr><td>推理 Pipeline</td><td><code>pipeline_cogvideox_wisa.py</code></td><td>需传入 priori + quantify_priori</td></tr>
+        </tbody>
+      </table>
+
+      <h3>② MoPA 门控 — 与 Eq.(1) 对齐的伪代码</h3>
+      <div class="code-block"><span class="cm"># wisa.py — PhysAttnProcessor_2_0（简化）</span>
+<span class="kw">def</span> <span class="fn">soft_priori</span>(priori, p_flip=<span class="str">0.2</span>):
+    <span class="cm"># priori: [B, C=29]  0/1 多标签</span>
+    r = torch.rand_like(priori)
+    soft = priori.clone()
+    soft[(priori==<span class="str">0</span>) &amp; (r &lt; p_flip)] = <span class="str">1.0</span>
+    soft[(priori==<span class="str">0</span>) &amp; (r &gt;= p_flip)] = <span class="str">0.1</span>
+    soft[(priori==<span class="str">1</span>) &amp; (r &lt; p_flip)] = <span class="str">0.1</span>
+  <span class="cm"># 1 且未 flip → 保持 1.0</span>
+    <span class="kw">return</span> soft  <span class="cm"># 对应论文 Random(P_c)</span>
+
+Fh = MHSA(F)                    <span class="cm"># [B, N, d*h], h=C</span>
+gates = soft_priori(priori).unsqueeze(<span class="str">1</span>)  <span class="cm"># broadcast 到序列</span>
+out = linear(reshape(Fh * gates))   <span class="cm"># 逐 head 门控后 concat</span></div>
+      <p class="code-note">代码里 CogVideoX 实现 <code>expert_head = expert_head * 2</code>（shared + routed heads），比论文公式更贴近 MoH 原版；Wan 分支用 <code>transformer_wan_wisa.py</code> 同样模式。</p>
+
+      <h3>③ Physical Module 插入位置</h3>
+      <div class="code-block"><span class="cm"># transformer_cogvideox_wisa.py — forward 核心</span>
+<span class="kw">for</span> block, phys_block <span class="kw">in</span> zip(transformer_blocks, phys_transformer_blocks):
+    hidden_states, enc = block(...)           <span class="cm"># 标准 CogVideoX block</span>
+    <span class="kw">if</span> not isinstance(phys_block, nn.Identity):
+        hidden_states, enc = phys_block(      <span class="cm"># 仅最后一层 phys_block 非 Identity</span>
+            hidden_states, enc,
+            phys_temb=timestep_phys,        <span class="cm"># 定量 prior → AdaLN</span>
+            priori=priori,                  <span class="cm"># 定性 29 类</span>
+            quantify_priori=quantify_priori,
+        )
+phys_tokens, hidden_states = hidden_states[:, <span class="str">0</span>], hidden_states[:, <span class="str">1</span>:]
+physical_logits = phys_classifier(phys_tokens)
+loss_pc = BCEWithLogitsLoss(physical_logits, priori)</div>
+
+      <h3>④ 推理时需显式传入物理条件</h3>
+      <p>与纯 CogVideoX 不同，<code>pipeline_cogvideox_wisa_multicfg</code> 支持多组物理条件 CFG。生产环境可用 GPT 从 prompt 推断 <code>priori</code> 向量（论文训练时用 WISA-32K 标注；推理可用 LLM 填 29 维或项目提供的工具）。</p>
+      <p class="code-note"><strong>论文 vs 代码：</strong>论文写「仅最后一个 block 后插 Physical Module」；代码用与 block 等长的 <code>phys_transformer_blocks</code> 列表，仅末项为 <code>PhysAwareBlock</code>，其余 <code>nn.Identity()</code>——结构等价，便于扩展多层 phys block 做 ablation。</p>
+    </section>
+
+    <h2 class="section-title" id="experiments">4. Experiments</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Metric:</strong> VideoCon-Physics (VideoPhy) — SA (semantic alignment) &amp; PC (physical law consistency). Threshold ≥0.5 → binary PC/SA = 1.</p>
+        <p><strong>Prompts:</strong> 344 VideoPhy + 160 PhyGenBench physics-crafted prompts.</p>
+      </div>
+      <div class="col-translation">
+        <p>指标：VideoCon-Physics 的 SA 与 PC；≥0.5 记为 1。</p>
+        <p>测试集：VideoPhy 344 条 + PhyGenBench 160 条物理向 prompt。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card">
+          <span class="tag">评测设定</span>
+          <p>VideoCon-Physics 训练数据来自 9 个 T2V 模型生成样本——与 WISA-32K 真实物理视频有分布差；作者 ablation 指出纯 LoRA 提升有限（SA 0.64），需 WISA 结构 + 专用数据。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <table class="exp-table">
+          <thead><tr><th>Method</th><th>Time(s)</th><th>VideoPhy SA</th><th>VideoPhy PC</th><th>PhyGen SA</th><th>PhyGen PC</th></tr></thead>
+          <tbody>
+            <tr><td>VideoCrafter2</td><td>—</td><td>0.47</td><td>0.36</td><td>—</td><td>—</td></tr>
+            <tr><td>HunyuanVideo</td><td>—</td><td>0.46</td><td>0.28</td><td>—</td><td>—</td></tr>
+            <tr><td>CogVideoX-5B*</td><td>210</td><td>0.60</td><td>0.33</td><td>0.39</td><td>0.41</td></tr>
+            <tr><td>Cosmos*</td><td>600</td><td>0.57</td><td>0.18</td><td>0.43</td><td>0.14</td></tr>
+            <tr><td>PhyT2V* (R4)</td><td>1800</td><td>0.61</td><td>0.37</td><td>—</td><td>—</td></tr>
+            <tr class="is-ours"><td>WISA</td><td>220</td><td>0.67</td><td>0.38</td><td>0.40</td><td>0.43</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="col-translation">
+        <p>WISA VideoPhy SA/PC 双 SOTA；PhyGenBench PC 0.43 SOTA。相对 CogVideoX-5B：SA +0.07、PC +0.05，推理仅 +10s。PhyT2V PC 略高（0.42 on PhyGen）但推理 9× 慢。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #198754;">
+          <span class="tag">定性案例</span>
+          <ul class="exp-detail">
+            <li><strong>橡皮擦：</strong>WISA 擦净笔迹；CogVideoX 无笔迹；PhyT2V 越擦越黑；Cosmos 无擦除过程。</li>
+            <li><strong>苹果落水：</strong>WISA 先平静水面→溅起→浮力；基线水体混乱或缺下落过程。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 Figure：与现有 T2V 定性对比</h3>
+      <figure>
+        <img src="assets/wisa/fig_compare_visual.jpg" alt="WISA 与 CogVideoX PhyT2V Cosmos 定性对比">
+        <figcaption>橡皮擦、苹果落水等案例：WISA 时序与物理更合理。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <section class="figure-row">
+      <h3>📄 Figure：WISA 更多生成样例</h3>
+      <figure>
+        <img src="assets/wisa/fig_ours_visual.jpg" alt="WISA 覆盖多种物理现象的生成结果">
+        <figcaption>覆盖额外物理现象的成功生成。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <section class="figure-row">
+      <h3>📄 Figure：MoPA 专家 Attention Map</h3>
+      <figure>
+        <img src="assets/wisa/fig_atten_map.jpg" alt="不同物理专家 attention 热力图">
+        <figcaption>刚体运动 expert 聚焦摆动区域；非动力学 expert 关注静态背景。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <section class="figure-row">
+      <h3>📄 Figure：人工评测</h3>
+      <figure>
+        <img src="assets/wisa/fig_user_per.png" alt="VideoPhy prompt 上人工评测排名">
+        <figcaption>语义一致性与物理对齐双维度人工排序：WISA 物理对齐显著领先。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="conclusion">5. Conclusion &amp; Limitation</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>WISA decomposes physical principles into structured information and guides T2V via MoPA + Physical Classifier + WISA-32K. <span class="hl-evidence">+3.5% params, +5% inference</span>.</p>
+        <p><span class="hl-counter">Limits:</span> (1) Only 17 phenomena — no corrosion/vacuum etc.; (2) High-level semantic guidance only — no explicit energy/Newton constraints; (3) Imperfect physics in hard scenarios.</p>
+      </div>
+      <div class="col-translation">
+        <p>WISA 结构化物理信息 + MoPA/Classifier + WISA-32K 有效提升物理一致性，开销小。</p>
+        <p><strong>局限：</strong>① 物理类别覆盖有限；② 缺机制级约束（能量守恒等）；③ 数据/参数有限，难全覆盖。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #dc3545;">
+          <span class="tag">诚实边界</span>
+          <p>PC 0.38 仍不高——物理评测本身难；WISA 是「物理语义引导」而非 PDE 求解器。与可微物理引擎 / NeRF+仿真路线互补而非替代。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="summary" id="notation">
+      <h2>符号速查表</h2>
+      <table class="notation">
+        <thead><tr><th>符号 / 术语</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td>WISA</td><td>World Simulator Assistant，物理感知 T2V 辅助框架</td></tr>
+          <tr><td>MoPA</td><td>Mixture-of-Physical-Experts Attention，每物理类一头</td></tr>
+          <tr><td>$P_c$, $C{=}29$</td><td>定性物理类别多标签向量</td></tr>
+          <tr><td>$\hat{P_c}$</td><td>Random 扰动后的类别门控（缓解标注噪声）</td></tr>
+          <tr><td>$F_h$, $F_o$</td><td>MHSA 输出与门控后恢复的特征</td></tr>
+          <tr><td>$L_{pc}$</td><td>Physical Classifier 多标签 BCE</td></tr>
+          <tr><td>WISA-32K</td><td>3.2 万物理突出视频 + 三层标注</td></tr>
+          <tr><td>SA / PC</td><td>VideoPhy 语义对齐 / 物理定律一致性</td></tr>
+          <tr><td>VideoCon-Physics</td><td>VideoPhy 基准的 VLM 评判器</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="summary" id="overview">
+      <h2>论证结构总览</h2>
+      <div class="skeleton">
+        问题（T2V 不懂物理 · 抽象定律与像素生成鸿沟 · 视频时序）<br/>
+        → 观察（通用数据物理弱耦合 · Koala 水流只是背景）<br/>
+        → 论点（三层物理信息分解 + MoPA/Classifier + 专用数据）<br/>
+        → 方法（文本拼 caption · 29 类门控 MHSA · 定量 AdaLN · 末层单 Physical Module）<br/>
+        → 数据（WISA-32K：17 类 · Qwen2-VL + GPT-4o mini 标注）<br/>
+        → 证据（VideoPhy SA 0.67 PC 0.38 · 220s · ablation · attention map · human eval）<br/>
+        → 局限（17 类 · 无机制级约束 · PC 仍有限）<br/>
+        → 结论（世界模拟器辅助路线 · 开源 360CVGroup/WISA）
+      </div>
+      <h4>核心主张（一句话）</h4>
+      <p>将物理原理结构化为可训练条件（文本/定性/定量），用 MoPA 专家注意力与 Physical Classifier 微调 CogVideoX-5B，配合 WISA-32K，以极小开销显著提升 VideoPhy 物理一致性。</p>
+      <div class="strength"><strong>论证最强处：</strong>问题—数据—方法闭环清晰；与 PhyT2V 效率对比鲜明；ablation 分离 Module/Classifier/Data；attention 可视化支撑 MoPA 可解释性。</div>
+      <div class="weakness"><strong>论证最弱处：</strong>PC 绝对值仍低；推理时需 29 维 priori 来源未完全标准化；VideoCon 评判器与训练数据分布差；17 类远不够「世界模拟器」。</div>
+      <p style="margin-top:1rem;font-size:0.85rem;color:var(--muted);">来源：<a href="https://arxiv.org/abs/2503.08153">arXiv:2503.08153</a> · NeurIPS 2025 · <a href="https://360cvgroup.github.io/WISA/">Project Page</a> · <a href="https://github.com/360CVGroup/WISA">GitHub</a></p>
+    </section>
+
+    <section class="summary faq" id="faq">
+      <h2>🧩 结构化十问（AI 解构）</h2>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.75rem;">让 AI 当助教，从十个角度提取论文骨架。</p>
+
+      <details open>
+        <summary>Q1 · 论文试图解决什么问题？</summary>
+        <div class="answer">T2V 模型（Sora、Kling、CogVideoX）虽逼真，但<strong>不理解抽象物理原理</strong>，生成违反定律（错误时序、错误因果）。缺从「物理概念」到「视觉现象」的显式引导。</div>
+      </details>
+      <details open>
+        <summary>Q2 · 这是否是一个新问题？</summary>
+        <div class="answer">物理一致性是 VideoPhy/PhyGenBench 已定义的问题；PhyT2V 等已有方案。新在于：<strong>训练时三层结构化物理条件</strong> + <strong>MoPA 专家头</strong> + <strong>专用 WISA-32K</strong> 组合，且推理开销接近基座（非多轮 prompt 优化）。</div>
+      </details>
+      <details open>
+        <summary>Q3 · 要验证什么科学假设？</summary>
+        <div class="answer">假设：① 物理信息分解为文本/定性/定量比单一 prompt 更有效；② MoPA 让不同物理现象由不同 expert 建模；③ Classifier 辅助理解抽象类别；④ 「物理突出」数据优于通用场景抽样（Koala 32K 对照）。</div>
+      </details>
+      <details open>
+        <summary>Q4 · 有哪些相关研究？</summary>
+        <div class="answer">
+          <ul>
+            <li><strong>世界模型：</strong>Sora, Cosmos, CogVideoX, HunyuanVideo</li>
+            <li><strong>物理评测：</strong>VideoPhy, PhyGenBench, VideoCon-Physics</li>
+            <li><strong>物理增强生成：</strong>PhyT2V（迭代 prompt）</li>
+            <li><strong>MoE/MoH：</strong>MoPA 受 MoH 启发</li>
+          </ul>
+          作者：Jing Wang, Ao Ma, Ke Cao 等（中山大学 &amp; 360 AI Research）。
+        </div>
+      </details>
+      <details open>
+        <summary>Q5 · 解决方案的关键是什么？</summary>
+        <div class="answer">① <strong>三层物理条件</strong>与对应注入（拼接 / MoPA / AdaLN）；② <strong>末层 Physical Module</strong> 控制算力；③ <strong>Physical Classifier + 自适应损失</strong>；④ <strong>WISA-32K</strong> 人工采集 + VLM caption + LLM 结构化标注。</div>
+      </details>
+      <details open>
+        <summary>Q6 · 实验是如何设计的？</summary>
+        <div class="answer">基座 CogVideoX-5B 微调；VideoPhy 344 + PhyGenBench 160 prompts；SA/PC 二值化阈值 0.5；对比 VideoCrafter2、Hunyuan、Cosmos、PhyT2V；ablation 去 Module/Classifier、换 Koala 数据、仅 LoRA；人工排序 + attention 可视化。</div>
+      </details>
+      <details open>
+        <summary>Q7 · 用什么数据集？代码开源吗？</summary>
+        <div class="answer">训练：<strong>WISA-32K</strong>（论文）/ 项目页 <strong>WISA-80K</strong>。评测：VideoPhy、PhyGenBench prompt 列表。代码：<a href="https://github.com/360CVGroup/WISA">360CVGroup/WISA</a>；权重 HuggingFace <code>qihoo360/WISA</code>。</div>
+      </details>
+      <details open>
+        <summary>Q8 · 实验结果是否支持假设？</summary>
+        <div class="answer">较好支持：SA/PC 双提升、Koala 对照失败、ablation 各组件有效、attention map 有专家分工。保留：PC 0.38 仍 modest；PhyGen PC 与 PhyT2V 接近；评测器偏差未完全消除。</div>
+      </details>
+      <details open>
+        <summary>Q9 · 贡献是什么？</summary>
+        <div class="answer">① 物理原理结构化分解方法；② WISA 框架（MoPA + Classifier）；③ WISA-32K 首个大规模物理突出视频集；④ 高效物理感知 T2V（+3.5% 参数 / +5% 延迟）SOTA VideoPhy。</div>
+      </details>
+      <details open>
+        <summary>Q10 · 下一步可以做什么？</summary>
+        <div class="answer">扩展物理类别与机制级约束（PDE/仿真器蒸馏）；推理时自动从 prompt 预测 priori；与 Wan2.1-14B 等更强基座结合（repo 已支持）；可微物理 loss；统一 WISA-32K vs 80K 论文口径；更公平的物理 benchmark。</div>
+      </details>
+    </section>
+
+    <section class="summary deepdive" id="deepdive">
+      <h2>🔬 深挖追问</h2>
+
+      <div class="block">
+        <h4>第一性原理 · 为何要「分解」物理信息？</h4>
+        <p>单一 prompt 把「场景描述」与「物理定律」混在同一语义空间，T5/LLM 编码后梯度信号纠缠。分解后：<strong>文本描述</strong>走已有语义通道补全因果叙述；<strong>定性标签</strong>提供离散开关选 expert；<strong>定量</strong>调制扩散时间步强度——类似 ControlNet 多条件，但条件语义是物理专用的。</p>
+      </div>
+      <div class="block">
+        <h4>第一性原理 · MoPA vs 标准 Cross-Attention</h4>
+        <p>Cross-attn 把文本 token attend 到视觉 token，但「碰撞」与「熔化」在文本 embedding 空间可能相近。MoPA 在<strong>视觉 self-attn 的 head 维</strong>硬分工——每 head 只学一类物理的空间—时间模式，门控 $P_c$ 在推理时选专家。比增大 prompt 更直接地控制「激活哪种物理动力学模板」。</p>
+      </div>
+      <div class="block">
+        <h4>第一性原理 · 数据为何必须「物理突出」？</h4>
+        <p>因果 identifiability：若数据中物理与背景共变（Koala 风景+水流），模型学 $P(\text{video}|\text{caption})$ 时物理信号被稀释。WISA-32K 强制单现象高 SNR——类似 ImageNet 对物体分类的必要性，物理类别需要「教科书式」样例。</p>
+      </div>
+      <div class="block crit">
+        <h4>批判性思维 · 盲区</h4>
+        <ul>
+          <li><strong>推理 priori 从哪来？</strong>训练用 GT 标注；用户只给自然语言 prompt 时，29 维向量需 LLM 推断——错误 priori 可能激活错专家。</li>
+          <li><strong>PC 0.38 的含义：</strong>VideoCon 是生成式评判器，可能偏好 WISA 风格；需更多 human + 规则物理检测。</li>
+          <li><strong>与 Wan2.1 关系：</strong>repo 支持 Wan，论文主表仅 CogVideoX-5B——更强基座 + WISA 上限未在正文充分展开。</li>
+          <li><strong>非物理场景：</strong>29 类「无显然 X 现象」标签是否损害通用美学生成？论文未报告非物理 prompt 退化。</li>
+          <li><strong>机制级物理：</strong>作者承认缺能量守恒等硬约束——WISA 是 soft guidance，非 simulator。</li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="lightbox" role="dialog" aria-modal="true" aria-label="放大查看">
+    <span class="lb-close" aria-hidden="true">&times;</span>
+    <div class="lb-content"></div>
+    <div class="lb-cap"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral', flowchart: { htmlLabels: true } });</script>
+  <script>
+    function syncScrollPad() {
+      var head = document.querySelector('.sticky-head');
+      if (head) document.documentElement.style.scrollPaddingTop = (head.offsetHeight + 8) + 'px';
+    }
+    window.addEventListener('load', syncScrollPad);
+    window.addEventListener('resize', syncScrollPad);
+    syncScrollPad();
+
+    (function () {
+      var lb = document.getElementById('lightbox');
+      var content = lb.querySelector('.lb-content');
+      var cap = lb.querySelector('.lb-cap');
+
+      function findZoomTarget(node) {
+        var el = node.closest ? node.closest('img, svg') : null;
+        if (!el) return null;
+        if (!el.closest('.diagram, .figure-row, .mermaid')) return null;
+        return el;
+      }
+      function nearestCaption(el) {
+        var fig = el.closest('figure') || el.closest('.diagram') || el.closest('.figure-row');
+        var c = fig && fig.querySelector('figcaption');
+        return c ? c.textContent.trim() : '';
+      }
+      function openLightbox(node, caption) {
+        content.innerHTML = '';
+        var clone = node.cloneNode(true);
+        clone.style.cursor = 'default';
+        clone.style.boxShadow = 'none';
+        var r = node.getBoundingClientRect();
+        var vw = window.innerWidth * 0.96, vh = window.innerHeight * 0.92;
+        var w = r.width || node.clientWidth || 600;
+        var h = r.height || node.clientHeight || 400;
+        var scale = Math.min(vw / w, vh / h);
+        if (!isFinite(scale) || scale <= 0) scale = 1;
+        clone.style.width = Math.round(w * scale) + 'px';
+        clone.style.height = Math.round(h * scale) + 'px';
+        clone.style.maxWidth = 'none';
+        clone.style.maxHeight = 'none';
+        content.appendChild(clone);
+        cap.textContent = caption || '';
+        lb.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+      function closeLightbox() {
+        lb.classList.remove('open');
+        content.innerHTML = '';
+        document.body.style.overflow = '';
+      }
+      document.addEventListener('click', function (e) {
+        if (lb.classList.contains('open')) { closeLightbox(); return; }
+        var el = findZoomTarget(e.target);
+        if (el) { e.preventDefault(); e.stopPropagation(); openLightbox(el, nearestCaption(el)); }
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && lb.classList.contains('open')) closeLightbox();
+      });
+    })();
+  </script>
+</body>
+</html>

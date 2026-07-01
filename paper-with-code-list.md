@@ -87,6 +87,7 @@ There are paper with code for CV / AIGC / LLM / VLM.
 | DALL-E 3 | [Improving Image Generation with Better Captions](https://cdn.openai.com/papers/dall-e-3.pdf) | OpenAI(2023) | [code] |
 | [PixArt-δ](https://gojay.top/paper-reading/pixart-delta.html) | [PIXART-δ: Fast and Controllable Image Generation with Latent Consistency Models](https://arxiv.org/abs/2401.05252) | arXiv(2024) | [PyTorch](https://github.com/PixArt-alpha/PixArt-alpha) |
 | [SD 3](https://gojay.top/paper-reading/sd3.html) | [Scaling Rectified Flow Transformers for High-Resolution Image Synthesis](https://arxiv.org/abs/2403.03206) | arXiv(2024) / ICML(2024) | [PyTorch](https://github.com/Stability-AI/generative-models) |
+| [RelaCtrl](https://gojay.top/paper-reading/relactrl.html) | [RelaCtrl: Relevance-Guided Efficient Control for Diffusion Transformers](https://arxiv.org/abs/2502.14377) | arXiv(2025) / AAAI(2026) | [PyTorch](https://github.com/360CVGroup/RelaCtrl) |
 | GPT-Image-1 | [Introducing our latest image generation model in the API](https://openai.com/index/image-generation-api/) | OpenAI(2025) | [code] |
 | FLUX.1 | [FLUX.1 Kontext: Flow Matching for In-Context Image Generation and Editing in Latent Space](https://arxiv.org/abs/2506.15742) | arXiv(2025) | [PyTorch](https://github.com/black-forest-labs/flux) |
 | Qwen-Image | [Qwen-Image Technical Report](https://arxiv.org/abs/2508.02324) | arXiv(2025) | [PyTorch](https://github.com/QwenLM/Qwen-Image) |

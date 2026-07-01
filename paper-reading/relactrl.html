@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RelaCtrl — Relevance-Guided Efficient Control for DiT · 逻辑精读</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+  <style>
+    :root {
+      --navy: #1a2744;
+      --paper: #faf8f5;
+      --thesis: #fff3cd;
+      --concept: #f8d7da;
+      --evidence: #cfe2ff;
+      --counter: #d1e7dd;
+      --method: #e2d9f3;
+      --text: #2c2c2c;
+      --muted: #6c757d;
+      --border: #e8e4df;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'IBM Plex Sans', sans-serif; background: var(--paper); color: var(--text); line-height: 1.6; }
+    .sticky-head { position: sticky; top: 0; z-index: 100; }
+    .top-nav { background: var(--navy); color: #fff; padding: 1rem 2rem; }
+    .top-nav h1 { font-size: 1.25rem; font-weight: 600; }
+    .top-nav h1 a { color: #fff; text-decoration: none; border-bottom: 1px dotted rgba(255,255,255,0.5); }
+    .top-nav h1 a:hover { border-bottom-style: solid; }
+    .top-nav .meta { font-size: 0.85rem; opacity: 0.85; margin-top: 0.25rem; }
+    .legend { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.75rem; font-size: 0.8rem; }
+    .legend span { padding: 0.15rem 0.5rem; border-radius: 3px; color: #2c2c2c; }
+    .chapter-nav { background: #fff; border-bottom: 1px solid var(--border); padding: 0.75rem 2rem; overflow-x: auto; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+    .chapter-nav a { color: var(--navy); text-decoration: none; margin-right: 1.25rem; font-size: 0.9rem; font-weight: 500; }
+    .chapter-nav a:hover { text-decoration: underline; }
+    main { max-width: 1680px; margin: 0 auto; padding: 2rem; }
+    .section-title { font-size: 1.5rem; color: var(--navy); margin: 2rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--navy); }
+    .col-labels { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 0.5rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+    .row { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; align-items: start; }
+    .col-original { font-family: 'Lora', serif; font-size: 0.95rem; line-height: 1.75; }
+    .col-original p { margin-bottom: 0.75rem; }
+    .col-translation { font-size: 0.92rem; line-height: 1.75; color: #333; }
+    .col-translation p { margin-bottom: 0.75rem; }
+    .analysis-card { background: #fff; border-left: 4px solid var(--navy); padding: 1rem 1.25rem; border-radius: 0 6px 6px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.06); font-size: 0.9rem; }
+    .analysis-card .tag { display: inline-block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0.5rem; color: var(--navy); }
+    .analysis-card h4 { font-size: 0.85rem; color: var(--muted); margin: 0.75rem 0 0.25rem; }
+    .analysis-card p { margin-bottom: 0.5rem; }
+    .analysis-card.deep { border-left-width: 5px; }
+    .analysis-detail { margin: 0.75rem 0; padding-top: 0.5rem; border-top: 1px dashed var(--border); }
+    .analysis-detail:first-of-type { border-top: none; }
+    .exp-detail { list-style: none; margin: 0.5rem 0; }
+    .exp-detail li { margin-bottom: 0.4rem; }
+    .exp-detail li strong { color: var(--navy); }
+    .exp-table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.82rem; }
+    .exp-table th, .exp-table td { border: 1px solid var(--border); padding: 0.35rem 0.5rem; text-align: left; }
+    .exp-table th { background: var(--paper); color: var(--navy); font-weight: 600; }
+    .exp-table tr.is-ours { background: var(--evidence); }
+    .exp-table tr.is-ours td { font-weight: 600; }
+    .notation { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.88rem; background: #fff; }
+    .notation th, .notation td { border: 1px solid var(--border); padding: 0.4rem 0.6rem; text-align: left; }
+    .notation th { background: var(--paper); color: var(--navy); font-weight: 600; }
+    .notation td:first-child { width: 22%; white-space: nowrap; }
+    .diagram { margin: 0.75rem 0; }
+    .diagram img, .diagram svg { max-width: 100%; height: auto; display: block; border: 1px solid var(--border); border-radius: 4px; background: #fff; }
+    .diagram figcaption { font-size: 0.78rem; color: var(--muted); margin-top: 0.35rem; }
+    .figure-row { margin: 1.5rem 0; padding: 1.25rem; background: #fff; border: 1px solid var(--border); border-radius: 8px; }
+    .figure-row figure { margin: 0; text-align: center; }
+    .figure-row img, .figure-row svg { max-width: 100%; height: auto; display: inline-block; }
+    .figure-row figcaption { font-size: 0.82rem; color: var(--muted); margin-top: 0.5rem; }
+    .figure-row h3 { color: var(--navy); font-size: 1rem; margin-bottom: 0.75rem; }
+    .mermaid { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem; margin: 0.5rem 0; text-align: center; }
+    .diagram img, .diagram svg, .figure-row img, .figure-row svg { cursor: zoom-in; transition: box-shadow .15s; }
+    .diagram img:hover, .diagram svg:hover, .figure-row img:hover, .figure-row svg:hover { box-shadow: 0 0 0 2px #0d9488; }
+    #lightbox { position: fixed; inset: 0; background: rgba(10,12,20,0.92); display: none; align-items: center; justify-content: center; z-index: 1000; cursor: zoom-out; padding: 3vh 3vw; }
+    #lightbox.open { display: flex; }
+    #lightbox .lb-content { display: flex; align-items: center; justify-content: center; }
+    #lightbox .lb-content img, #lightbox .lb-content svg { display: block; background: #fff; border-radius: 6px; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
+    #lightbox .lb-close { position: fixed; top: 1rem; right: 1.5rem; color: #fff; font-size: 2rem; line-height: 1; opacity: 0.8; }
+    #lightbox .lb-cap { position: fixed; bottom: 1.2rem; left: 0; right: 0; text-align: center; color: #e8e4df; font-size: 0.8rem; padding: 0 2rem; }
+    .hl-thesis { background: var(--thesis); padding: 0 2px; }
+    .hl-concept { background: var(--concept); padding: 0 2px; }
+    .hl-evidence { background: var(--evidence); padding: 0 2px; }
+    .hl-counter { background: var(--counter); padding: 0 2px; }
+    .hl-method { background: var(--method); padding: 0 2px; }
+    .summary { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 2rem; margin-top: 3rem; }
+    .summary h2 { color: var(--navy); margin-bottom: 1rem; }
+    .summary .skeleton { font-family: 'IBM Plex Sans', monospace; background: var(--paper); padding: 1rem; border-radius: 4px; margin: 1rem 0; line-height: 1.9; }
+    .summary .strength, .summary .weakness { padding: 0.75rem 1rem; border-radius: 4px; margin: 0.5rem 0; }
+    .summary .strength { background: var(--counter); }
+    .summary .weakness { background: var(--concept); }
+    .feynman { background: #fff; border: 1px solid var(--border); border-left: 5px solid #0d9488; border-radius: 0 8px 8px 0; padding: 1.25rem 1.5rem; margin: 1.5rem 0 2rem; }
+    .feynman h2 { color: #0d9488; font-size: 1.15rem; margin-bottom: 0.35rem; }
+    .feynman .tldr-meta { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.6rem; }
+    .feynman p { font-size: 0.95rem; line-height: 1.85; margin-bottom: 0.6rem; }
+    .faq details { background: #fff; border: 1px solid var(--border); border-radius: 6px; margin: 0.5rem 0; }
+    .faq details[open] { box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .faq summary { cursor: pointer; font-weight: 600; color: var(--navy); padding: 0.7rem 0.9rem; list-style: none; font-size: 0.92rem; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::before { content: '▸'; color: #0d9488; margin-right: 0.5rem; }
+    .faq details[open] summary::before { content: '▾'; }
+    .faq .answer { padding: 0 0.9rem 0.85rem 1.8rem; font-size: 0.9rem; line-height: 1.8; color: #333; }
+    .deepdive .block { margin: 0.9rem 0; padding: 0.85rem 1.1rem; border-radius: 4px; background: var(--paper); border-left: 3px solid #6f42c1; }
+    .deepdive .block.crit { border-left-color: #dc3545; background: #fdf0f1; }
+    .deepdive .block h4 { color: var(--navy); margin-bottom: 0.3rem; }
+    .deepdive .block ul { margin: 0.3rem 0 0 1.1rem; }
+    .deepdive .block li { margin-bottom: 0.3rem; font-size: 0.9rem; }
+    @media (max-width: 1100px) {
+      .col-labels { display: none; }
+      .row { grid-template-columns: 1fr; }
+      .row > div::before {
+        display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+        letter-spacing: 0.05em; color: var(--muted); margin-bottom: 0.35rem;
+      }
+      .col-original::before { content: '原文'; }
+      .col-translation::before { content: '翻译'; }
+      .col-analysis::before { content: '解析'; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sticky-head">
+    <header class="top-nav">
+      <h1><a href="https://arxiv.org/abs/2502.14377" target="_blank" rel="noopener">RelaCtrl — Relevance-Guided Efficient Control for Diffusion Transformers</a></h1>
+      <div class="meta">DeepLearning-Paper-with-Code · Diffusion Model · arXiv(2025) / AAAI(2026) · Cao, Wang, Ma et al.</div>
+      <div class="legend">
+        <span class="hl-thesis">核心论点</span>
+        <span class="hl-concept">关键概念</span>
+        <span class="hl-evidence">实证证据</span>
+        <span class="hl-counter">让步/反驳</span>
+        <span class="hl-method">方法论</span>
+      </div>
+    </header>
+    <nav class="chapter-nav">
+      <a href="#feynman">速读</a>
+      <a href="#abstract">Abstract</a>
+      <a href="#intro">Introduction</a>
+      <a href="#related">Related</a>
+      <a href="#method">Method</a>
+      <a href="#experiments">Experiments</a>
+      <a href="#conclusion">Conclusion</a>
+      <a href="#notation">符号表</a>
+      <a href="#overview">总览</a>
+      <a href="#faq">十问</a>
+      <a href="#deepdive">深挖</a>
+    </nav>
+  </div>
+
+  <main>
+
+    <section class="feynman" id="feynman">
+      <h2>🎮 费曼一分钟（通俗速读）</h2>
+      <div class="tldr-meta">通俗速读 · 先建立模糊认知，再读正文</div>
+      <p>给 DiT 加「可控生成」（Canny、Depth、Seg 等）时，主流做法很「笨重」：<strong>PixArt-δ</strong> 直接复制前 13 个 DiT block 做 ControlNet，参数和 FLOPs 各涨约 <strong>50%</strong>；<strong>OminiControl</strong> 把控制 token 拼进序列，token 数翻倍，FLOPs 涨约 <strong>70%</strong>。更关键的是——它们<strong>假设每一层对控制信号同等重要</strong>，均匀堆控制模块，造成大量冗余。</p>
+      <p><strong>RelaCtrl</strong> 先做「层重要性体检」：逐层跳过 control block 推理，用 FID（生成质量）和 HDD（控制精度）排名，合成 <strong>ControlNet Relevance Score (CRS)</strong>——相关性在<strong>前中段层</strong>最高，深层很弱。于是只在 CRS 排名前 11 的位置放控制块（PixArt-δ 用 13 个），并用轻量 <strong>Two-Dimensional Shuffle Mixer (TDSM)</strong> 替换 copy-block 里的 SA+FFN，一次完成 token/channel mixing。</p>
+      <p>结果：相对 PixArt-α 基座（611M / 542 GFLOPs），RelaCtrl 仅 <strong>+45M 参数 (+7.4%)</strong>、<strong>+46.7 GFLOPs (+8.6%)</strong>，约为 PixArt-δ 控制开销的 <strong>15%</strong>，却在 COCO 控制任务上多项指标优于 PixArt-δ（如 Canny HDD 94.04、FID 20.34；Depth MSE-d 99.11；Seg mIoU 0.405）。</p>
+    </section>
+
+    <h2 class="section-title" id="abstract">Abstract</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>The <span class="hl-concept">Diffusion Transformer (DiT)</span> plays a pivotal role in advancing text-to-image and text-to-video generation, owing primarily to its inherent scalability. However, existing controlled DiT methods incur <span class="hl-counter">significant parameter and computational overheads</span> and suffer from inefficient resource allocation due to their failure to account for the <span class="hl-concept">varying relevance of control information across different transformer layers</span>.</p>
+        <p>We propose <span class="hl-thesis">RelaCtrl</span>, a <span class="hl-method">Relevance-Guided Efficient Controllable Generation</span> framework. First, we evaluate layer relevance via the <span class="hl-concept">ControlNet Relevance Score (CRS)</span>, measuring the impact of skipping each control layer on generation quality and control effectiveness. Based on relevance strength, we tailor the positioning, parameter scale, and modeling capacity of control layers. Additionally, we replace self-attention and FFN in copy blocks with the <span class="hl-method">Two-Dimensional Shuffle Mixer (TDSM)</span>. Our approach achieves superior performance with only <span class="hl-evidence">15% of the parameters and computational complexity</span> compared to PixArt-δ.</p>
+      </div>
+      <div class="col-translation">
+        <p>Diffusion Transformer 凭借可扩展性推动文生图/文生视频，但现有 DiT 可控方法引入大量额外参数与计算，且未考虑控制信息在不同 Transformer 层上的相关性差异，导致资源分配低效。</p>
+        <p>我们提出 RelaCtrl——相关性引导的高效可控生成框架。首先用 ControlNet Relevance Score 评估每层相关性（跳过该层对生成质量与控制效果的影响）；再按相关性定制控制层位置、参数规模与建模能力；并用 TDSM 替换 copy block 中的 SA 与 FFN。实验表明，相对 PixArt-δ 仅用约 15% 参数与计算即可取得更优性能。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #ffc107;">
+          <span class="tag">概括主张</span>
+          <h4>段落功能</h4>
+          <p>点出 DiT 可控的两难：必须加控制分支 vs 现有方法「均匀堆叠」导致冗余；宣告 CRS 引导放置 + TDSM 轻量化双管齐下。</p>
+          <h4>逻辑角色</h4>
+          <p>论证链起点：问题（参数/FLOPs 爆炸 + 层间相关性被忽视）→ 解法（CRS + RGLC/TDSM）→ 承诺（15% 开销、SOTA 性能）。</p>
+          <h4>论证技巧 / 潜在漏洞</h4>
+          <p>技巧：「15% vs PixArt-δ」是强 hook，同时锚定 AAAI 2026。漏洞：CRS 依赖 PixArt-α 上 skip-layer 实验，迁移到其他 DiT（Flux、SD3）是否成立未在摘要展开。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="intro">1. Introduction</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>DiT (Peebles and Xie 2023) with strong scalability has advanced T2I/T2V (PixArt-α, Flux, SD3, CogVideoX, Sora, etc.). Controlled generation methods like <span class="hl-concept">PixArt-δ</span> and <span class="hl-concept">OminiControl</span> extend DiT to real-world content creation.</p>
+        <p>However, two shortcomings persist. First, <span class="hl-counter">massive parameter/compute overhead</span>: PixArt-δ duplicates the first 13 blocks (+50% params/FLOPs); OminiControl doubles tokens (+~70% FLOPs). Second, <span class="hl-counter">uniform control across layers</span> ignores varying relevance — our ControlNet Relevance Score experiments show relevance peaks in early-middle layers and weakens in deeper layers (Fig. 1).</p>
+      </div>
+      <div class="col-translation">
+        <p>DiT 的可扩展性推动 PixArt-α、Flux、SD3 等；PixArt-δ、OminiControl 等将 DiT 扩展到可控生成场景。</p>
+        <p>但存在两大缺陷：① 参数/计算开销大——PixArt-δ 复制前 13 block（+50%）；OminiControl token 翻倍（+~70% FLOPs）。② 各层控制相关性不同却被均匀对待——CRS 实验显示前中段层相关性高、深层弱（Fig.1）。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #1a2744;">
+          <span class="tag">引出问题</span>
+          <h4>段落功能</h4>
+          <p>建立「DiT 可控已实用 vs 现有方法又胖又笨」的反差；用 Fig.1 skip-layer 曲线作为经验动机。</p>
+          <h4>逻辑角色</h4>
+          <p>问题语境：为何「复制前半网络」不是最优？预告——应按层相关性动态配置，而非增减复制 block 数量。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <p>We propose <span class="hl-thesis">RelaCtrl</span>: place control blocks at high-CRS locations; skip weak-relevance positions. Replace copy-block SA+FFN with <span class="hl-method">TDSM</span> — random channel grouping + token shuffle + grouped attention for efficient token/channel mixing. Stronger correlation regions use fewer channel groups (wider attention). Results: only <span class="hl-evidence">+45M params (+7.4%)</span> and <span class="hl-evidence">+46.7 GFLOPs (+8.6%)</span> over PixArt-α, beating PixArt-δ on multiple control tasks.</p>
+      </div>
+      <div class="col-translation">
+        <p>我们提出 RelaCtrl：在高 CRS 位置放置控制块，弱相关位置留空；用 TDSM 替换 copy-block 的 SA+FFN，通过随机通道分组与 token shuffle 实现高效 mixing；高相关区域减少通道分组数以增强建模。相对 PixArt-α 仅 +45M 参数、+46.7 GFLOPs，多项控制任务超越 PixArt-δ。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #ffc107;">
+          <span class="tag">提出论点</span>
+          <h4>段落功能</h4>
+          <p>Intro 末段浓缩三大贡献：CRS 先验、RGLC 放置策略、TDSM 结构创新 → 预告实验数字。</p>
+          <h4>论证技巧</h4>
+          <p>把「层相关性曲线」从观察升格为设计原则——这是全文方法论 pivot。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 1：ControlNet Relevance Score（skip layer → FID/HDD）</h3>
+      <figure>
+        <img src="assets/relactrl/fig1.jpg" alt="跳过各 control layer 对 FID 与 HDD 的影响，CRS 前中段峰值">
+        <figcaption>Fig.1：推理时逐层跳过 control block，FID↑/HDD↑ 表示该层越关键。CRS 呈先升后降，前中段（如 block 5–7）相关性最高，深层跳过几乎不影响性能。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="related">2. Related Works</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Diffusion-Based Models:</strong> Latent diffusion (Rombach et al. 2022) and DiT (Peebles and Xie 2023; Chen et al. 2023) scale Transformers inside diffusion for SOTA T2I. Flux combines flow-matching with Transformer architecture.</p>
+        <p><strong>Controllable Generation:</strong> Two paradigms — (1) train large multi-condition models from scratch; (2) fine-tune lightweight adapters on frozen backbones. <span class="hl-concept">ControlNet</span> (Zhang et al. 2023) copies U-Net layers + zero conv; Uni-Control (MoE), ControlNet-XS extend bandwidth. These U-Net designs <span class="hl-counter">do not transfer directly to DiT</span>. PixArt-δ adapts copy-block ControlNet to DiT but at +50% cost.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>扩散模型：</strong>LDM 与 DiT 将 Transformer 引入扩散框架；Flux 等进一步结合 flow-matching。</p>
+        <p><strong>可控生成：</strong>全量训练 vs 冻结主干+轻量分支。ControlNet 复制 U-Net 层；Uni-Control、ControlNet-XS 等改进交互。但这些 U-Net 方案难以直接用于 DiT；PixArt-δ 为 DiT 定制 copy-block 方案，代价是 +50% 开销。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #6f42c1;">
+          <span class="tag">定位缺口</span>
+          <h4>段落功能</h4>
+          <p>Related Work 把 RelaCtrl 放在「DiT 时代可控生成」子问题：U-Net ControlNet 成熟，DiT 只有 PixArt-δ 式笨重复制——效率是社区部署瓶颈。</p>
+          <h4>逻辑角色</h4>
+          <p>论证链的 literature gap：不是 reinvent control，而是 <strong>DiT-specific + relevance-aware + lightweight</strong>。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="method">3. Method — CRS · RGLC · TDSM</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>DiT-ControlNet Relevance Prior:</strong> Train full copy-all-blocks ControlNet on PixArt-α (27 replicated modules). At inference, skip one control layer at a time; measure FID (quality) and HDD (control). Rank layers and compute:</p>
+        <p>$$CRS_i = \tfrac{1}{2}\left(\frac{F_i - F_{\min}}{F_{\max} - F_{\min}} + \frac{H_i - H_{\min}}{H_{\max} - H_{\min}}\right) \quad\text{(Eq. 1)}$$</p>
+        <p>where $F_i, H_i$ are normalized ranks of FID/HDD when layer $i$ is removed. Higher $CRS_i$ → layer $i$ is more critical. Key finding: critical modules concentrate in <span class="hl-evidence">early-middle layers (blocks 5–7)</span>; removing last modules causes minimal loss — unlike LLM layer pruning trends.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>DiT-ControlNet 相关性先验：</strong>在 PixArt-α 上训练全复制 control 分支（27 模块），推理时逐层跳过 control block，测 FID 与 HDD 并排名，合成 CRS（式 1）。$CRS_i$ 越高，该层对控制越关键。发现：关键层集中在前中段（block 5–7），深层可跳过且性能损失极小——与 LLM/DiT 主干的层剪枝规律不同。</p>
+        <p>$$CRS_i = \tfrac{1}{2}\left(\frac{F_i - F_{\min}}{F_{\max} - F_{\min}} + \frac{H_i - H_{\min}}{H_{\max} - H_{\min}}\right) \quad\text{（式 1）}$$</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #6f42c1;">
+          <span class="tag">CRS 度量</span>
+          <div class="analysis-detail">
+            <h4>Skip-layer 诊断流程（自绘）</h4>
+            <div class="diagram">
+              <pre class="mermaid">
+flowchart LR
+  TRAIN["训练：27 层全复制 ControlNet"] --> INF["推理：逐层 skip 一层 control"]
+  INF --> FID["FID rank F_i<br/>生成质量"]
+  INF --> HDD["HDD rank H_i<br/>控制精度"]
+  FID --> CRS["CRS_i = 0.5·norm(F) + 0.5·norm(H)"]
+  HDD --> CRS
+  CRS --> RANK["按 CRS 排序 → 选 top-11 放置控制块"]
+              </pre>
+              <figcaption>CRS 是「删层敏感性」的可操作代理指标，把启发式 layer importance 量化成可排序分数。点击放大。</figcaption>
+            </div>
+          </div>
+          <div class="analysis-detail">
+            <h4>设计取舍</h4>
+            <p>CRS 融合质量与控制两维，避免只优化 FID 而牺牲 HDD。rank 归一化使不同量纲可比；代价是一次性 profiling 成本，且绑定 PixArt-α 架构。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Overall Architecture:</strong> Select the <span class="hl-method">11 highest-CRS positions</span> (vs PixArt-δ's 13 copied blocks, ~15% param saving). Each position hosts a <span class="hl-concept">Relevance-Guided Lightweight Control Block (RGLC)</span> replacing full copy blocks.</p>
+        <p><strong>RGLC forward:</strong> Main branch feature $x$ passes zero conv and adds to condition $c$ → $c_{\rm in}$. Then:</p>
+        <p>$$c_{\rm cond} = \text{ZC}(\text{TDSM}(c_{\rm in}) + c_{\rm in}) \quad\text{(Eq. 2)}$$</p>
+        <p>$c_{\rm cond}$ adds to frozen main branch via zero conv. TDSM replaces SA (token mixer) + FFN (channel mixer) with grouped attention after random channel selection and 3D token shuffle.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>整体架构：</strong>按 CRS 选取 top-11 位置放置控制模块（PixArt-δ 用 13 个，约省 15% 参数）。每处用 RGLC 替代完整 copy block。</p>
+        <p><strong>RGLC 前向：</strong>主分支特征 $x$ 经 zero conv 加到条件 $c$ 得 $c_{\rm in}$，再经 TDSM 与残差，最后 zero conv 输出 $c_{\rm cond}$ 注入主分支：</p>
+        <p>$$c_{\rm cond} = \text{ZC}(\text{TDSM}(c_{\rm in}) + c_{\rm in}) \quad\text{（式 2）}$$</p>
+        <p>TDSM 用随机通道选取 + 3D token shuffle + 分组 attention 同时承担 token mixer 与 channel mixer 职能。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #0d6efd;">
+          <span class="tag">RGLC · TDSM</span>
+          <div class="analysis-detail">
+            <h4>RelaCtrl 数据流（自绘）</h4>
+            <div class="diagram">
+              <pre class="mermaid">
+flowchart TB
+  MAIN["Frozen DiT block x"] --> ZC1["Zero Conv"]
+  COND["Control condition c"] --> ADD["c_in = c + ZC(x)"]
+  ZC1 --> ADD
+  ADD --> TDSM["TDSM<br/>channel shuffle + grouped SA"]
+  TDSM --> RES["+ c_in residual"]
+  RES --> ZC2["Zero Conv"]
+  ZC2 --> OUT["c_cond → inject main branch"]
+              </pre>
+              <figcaption>式 2：TDSM 内含残差；zero conv 保证训练初期控制分支零影响。高 CRS 层用更少 channel group（更大 $d_i$）增强 TDSM 容量。点击放大。</figcaption>
+            </div>
+          </div>
+          <div class="analysis-detail">
+            <h4>TDSM 理论要点</h4>
+            <p>随机 channel 选取 + shuffle 使本窗口内 token 可来自任意位置，期望交互距离下界 $\Omega(\frac{\sqrt{2}}{4}(H+Wd_i))$，突破纯 local grouping；shuffle 后做 inverse recovery 保信息。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 2：RelaCtrl 整体架构（MAIN method figure）</h3>
+      <figure>
+        <img src="assets/relactrl/fig2.png" alt="RelaCtrl 架构：CRS 排序放置 RGLC + TDSM">
+        <figcaption>Fig.2：按 CRS 从高到低选 11 个控制位置；copy block 替换为 RGLC（含 TDSM）；主分支冻结，控制信号经 zero conv 注入。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="experiments">4. Experiments</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Setup:</strong> COCO validation set; conditions: Canny, HED, Depth, Segmentation. Metrics: FID, CLIP-Aesthetics (C-Ae), CLIP-Score (C-SC) for quality/TC; HDD (edge), MSE-depth, mIoU (seg) for control fidelity.</p>
+        <p><strong>Baselines:</strong> Uni-ControlNet, Uni-Control (SD1.5); ControlNet-XS, ControlNext (SDXL); PixArt-δ (DiT). PixArt-δ and RelaCtrl control branches trained from scratch under identical settings for fair comparison.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>设置：</strong>COCO val；Canny/HED/Depth/Seg 四类条件。FID、C-Ae、C-SC 评质量与文本一致；HDD/MSE-d/mIoU 评控制保真。</p>
+        <p><strong>基线：</strong>SD1.5/SDXL 代表方法 + PixArt-δ；PixArt-δ 与 RelaCtrl 控制分支同设置从零训练，保证公平。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #0d6efd;">
+          <span class="tag">效率对比 · vs PixArt-α</span>
+          <table class="exp-table">
+            <thead><tr><th>Method</th><th>Base</th><th>Δ Params</th><th>Δ FLOPs</th></tr></thead>
+            <tbody>
+              <tr><td>PixArt-α</td><td>611M / 542 GFLOPs</td><td>—</td><td>—</td></tr>
+              <tr><td>PixArt-δ ControlNet</td><td>同上</td><td>+48.16%</td><td>+49.87%</td></tr>
+              <tr class="is-ours"><td>RelaCtrl</td><td>同上</td><td>+7.38% (+45M)</td><td>+8.61% (+46.7G)</td></tr>
+            </tbody>
+          </table>
+          <ul class="exp-detail">
+            <li><strong>论点↔证据：</strong>RelaCtrl 控制开销约为 PixArt-δ 的 15%，却多项指标更优——效率增益来自 CRS 稀疏放置 + TDSM，非单纯减层。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Main Results (PixArt-α backbone):</strong> RelaCtrl achieves best or competitive scores across conditions. Highlights on COCO:</p>
+        <p>• <span class="hl-evidence">Canny:</span> HDD <strong>94.04</strong>, FID <strong>20.34</strong> (vs PixArt-δ 96.26 / 21.38)<br/>
+        • <span class="hl-evidence">Depth:</span> MSE-d <strong>99.11</strong>, FID 33.93<br/>
+        • <span class="hl-evidence">Segmentation:</span> mIoU <strong>0.405</strong>, FID 33.76 (vs PixArt-δ 0.379 / 35.50)</p>
+        <p>Qualitative results show sharper edge alignment and better semantic preservation under varied control strengths (Fig. 3–4).</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>主结果（PixArt-α 主干）：</strong>RelaCtrl 在多项控制任务上最优或具竞争力。COCO 亮点：</p>
+        <p>• Canny：HDD <strong>94.04</strong>、FID <strong>20.34</strong>（PixArt-δ 96.26 / 21.38）<br/>
+        • Depth：MSE-d <strong>99.11</strong><br/>
+        • Seg：mIoU <strong>0.405</strong>（PixArt-δ 0.379）</p>
+        <p>定性对比（Fig.3–4）显示更清晰的边缘对齐与多条件下语义保持。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #0d6efd;">
+          <span class="tag">Table 1 · PixArt-α 关键行</span>
+          <table class="exp-table">
+            <thead><tr><th>Condition</th><th>Method</th><th>Control↓</th><th>FID↓</th><th>Notes</th></tr></thead>
+            <tbody>
+              <tr class="is-ours"><td>Canny</td><td>RelaCtrl</td><td>HDD 94.04</td><td>20.34</td><td>bold best</td></tr>
+              <tr><td>Canny</td><td>PixArt-δ</td><td>HDD 96.26</td><td>21.38</td><td>+50% overhead</td></tr>
+              <tr class="is-ours"><td>Depth</td><td>RelaCtrl</td><td>MSE-d 99.11</td><td>33.93</td><td>bold best MSE-d</td></tr>
+              <tr class="is-ours"><td>Seg</td><td>RelaCtrl</td><td>mIoU 0.405</td><td>33.76</td><td>bold best mIoU</td></tr>
+            </tbody>
+          </table>
+          <ul class="exp-detail">
+            <li><strong>vs SD 系：</strong>U-Net ControlNet 在 DiT 时代仍被比较，RelaCtrl 在 PixArt-α 上全面领先同 backbone PixArt-δ。</li>
+            <li><strong>公平性：</strong>控制分支同数据同 schedule 从零训练，非直接微调官方 δ 权重。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 3：定性对比 vs 基线</h3>
+      <figure>
+        <img src="assets/relactrl/fig3.jpg" alt="RelaCtrl 与 PixArt-δ 等基线定性对比">
+        <figcaption>Fig.3：Canny/Depth/Seg 等条件下 RelaCtrl 与 PixArt-δ、Uni-Control 等方法的视觉对比——控制对齐更准、伪影更少。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 4：不同控制条件下的生成效果</h3>
+      <figure>
+        <img src="assets/relactrl/fig4.png" alt="RelaCtrl 在 varied control conditions 下的生成">
+        <figcaption>Fig.4：RelaCtrl 在多种控制强度/条件下的生成样例，展示框架泛化性与语义一致性。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="conclusion">5. Conclusion</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>We presented <span class="hl-thesis">RelaCtrl</span>, addressing inefficient control integration in DiT. By analyzing <span class="hl-concept">ControlNet Relevance Score</span>, we discovered that control information relevance peaks in early-middle layers — a pattern distinct from LLM/DiT main-branch pruning. Our <span class="hl-method">relevance-guided placement</span> and <span class="hl-method">TDSM</span> jointly reduce parameters and FLOPs while maintaining or improving control quality.</p>
+        <p>Experiments on COCO across Canny, HED, Depth, and Segmentation validate that RelaCtrl achieves <span class="hl-evidence">superior performance with ~15% of PixArt-δ's control overhead</span>, enabling efficient DiT controllable generation for community deployment and practical AI content creation.</p>
+      </div>
+      <div class="col-translation">
+        <p>我们提出 RelaCtrl，解决 DiT 可控集成低效问题。通过 CRS 分析发现控制相关性在前中段峰值——与 LLM/DiT 主干剪枝规律不同。相关性引导放置 + TDSM 共同降参降算力，且不损甚至提升控制质量。</p>
+        <p>COCO 上 Canny/HED/Depth/Seg 实验验证：RelaCtrl 以约 PixArt-δ 控制开销 15% 的成本取得更优性能，利于社区部署与实用 AI 内容创作。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #ffc107;">
+          <span class="tag">总结</span>
+          <h4>段落功能</h4>
+          <p>收束 CRS 发现 → RGLC/TDSM 设计 → 效率-性能 Pareto 改进；强调 DiT 可控的「层相关性先验」是新知识贡献。</p>
+          <h4>逻辑角色</h4>
+          <p>论证链终点——从 Intro「+50% 复制 block」到「+7.4% 参数仍 SOTA」闭环。</p>
+          <h4>潜在漏洞</h4>
+          <p>CRS/TDSM 超参（top-11、channel group 数）仍需 ablation 支撑；跨 backbone（Flux/SD3）与 video DiT 未充分验证。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="summary" id="notation">
+      <h2>符号速查表</h2>
+      <table class="notation">
+        <thead><tr><th>符号</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td>$CRS_i$</td><td>第 $i$ 层 ControlNet Relevance Score（式 1），FID/HDD rank 各半加权</td></tr>
+          <tr><td>$F_i, H_i$</td><td>跳过第 $i$ 层 control block 时的 FID / HDD 排名</td></tr>
+          <tr><td>$c, x, t$</td><td>控制条件、主分支对应层特征、扩散时间步 embedding</td></tr>
+          <tr><td>$c_{\rm in}$</td><td>条件输入 $c + \text{ZC}(x)$，融合主分支信息</td></tr>
+          <tr><td>$c_{\rm cond}$</td><td>控制分支输出，经 ZC 注入主分支（式 2）</td></tr>
+          <tr><td>ZC</td><td>Zero Convolution，训练初期零初始化保证主干不受影响</td></tr>
+          <tr><td>TDSM</td><td>Two-Dimensional Shuffle Mixer，替换 SA+FFN 的轻量 token/channel mixer</td></tr>
+          <tr><td>RGLC</td><td>Relevance-Guided Lightweight Control Block，含 TDSM 的控制模块</td></tr>
+          <tr><td>$S, n, d_i$</td><td>TDSM 随机选取/shuffle 函数；通道分组数；第 $i$ 组通道维</td></tr>
+          <tr><td>HDD / MSE-d / mIoU</td><td>边缘控制 Hausdorff 距离 / 深度 MSE / 分割 mean IoU</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="summary" id="overview">
+      <h2>论证结构总览</h2>
+      <div class="skeleton">
+        问题（DiT 可控方法参数/FLOPs 暴涨 + 各层控制相关性被忽视 → 均匀 copy block 冗余）<br/>
+        → 观察（skip-layer 实验：CRS 前中段峰值、深层可删 → Fig.1）<br/>
+        → 论点（CRS 引导稀疏放置 top-11 + RGLC/TDSM 轻量化 copy block）<br/>
+        → 方法（式 1 CRS；式 2 $c_{\rm cond}=\text{ZC}(\text{TDSM}(c_{\rm in})+c_{\rm in})$；TDSM 2D shuffle 理论）<br/>
+        → 证据（+7.38% params / +8.61% FLOPs vs α；Canny HDD 94.04 FID 20.34；Depth MSE-d 99.11；Seg mIoU 0.405；Fig.2–4）<br/>
+        → 结论（~15% PixArt-δ 控制开销、AAAI 2026）
+      </div>
+      <h4>核心主张（一句话）</h4>
+      <p>通过量化 DiT ControlNet 各层「删层敏感性」(CRS) 并据此稀疏放置轻量 TDSM 控制块，可在几乎不增开销的前提下超越 PixArt-δ 式全复制方案。</p>
+      <div class="strength"><strong>论证最强处：</strong>CRS 从实验观察到架构设计形成闭环；效率表（+7.4% vs +48%）与 Table 1 主结果同向；TDSM 有交互距离下界理论支撑；PixArt-δ 同设置重训保证公平。</div>
+      <div class="weakness"><strong>论证最弱处：</strong>CRS Profiling 绑定 PixArt-α 27-block 布局；top-11 为 ablation 选定非理论最优；TDSM shuffle 随机性可能影响推理确定性；未系统评估 video DiT / 多条件联合控制；与 OminiControl token 拼接路线正交但未 head-to-head。</div>
+      <p style="margin-top:1rem;font-size:0.85rem;color:var(--muted);">来源：<a href="https://arxiv.org/abs/2502.14377">arXiv:2502.14377</a> · AAAI 2026 · <a href="https://360cvgroup.github.io/RelaCtrl/">Project</a> · <a href="https://github.com/360CVGroup/RelaCtrl">GitHub</a></p>
+    </section>
+
+    <section class="summary faq" id="faq">
+      <h2>🧩 结构化十问（AI 解构）</h2>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.75rem;">让 AI 当助教，从十个角度提取论文骨架。</p>
+
+      <details open>
+        <summary>Q1 · 论文试图解决什么问题？</summary>
+        <div class="answer">DiT 可控生成现有方法（PixArt-δ 复制 13 block、OminiControl 翻倍 token）引入<strong>过多参数与计算</strong>，且<strong>忽视各层对控制信号的不同相关性</strong>，导致冗余。目标：在 PixArt-α 等 DiT 上高效集成 Canny/Depth/Seg 等控制，开销远小于 PixArt-δ 且性能更优（§1）。</div>
+      </details>
+      <details open>
+        <summary>Q2 · 这是否是一个新问题？</summary>
+        <div class="answer">ControlNet 与 PixArt-δ 非新，但「DiT 层间控制相关性非均匀」是本文新 empirical finding；「按 CRS 稀疏放置 + 专用轻量 mixer」是新的系统设计问题。与 LLM layer pruning（深层可删）规律<strong>相反</strong>——控制分支关键层在前中段。</div>
+      </details>
+      <details open>
+        <summary>Q3 · 要验证什么科学假设？</summary>
+        <div class="answer">假设：① 各 control layer 对 FID/HDD 贡献不均，可用 CRS 排序；② 仅在 top-CRS 位置放 11 个 RGLC 可匹配/超越 13 个 full copy block；③ TDSM 可在极低参数下替代 SA+FFN 完成 token/channel mixing 且不损控制质量。</div>
+      </details>
+      <details open>
+        <summary>Q4 · 有哪些相关研究？如何归类？</summary>
+        <div class="answer">
+          <ul>
+            <li><strong>DiT T2I：</strong>PixArt-α/δ, Flux, SD3</li>
+            <li><strong>U-Net 可控：</strong>ControlNet, Uni-Control, ControlNet-XS, ControlNext</li>
+            <li><strong>DiT 可控：</strong>PixArt-δ (copy block), OminiControl (token concat)</li>
+            <li><strong>高效 Mixer：</strong>MetaFormer, grouped/shuffle attention (Huang et al.)</li>
+          </ul>
+          作者：Ke Cao, Jing Wang, Ao Ma 等（USTC / 360 AI Research）。
+        </div>
+      </details>
+      <details open>
+        <summary>Q5 · 解决方案的关键是什么？</summary>
+        <div class="answer">三件套：① CRS 度量（式 1）量化层重要性；② 按 CRS 选 top-11 位置 + 高相关层减少 TDSM channel group；③ RGLC 中 TDSM 替换 SA+FFN，式 2 残差 + zero conv 注入。相对 PixArt-α 仅 +45M / +46.7 GFLOPs。</div>
+      </details>
+      <details open>
+        <summary>Q6 · 实验是如何设计的？</summary>
+        <div class="answer">COCO val；Canny/HED/Depth/Seg 四任务；FID、C-Ae、C-SC、HDD、MSE-d、mIoU。与 SD1.5/SDXL SOTA 及 PixArt-δ 对比；PixArt-δ 与 RelaCtrl 控制分支同设置从零训练。消融验证 CRS 排序、控制层数量、TDSM vs full block。</div>
+      </details>
+      <details open>
+        <summary>Q7 · 用什么数据集评估？代码开源吗？</summary>
+        <div class="answer">主实验 COCO validation（Lin et al. 2014）；控制条件由标准预处理 pipeline 生成。论文未强调公开 repo；基线用官方预训练权重（SD 系），DiT 控制分支作者自行训练。</div>
+      </details>
+      <details open>
+        <summary>Q8 · 实验结果是否很好支持了假设？</summary>
+        <div class="answer">较好支持：效率 +7.4% params 仍 Canny HDD 94.04 / FID 20.34 等多项 bold best；定性 Fig.3–4 对齐更好。保留：部分 CLIP 指标与 PixArt-δ 接近；CRS 是否 cross-task 通用需更多 ablation。</div>
+      </details>
+      <details open>
+        <summary>Q9 · 这篇论文到底有什么贡献？</summary>
+        <div class="answer">① 发现 DiT-ControlNet 层相关性分布（前中段峰值）；② CRS 引导的稀疏控制放置策略；③ TDSM 2D shuffle mixer 及交互距离理论；④ 以 ~15% PixArt-δ 控制成本取得 SOTA 级 COCO 控制结果（AAAI 2026）。</div>
+      </details>
+      <details open>
+        <summary>Q10 · 下一步可以做什么？</summary>
+        <div class="answer">自然延伸：CRS 自动迁移到 Flux/SD3/video DiT；学习式 CRS 替代 skip-layer profiling；与 OminiControl  token 路线融合；多条件联合控制；开源训练代码与预训练 RGLC 权重；推理时动态按条件调整 top-k 层。</div>
+      </details>
+    </section>
+
+    <section class="summary deepdive" id="deepdive">
+      <h2>🔬 深挖追问</h2>
+
+      <div class="block">
+        <h4>第一性原理 · 本质</h4>
+        <p>ControlNet 的本质是在<strong>冻结生成主干</strong>旁路注入<strong>条件梯度场</strong>。U-Net 有 encoder/decoder 层次，copy 前半合理；DiT 是<strong>同质 block 堆叠</strong>，「复制前 13 层」是 PixArt-δ 的启发式，并非最优。RelaCtrl 把「哪一层该听控制信号」变成可测量、可排序的 CRS——从 craft 升格为 data-driven design。</p>
+      </div>
+      <div class="block">
+        <h4>第一性原理 · CRS vs 剪枝文献</h4>
+        <p>LLM/DiT 主干剪枝常发现<strong>深层冗余</strong>；ControlNet 分支却<strong>前中段最敏感</strong>。直觉：浅层控制特征与 spatial condition（边缘/深度）对齐，深层更负责语义/纹理，control residual 边际递减。这解释为何「少复制两层」不够——删错层比少层更伤。</p>
+      </div>
+      <div class="block">
+        <h4>第一性原理 · TDSM 数学</h4>
+        <p>MetaFormer 分解 token mixer (SA) + channel mixer (FFN)。TDSM 用随机 $S: c_{\rm in}\to c_{\rm rs}^i$ 在 $H\times W\times d_i$ 局部窗做 SA，期望交互距离 $d(t_j)\geq\Omega(\frac{\sqrt{2}}{4}(H+Wd_i))$（Thm 4），shuffle+recovery 保 reversible。高 CRS 层减小 $n$（更大 $d_i$）= 相关性引导的<strong>容量分配</strong>。</p>
+      </div>
+      <div class="block crit">
+        <h4>批判性思维 · 我们还没问的根本问题（盲区）</h4>
+        <ul>
+          <li><strong>CRS 任务依赖：</strong>Fig.1 基于单一条件训练的全复制模型；Canny 上得到的 CRS 排序用于 Depth/Seg 是否最优？</li>
+          <li><strong>top-11 离散性：</strong>11 vs 13 是 ablation 结果，缺少连续 Pareto 曲线（层数 vs FID/HDD）。</li>
+          <li><strong>TDSM 随机性：</strong>训练/推理 shuffle 是否固定 seed？对可复现工业部署的影响未讨论。</li>
+          <li><strong>与 OminiControl 对比：</strong>token 翻倍路线参数少但 FLOPs 高；两种 efficiency 维度未统一 benchmark。</li>
+          <li><strong>Scale-up：</strong>611M PixArt-α 上验证；Flux 级 DiT 上 CRS 分布是否仍前中段峰值？</li>
+          <li><strong>训练成本：</strong>虽推理轻，CRS profiling 需先训练 27-layer full ControlNet——一次性成本仍高。</li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="lightbox" role="dialog" aria-modal="true" aria-label="放大查看">
+    <span class="lb-close" aria-hidden="true">&times;</span>
+    <div class="lb-content"></div>
+    <div class="lb-cap"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral', flowchart: { htmlLabels: true } });</script>
+  <script>
+    function syncScrollPad() {
+      var head = document.querySelector('.sticky-head');
+      if (head) document.documentElement.style.scrollPaddingTop = (head.offsetHeight + 8) + 'px';
+    }
+    window.addEventListener('load', syncScrollPad);
+    window.addEventListener('resize', syncScrollPad);
+    syncScrollPad();
+
+    (function () {
+      var lb = document.getElementById('lightbox');
+      var content = lb.querySelector('.lb-content');
+      var cap = lb.querySelector('.lb-cap');
+
+      function findZoomTarget(node) {
+        var el = node.closest ? node.closest('img, svg') : null;
+        if (!el) return null;
+        if (!el.closest('.diagram, .figure-row, .mermaid')) return null;
+        return el;
+      }
+      function nearestCaption(el) {
+        var fig = el.closest('figure') || el.closest('.diagram') || el.closest('.figure-row');
+        var c = fig && fig.querySelector('figcaption');
+        return c ? c.textContent.trim() : '';
+      }
+      function openLightbox(node, caption) {
+        content.innerHTML = '';
+        var clone = node.cloneNode(true);
+        clone.style.cursor = 'default';
+        clone.style.boxShadow = 'none';
+        var r = node.getBoundingClientRect();
+        var vw = window.innerWidth * 0.96, vh = window.innerHeight * 0.92;
+        var w = r.width || node.clientWidth || 600;
+        var h = r.height || node.clientHeight || 400;
+        var scale = Math.min(vw / w, vh / h);
+        if (!isFinite(scale) || scale <= 0) scale = 1;
+        clone.style.width = Math.round(w * scale) + 'px';
+        clone.style.height = Math.round(h * scale) + 'px';
+        clone.style.maxWidth = 'none';
+        clone.style.maxHeight = 'none';
+        content.appendChild(clone);
+        cap.textContent = caption || '';
+        lb.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+      function closeLightbox() {
+        lb.classList.remove('open');
+        content.innerHTML = '';
+        document.body.style.overflow = '';
+      }
+      document.addEventListener('click', function (e) {
+        if (lb.classList.contains('open')) { closeLightbox(); return; }
+        var el = findZoomTarget(e.target);
+        if (el) { e.preventDefault(); e.stopPropagation(); openLightbox(el, nearestCaption(el)); }
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && lb.classList.contains('open')) closeLightbox();
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PixArt-δ — Fast and Controllable Image Generation with LCM · 逻辑精读</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+  <style>
+    :root {
+      --navy: #1a2744;
+      --paper: #faf8f5;
+      --thesis: #fff3cd;
+      --concept: #f8d7da;
+      --evidence: #cfe2ff;
+      --counter: #d1e7dd;
+      --method: #e2d9f3;
+      --text: #2c2c2c;
+      --muted: #6c757d;
+      --border: #e8e4df;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'IBM Plex Sans', sans-serif; background: var(--paper); color: var(--text); line-height: 1.6; }
+    .sticky-head { position: sticky; top: 0; z-index: 100; }
+    .top-nav { background: var(--navy); color: #fff; padding: 1rem 2rem; }
+    .top-nav h1 { font-size: 1.25rem; font-weight: 600; }
+    .top-nav h1 a { color: #fff; text-decoration: none; border-bottom: 1px dotted rgba(255,255,255,0.5); }
+    .top-nav h1 a:hover { border-bottom-style: solid; }
+    .top-nav .meta { font-size: 0.85rem; opacity: 0.85; margin-top: 0.25rem; }
+    .legend { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.75rem; font-size: 0.8rem; }
+    .legend span { padding: 0.15rem 0.5rem; border-radius: 3px; color: #2c2c2c; }
+    .chapter-nav { background: #fff; border-bottom: 1px solid var(--border); padding: 0.75rem 2rem; overflow-x: auto; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+    .chapter-nav a { color: var(--navy); text-decoration: none; margin-right: 1.25rem; font-size: 0.9rem; font-weight: 500; }
+    .chapter-nav a:hover { text-decoration: underline; }
+    main { max-width: 1680px; margin: 0 auto; padding: 2rem; }
+    .section-title { font-size: 1.5rem; color: var(--navy); margin: 2rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--navy); }
+    .col-labels { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 0.5rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+    .row { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; align-items: start; }
+    .col-original { font-family: 'Lora', serif; font-size: 0.95rem; line-height: 1.75; }
+    .col-original p { margin-bottom: 0.75rem; }
+    .col-translation { font-size: 0.92rem; line-height: 1.75; color: #333; }
+    .col-translation p { margin-bottom: 0.75rem; }
+    .analysis-card { background: #fff; border-left: 4px solid var(--navy); padding: 1rem 1.25rem; border-radius: 0 6px 6px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.06); font-size: 0.9rem; }
+    .analysis-card .tag { display: inline-block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0.5rem; color: var(--navy); }
+    .analysis-card h4 { font-size: 0.85rem; color: var(--muted); margin: 0.75rem 0 0.25rem; }
+    .analysis-card p { margin-bottom: 0.5rem; }
+    .analysis-card.deep { border-left-width: 5px; }
+    .analysis-detail { margin: 0.75rem 0; padding-top: 0.5rem; border-top: 1px dashed var(--border); }
+    .analysis-detail:first-of-type { border-top: none; }
+    .exp-detail { list-style: none; margin: 0.5rem 0; }
+    .exp-detail li { margin-bottom: 0.4rem; }
+    .exp-detail li strong { color: var(--navy); }
+    .exp-table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.82rem; }
+    .exp-table th, .exp-table td { border: 1px solid var(--border); padding: 0.35rem 0.5rem; text-align: left; }
+    .exp-table th { background: var(--paper); color: var(--navy); font-weight: 600; }
+    .exp-table tr.is-ours { background: var(--evidence); }
+    .exp-table tr.is-ours td { font-weight: 600; }
+    .notation { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.88rem; background: #fff; }
+    .notation th, .notation td { border: 1px solid var(--border); padding: 0.4rem 0.6rem; text-align: left; }
+    .notation th { background: var(--paper); color: var(--navy); font-weight: 600; }
+    .notation td:first-child { width: 22%; white-space: nowrap; }
+    .diagram { margin: 0.75rem 0; }
+    .diagram img, .diagram svg { max-width: 100%; height: auto; display: block; border: 1px solid var(--border); border-radius: 4px; background: #fff; }
+    .diagram figcaption { font-size: 0.78rem; color: var(--muted); margin-top: 0.35rem; }
+    .figure-row { margin: 1.5rem 0; padding: 1.25rem; background: #fff; border: 1px solid var(--border); border-radius: 8px; }
+    .figure-row figure { margin: 0; text-align: center; }
+    .figure-row img, .figure-row svg { max-width: 100%; height: auto; display: inline-block; }
+    .figure-row figcaption { font-size: 0.82rem; color: var(--muted); margin-top: 0.5rem; }
+    .figure-row h3 { color: var(--navy); font-size: 1rem; margin-bottom: 0.75rem; }
+    .mermaid { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem; margin: 0.5rem 0; text-align: center; }
+    .diagram img, .diagram svg, .figure-row img, .figure-row svg { cursor: zoom-in; transition: box-shadow .15s; }
+    .diagram img:hover, .diagram svg:hover, .figure-row img:hover, .figure-row svg:hover { box-shadow: 0 0 0 2px #0d9488; }
+    #lightbox { position: fixed; inset: 0; background: rgba(10,12,20,0.92); display: none; align-items: center; justify-content: center; z-index: 1000; cursor: zoom-out; padding: 3vh 3vw; }
+    #lightbox.open { display: flex; }
+    #lightbox .lb-content { display: flex; align-items: center; justify-content: center; }
+    #lightbox .lb-content img, #lightbox .lb-content svg { display: block; background: #fff; border-radius: 6px; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
+    #lightbox .lb-close { position: fixed; top: 1rem; right: 1.5rem; color: #fff; font-size: 2rem; line-height: 1; opacity: 0.8; }
+    #lightbox .lb-cap { position: fixed; bottom: 1.2rem; left: 0; right: 0; text-align: center; color: #e8e4df; font-size: 0.8rem; padding: 0 2rem; }
+    .hl-thesis { background: var(--thesis); padding: 0 2px; }
+    .hl-concept { background: var(--concept); padding: 0 2px; }
+    .hl-evidence { background: var(--evidence); padding: 0 2px; }
+    .hl-counter { background: var(--counter); padding: 0 2px; }
+    .hl-method { background: var(--method); padding: 0 2px; }
+    .summary { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 2rem; margin-top: 3rem; }
+    .summary h2 { color: var(--navy); margin-bottom: 1rem; }
+    .summary .skeleton { font-family: 'IBM Plex Sans', monospace; background: var(--paper); padding: 1rem; border-radius: 4px; margin: 1rem 0; line-height: 1.9; }
+    .summary .strength, .summary .weakness { padding: 0.75rem 1rem; border-radius: 4px; margin: 0.5rem 0; }
+    .summary .strength { background: var(--counter); }
+    .summary .weakness { background: var(--concept); }
+    .feynman { background: #fff; border: 1px solid var(--border); border-left: 5px solid #0d9488; border-radius: 0 8px 8px 0; padding: 1.25rem 1.5rem; margin: 1.5rem 0 2rem; }
+    .feynman h2 { color: #0d9488; font-size: 1.15rem; margin-bottom: 0.35rem; }
+    .feynman .tldr-meta { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.6rem; }
+    .feynman p { font-size: 0.95rem; line-height: 1.85; margin-bottom: 0.6rem; }
+    .faq details { background: #fff; border: 1px solid var(--border); border-radius: 6px; margin: 0.5rem 0; }
+    .faq details[open] { box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .faq summary { cursor: pointer; font-weight: 600; color: var(--navy); padding: 0.7rem 0.9rem; list-style: none; font-size: 0.92rem; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::before { content: '▸'; color: #0d9488; margin-right: 0.5rem; }
+    .faq details[open] summary::before { content: '▾'; }
+    .faq .answer { padding: 0 0.9rem 0.85rem 1.8rem; font-size: 0.9rem; line-height: 1.8; color: #333; }
+    .deepdive .block { margin: 0.9rem 0; padding: 0.85rem 1.1rem; border-radius: 4px; background: var(--paper); border-left: 3px solid #6f42c1; }
+    .deepdive .block.crit { border-left-color: #dc3545; background: #fdf0f1; }
+    .deepdive .block h4 { color: var(--navy); margin-bottom: 0.3rem; }
+    .deepdive .block ul { margin: 0.3rem 0 0 1.1rem; }
+    .deepdive .block li { margin-bottom: 0.3rem; font-size: 0.9rem; }
+    @media (max-width: 1100px) {
+      .col-labels { display: none; }
+      .row { grid-template-columns: 1fr; }
+      .row > div::before {
+        display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+        letter-spacing: 0.05em; color: var(--muted); margin-bottom: 0.35rem;
+      }
+      .col-original::before { content: '原文'; }
+      .col-translation::before { content: '翻译'; }
+      .col-analysis::before { content: '解析'; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sticky-head">
+    <header class="top-nav">
+      <h1><a href="https://arxiv.org/abs/2401.05252" target="_blank" rel="noopener">PixArt-δ — Fast and Controllable Image Generation with Latent Consistency Models</a></h1>
+      <div class="meta">DeepLearning-Paper-with-Code · Diffusion Model · arXiv(2024) · Huawei Noah's Ark Lab</div>
+      <div class="legend">
+        <span class="hl-thesis">核心论点</span>
+        <span class="hl-concept">关键概念</span>
+        <span class="hl-evidence">实证证据</span>
+        <span class="hl-counter">让步/反驳</span>
+        <span class="hl-method">方法论</span>
+      </div>
+    </header>
+    <nav class="chapter-nav">
+      <a href="#feynman">速读</a>
+      <a href="#abstract">Abstract</a>
+      <a href="#intro">Introduction</a>
+      <a href="#lcm">LCM</a>
+      <a href="#controlnet">ControlNet</a>
+      <a href="#experiments">Experiments</a>
+      <a href="#conclusion">Conclusion</a>
+      <a href="#notation">符号表</a>
+      <a href="#overview">总览</a>
+      <a href="#faq">十问</a>
+      <a href="#deepdive">深挖</a>
+    </nav>
+  </div>
+
+  <main>
+
+    <section class="feynman" id="feynman">
+      <h2>🎮 费曼一分钟（通俗速读）</h2>
+      <div class="tldr-meta">通俗速读 · 先建立模糊认知，再读正文</div>
+      <p>PixArt-α 已是高效 DiT 文生图基座；<strong>PixArt-δ</strong> 在其上叠两层能力：<strong>LCM 蒸馏</strong>把采样从 14 步压到 <strong>2–4 步</strong>，A100 上 <strong>0.5s/1024px</strong>（相对 α 约 <strong>7× 加速</strong>）；<strong>ControlNet-Transformer</strong> 把边缘/深度等条件注入 DiT，实现细粒度可控生成。</p>
+      <p>LCM 侧：用 <span class="hl-method">Latent Consistency Distillation (LCD)</span> 在 120K 图文对上蒸馏 Teacher（PixArt-α），固定 CFG scale <strong>ω_fix=4.5</strong>（比 LCM 原版随机 ω embedding 更简单且效果更好），约 <strong>5K iter</strong> 收敛；32GB V100 一天可训完，8-bit 推理 <strong>&lt;8GB VRAM</strong>。</p>
+      <p>控制侧：UNet 式 ControlNet 强行把 DiT 28 block 拆成「encoder/decoder」效果差；改为复制前 <strong>N=13</strong> 个 block，zero linear 注入主支，与 Transformer 数据流一致。简单边缘 N=1 够用，人脸轮廓等难例需更大 N；训练有 <strong>sudden converge</strong> 现象（300–1000 steps 内突然对齐条件）。</p>
+    </section>
+
+    <h2 class="section-title" id="abstract">Abstract</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>This technical report introduces <span class="hl-thesis">PixArt-δ</span>, integrating <span class="hl-concept">Latent Consistency Model (LCM)</span> and <span class="hl-concept">ControlNet</span> into PixArt-α. LCM significantly accelerates inference, enabling high-quality images in just <span class="hl-evidence">2–4 steps</span>. PixArt-δ achieves <span class="hl-evidence">0.5 seconds</span> for 1024×1024 images — a <span class="hl-evidence">7× improvement</span> over PixArt-α.</p>
+        <p>PixArt-δ is efficiently trainable on <span class="hl-evidence">32GB V100 GPUs within a single day</span>. With <span class="hl-method">8-bit inference</span>, it synthesizes 1024px images within <span class="hl-evidence">8GB GPU memory</span>. We introduce <span class="hl-thesis">ControlNet-Transformer</span>, tailored for Transformers, achieving explicit controllability alongside high-quality generation — a promising open-source alternative to Stable Diffusion.</p>
+      </div>
+      <div class="col-translation">
+        <p>本技术报告提出 PixArt-δ，将 LCM 与 ControlNet 集成到 PixArt-α。LCM 大幅加速推理，仅需 2–4 步即可生成高质量图像；1024×1024 图像生成仅需 0.5 秒，相对 PixArt-α 提速约 7 倍。</p>
+        <p>PixArt-δ 可在 32GB V100 上一天内完成训练；配合 8-bit 推理，8GB 显存即可合成 1024px 图像。我们提出面向 Transformer 的 ControlNet-Transformer，在保持生成质量的同时实现显式可控，是 Stable Diffusion 系列的有力开源替代。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #ffc107;">
+          <span class="tag">概括主张</span>
+          <h4>段落功能</h4>
+          <p>双贡献宣告：① LCM 蒸馏加速（步数/延迟/显存）；② DiT 专用 ControlNet 架构。数字 hook：0.5s、7×、8GB。</p>
+          <h4>逻辑角色</h4>
+          <p>论证链起点：在已有高效基座 PixArt-α 上，同时解决「推理慢」与「不可控」两个部署痛点。</p>
+          <h4>潜在漏洞</h4>
+          <p>技术报告非 peer-review 论文；LCM 蒸馏数据仅 120K 内部集；ControlNet 实验以 HED 为主，其他条件标为 future work。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="intro">1. Introduction</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>We propose PixArt-δ by incorporating <span class="hl-concept">LCM</span> and <span class="hl-concept">ControlNet</span> into PixArt-α — an advanced 1024px DiT T2I model known for superior quality and efficient training.</p>
+        <p>LCM views reverse diffusion as solving an augmented <span class="hl-method">PF-ODE</span>, enabling ~4-step sampling while preserving quality. PixArt-δ takes <span class="hl-evidence">0.5s per 1024×1024 image on A100</span> (7× faster than α). We also support <span class="hl-method">LCM-LoRA</span> for convenience.</p>
+      </div>
+      <div class="col-translation">
+        <p>我们在 PixArt-α（高效 1024px DiT 文生图基座）上集成 LCM 与 ControlNet，提出 PixArt-δ。</p>
+        <p>LCM 将反向扩散视为增广 PF-ODE 求解，约 4 步采样仍保质量；A100 上 0.5s/张 1024px，相对 α 提速 7×。同时支持 LCM-LoRA 模块。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #1a2744;">
+          <span class="tag">问题语境</span>
+          <h4>段落功能</h4>
+          <p>锚定 PixArt-α 作为 Teacher/基座；LCM 解决推理瓶颈，ControlNet 解决条件控制——两条正交能力线。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <p>ControlNet excels at conditioning UNet diffusion models, but <span class="hl-counter">direct replication into Transformer proves less effective</span>. We propose <span class="hl-thesis">ControlNet-Transformer</span> customized for DiT, achieving explicit controllability with high-quality generation.</p>
+      </div>
+      <div class="col-translation">
+        <p>ControlNet 在 UNet 扩散模型上表现优异，但直接套用到 Transformer 效果不佳。我们提出面向 DiT 定制的 ControlNet-Transformer，实现显式可控与高质量生成。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #ffc107;">
+          <span class="tag">提出论点</span>
+          <h4>段落功能</h4>
+          <p>Intro 第二 pivot：UNet 架构假设（encoder-decoder + skip）不适用于同质 DiT block 堆叠——预告 §4 架构对比。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="lcm">3. LCM in PixArt-δ — LCD · Noise Schedule</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>We employ <span class="hl-method">Latent Consistency Distillation (LCD)</span> on 120K internal image-text pairs. Three models function as denoisers: <strong>Teacher</strong> (PixArt-α), <strong>Student</strong> $f_\theta$, and <strong>EMA</strong> $f_{\theta^-}$ for the ODE solver $\Psi$.</p>
+        <p>Training: sample noise at $t_{n+k}$ → Teacher denoises to $\hat{z}_{T_{t_0}}$ → ODE solver computes $\hat{z}^{\Psi,\omega}_{t_n}$ → EMA denoises to $\hat{z}_{E_{t_0}}$; Student denoises $z_{t_{n+k}}$ to $\hat{z}_{S_{t_0}}$ → minimize $d(\hat{z}_{S_{t_0}}, \hat{z}_{E_{t_0}})$.</p>
+        <p>Unlike original LCM's variable $\omega \in [\omega_{min}, \omega_{max}]$, we use constant <span class="hl-evidence">$\omega_{fix}$</span>, removing guidance scale embedding for simplicity.</p>
+      </div>
+      <div class="col-translation">
+        <p>在 120K 内部图文对上执行 LCD。三模型协同：Teacher（PixArt-α）、Student $f_\theta$、EMA $f_{\theta^-}$ 配合 ODE 求解器 $\Psi$。</p>
+        <p>训练流程：在 $t_{n+k}$ 采样噪声 → Teacher 去噪得 $\hat{z}_{T_{t_0}}$ → ODE 求解器从 $z_{t_{n+k}}$ 与 $\hat{z}_{T_{t_0}}$ 算 $\hat{z}^{\Psi,\omega}_{t_n}$ → EMA 进一步去噪得 $\hat{z}_{E_{t_0}}$；Student 对 $z_{t_{n+k}}$ 去噪得 $\hat{z}_{S_{t_0}}$ → 最小化两者距离（一致性蒸馏目标）。</p>
+        <p>与原版 LCM 从 $[\omega_{min}, \omega_{max}]$ 随机采样 $\omega$ 不同，我们固定 $\omega_{fix}$，去掉 guidance scale embedding，实现更简单。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #6f42c1;">
+          <span class="tag">LCD 算法</span>
+          <div class="analysis-detail">
+            <h4>蒸馏数据流（自绘）</h4>
+            <div class="diagram">
+              <pre class="mermaid">
+flowchart TB
+  Z["z ~ D_z, sample t_{n+k}"] --> T["Teacher: denoise → ẑ_T"]
+  Z --> S["Student f_θ: denoise → ẑ_S"]
+  Z --> PSI["ODE Solver Ψ → ẑ^Ψ,ω_tn"]
+  PSI --> EMA["EMA f_θ⁻: denoise → ẑ_E"]
+  S --> LOSS["L = d(ẑ_S, ẑ_E)"]
+  EMA --> LOSS
+  LOSS --> UPD["θ ← θ - η∇L; EMA update"]
+              </pre>
+              <figcaption>Algorithm 1：Student 学 EMA 目标，Teacher 提供 ODE 轨迹锚点。固定 ω_fix 省去 ω embedding 分支。点击放大。</figcaption>
+            </div>
+          </div>
+          <div class="analysis-detail">
+            <h4>CFG 蒸馏项</h4>
+            <p>$\hat{z}^{\Psi,\omega_{fix}}_{t_n} = z_{t_{n+k}} + (1+\omega_{fix})\Psi(z_{t_{n+k}}, t_{n+k}, t_n, c) - \omega_{fix}\Psi(z_{t_{n+k}}, t_{n+k}, t_n, \varnothing)$ — 在 latent 空间直接预测 PF-ODE 解。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 1：LCM 蒸馏训练管线</h3>
+      <figure>
+        <img src="assets/pixart-delta/fig1.png" alt="PixArt-δ LCD 训练管线：Teacher / Student / EMA 与 ODE 轨迹">
+        <figcaption>Fig.1：上半为噪声采样与沿 ODE 轨迹去噪的时序；下半展开 Teacher 与 Student 在蒸馏中的角色，序号标注步骤顺序。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Hyper-parameters:</strong> We ablate CFG scale and batch size via FID and CLIP scores.</p>
+        <p>• <span class="hl-evidence">CFG Scale:</span> Compare $\omega_{fix}$=3.5, <strong>4.5</strong> (optimal for PixArt-α), and $\omega_{Embed}$ (standard LCM). Constant guidance scale <span class="hl-evidence">improves performance and simplifies implementation</span>.</p>
+        <p>• <span class="hl-evidence">Batch Size:</span> 2×V100 (bs=24) vs 32×V100 (bs=384). Larger batch improves FID/CLIP, but smaller batch also converges fast with comparable quality (Fig. 8).</p>
+        <p>• <span class="hl-evidence">Convergence:</span> Training reaches convergence after <strong>~5,000 iterations</strong>; further gains minimal.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>超参消融：</strong>以 FID 与 CLIP 评估 CFG scale 与 batch size。</p>
+        <p>• CFG：对比 3.5、<strong>4.5</strong>（PixArt-α 最优）、以及 LCM 标准 ω embedding。固定 scale 效果更好且实现更简单。</p>
+        <p>• Batch：2×V100（总 bs=24）vs 32×V100（总 bs=384）。大 batch 提升指标，但小 batch 也能快速收敛（Fig.8）。</p>
+        <p>• 收敛：约 <strong>5000 iter</strong> 后增益甚微。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #0d6efd;">
+          <span class="tag">关键数字</span>
+          <ul class="exp-detail">
+            <li><strong>ω_fix = 4.5</strong> — 与 PixArt-α 推理最优 CFG 一致，蒸馏时固定而非随机 embedding</li>
+            <li><strong>~5K iter</strong> — LCD 主收敛点；2×V100、lr=2e-5、EMA μ=0.95</li>
+            <li><strong>k=20</strong> skipping step；DDIM-Solver</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 3：FID / CLIP vs CFG scale &amp; batch size</h3>
+      <figure>
+        <img src="assets/pixart-delta/fig3.png" alt="ω_fix、ω_Embed 与 batch size 对 FID/CLIP 的影响">
+        <figcaption>Fig.3：固定 ω_fix=4.5 优于 ω embedding；大 batch 改善 FID/CLIP，但小 batch 亦可接受。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Noise Schedule Adjustment:</strong> We adapt LCM's noise schedule to align with PixArt-α's higher logSNR during distillation. Change $\beta_t$ from scaled-linear to <span class="hl-method">linear</span>: $\beta_{t_0}$: 0.00085→0.0001, $\beta_{t_T}$: 0.012→0.02. PixArt-δ parameterizes a <span class="hl-evidence">broader noise distribution</span>, enhancing generation (Hoogeboom et al., 2023; Chen, 2023).</p>
+        <p>Student initializes from Teacher (PixArt-α) with <span class="hl-method">identical structure and trainable parameters</span> — no performance compromise. LCM-LoRA integration supported for broader applications.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>噪声日程调整：</strong>将 LCM 噪声日程对齐 PixArt-α 更高 logSNR；$\beta_t$ 从 scaled-linear 改为 linear（$\beta_{t_0}$、$\beta_{t_T}$ 相应调整），覆盖更广噪声分布。</p>
+        <p>Student 与 Teacher 结构完全一致，可直接用 PixArt-α 权重初始化；并支持 LCM-LoRA 扩展。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #0d6efd;">
+          <span class="tag">训练效率 · 推理加速</span>
+          <table class="exp-table">
+            <thead><tr><th>设置</th><th>PixArt-δ</th><th>SDXL LCM</th><th>SD-V1.5 LCM</th></tr></thead>
+            <tbody>
+              <tr class="is-ours"><td>数据量</td><td>120K</td><td>650K</td><td>650K</td></tr>
+              <tr class="is-ours"><td>分辨率</td><td>1024px</td><td>1024px</td><td>768px</td></tr>
+              <tr class="is-ours"><td>Batch</td><td>12×32</td><td>12×64</td><td>16×8</td></tr>
+              <tr class="is-ours"><td>显存</td><td>~32G</td><td>~80G</td><td>~80G</td></tr>
+            </tbody>
+          </table>
+          <table class="exp-table">
+            <thead><tr><th>硬件</th><th>PixArt-δ (4步)</th><th>SDXL LCM (4步)</th><th>PixArt-α (14步)</th><th>SDXL (25步)</th></tr></thead>
+            <tbody>
+              <tr class="is-ours"><td>A100</td><td><strong>0.5s</strong></td><td>1.2s</td><td>2.2s</td><td>3.8s</td></tr>
+              <tr class="is-ours"><td>V100</td><td>0.8s</td><td>1.2s</td><td>5.5s</td><td>7.7s</td></tr>
+              <tr class="is-ours"><td>T4</td><td>3.3s</td><td>8.4s</td><td>16.0s</td><td>26.5s</td></tr>
+            </tbody>
+          </table>
+          <ul class="exp-detail">
+            <li><strong>8-bit 推理：</strong>&lt;8GB VRAM 可跑 1024px，甚至 CPU 可行</li>
+            <li><strong>训练：</strong>2×V100、bs=24、&lt;24GB 即可完成 LCD 微调</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="controlnet">4. ControlNet in PixArt-δ — UNet vs Transformer</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>ControlNet for UNet uses skip-connections between encoder and decoder. <span class="hl-counter">Transformers lack explicit encoder/decoder blocks</span>, making conventional ControlNet inappropriate.</p>
+        <p>PixArt-δ has <strong>28 Transformer blocks</strong>. We replace zero-convolution with <span class="hl-method">zero linear layer</span> (weight &amp; bias init to zero). Two designs explored:</p>
+        <p>• <span class="hl-counter">ControlNet-UNet:</span> Treat first 14 blocks as "encoder", last 14 as "decoder"; copy 14 encoding blocks, add outputs via skip to decoder. <span class="hl-counter">Suboptimal</span> — departs from Transformer data flow.</p>
+        <p>• <span class="hl-thesis">ControlNet-Transformer:</span> Apply ControlNet to first <strong>N</strong> base blocks. Copy first N blocks as trainable; output of $i$-th copy → zero linear → add to frozen $i$-th block output → feed $(i+1)$-th frozen block. Final <span class="hl-evidence">N=13</span>.</p>
+      </div>
+      <div class="col-translation">
+        <p>UNet ControlNet 靠 encoder-decoder skip 注入控制；Transformer 无显式 encoder/decoder，传统方案不适用。</p>
+        <p>PixArt-δ 共 28 个 Transformer block；zero conv 改为 <strong>zero linear</strong>（权重/偏置零初始化）。探索两种设计：</p>
+        <p>• <strong>ControlNet-UNet：</strong>前 14 block 当 encoder、后 14 当 decoder，复制 14 个编码 block 经 skip 连 decoder。<span class="hl-counter">效果差</span>——违背 Transformer 同质数据流。</p>
+        <p>• <strong>ControlNet-Transformer：</strong>仅复制前 N 个 block；第 i 个可训练副本输出经 zero linear 加到第 i 个冻结 block 输出，再送入第 i+1 冻结 block。最终 <strong>N=13</strong>。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #6f42c1;">
+          <span class="tag">架构对比</span>
+          <div class="analysis-detail">
+            <h4>ControlNet-Transformer 数据流（自绘）</h4>
+            <div class="diagram">
+              <pre class="mermaid">
+flowchart LR
+  COND["HED / Canny condition"] --> CP["Copy block 1..N<br/>(trainable)"]
+  MAIN["Frozen DiT block 1..N"] --> ADD["+ zero linear(copy_out)"]
+  CP --> ZL["Zero Linear"]
+  ZL --> ADD
+  ADD --> NEXT["→ frozen block i+1"]
+  MAIN2["Frozen blocks N+1..28"] --> OUT["1024px output"]
+  NEXT --> MAIN2
+              </pre>
+              <figcaption>与 UNet 式「encoder→decoder skip」不同，控制信号沿主支 block 顺序注入，保持 PixArt 原始前向路径。点击放大。</figcaption>
+            </div>
+          </div>
+          <div class="analysis-detail">
+            <h4>设计取舍</h4>
+            <p>N=13 在算力与控制精度间平衡：简单场景 N=1 够用，人脸/身体轮廓等难边缘需更大 N；复制 27 层（全复制）收益递减。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 2：ControlNet-UNet vs ControlNet-Transformer（MAIN）</h3>
+      <figure>
+        <img src="assets/pixart-delta/fig2.png" alt="ControlNet-Transformer 与 ControlNet-UNet 架构对比">
+        <figcaption>Fig.2：(b) ControlNet-UNet 强行 encoder-decoder + skip；(c) ControlNet-Transformer 复制前 N block，zero linear 逐层注入主支——与 DiT 数据流一致。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Ablation (HED, 512px):</strong> ControlNet-Transformer <span class="hl-evidence">outperforms ControlNet-UNet</span> — faster convergence, better controllability. Copied blocks ablated: N ∈ {1, 4, 7, 13, 27}.</p>
+        <p>Most scenes/objects: <span class="hl-evidence">N=1 suffices</span>. Challenging edges (face/body outlines): performance improves as N increases. <span class="hl-evidence">N=13 optimal</span> balancing compute and quality.</p>
+        <p><strong>Sudden Converge:</strong> Typically occurs at <span class="hl-evidence">300–1,000 steps</span> depending on condition difficulty. After sudden converge, details progressively improve (especially face/body outlines).</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>消融（HED 条件，512px）：</strong>ControlNet-Transformer 全面优于 UNet 式方案——收敛更快、可控性更强。复制 block 数 N ∈ {1,4,7,13,27}。</p>
+        <p>多数场景/物体：N=1 即可。难边缘（人脸/身体轮廓）：N 越大越好；<strong>N=13</strong> 为算力与性能最优折中。</p>
+        <p><strong>突然收敛：</strong>通常在 <strong>300–1000 steps</strong> 内突然对齐条件（与原版 ControlNet 类似）；之后细节逐步提升。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #0d6efd;">
+          <span class="tag">训练设置</span>
+          <ul class="exp-detail">
+            <li><strong>数据：</strong>3M HED-图文对；gradient accumulation=4</li>
+            <li><strong>硬件：</strong>16×V100 32GB；N=27 时 bs/GPU=2，其余 bs=12</li>
+            <li><strong>~1000 steps</strong> 多数边缘已满意；人脸轮廓需更多步</li>
+            <li>Canny 等其他条件标为 future work</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="experiments">Experiments &amp; Ablation</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>LCM Speed &amp; Quality:</strong> Fig. 7 compares PixArt-δ (4 steps) vs SDXL-LCM and PixArt-α (14 steps, DPM-Solver). PixArt-δ maintains high quality at 4-step inference across hardware (Tab. 2).</p>
+        <p><strong>Fast LCD Convergence:</strong> Fig. 8 shows 4-step samples during LCD on 2×V100 (bs=24, &lt;24GB) — impressive results before 5K iterations.</p>
+        <p><strong>ControlNet Quality:</strong> Fig. 9–10 demonstrate 1024px fine-grained control — precise geometric composition down to individual hair strands. Fig. 11 shows more PixArt-ControlNet samples.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>LCM 速度/质量：</strong>Fig.7 对比 PixArt-δ（4 步）与 SDXL-LCM、PixArt-α（14 步）；4 步推理在各硬件上保持领先延迟且质量可比。</p>
+        <p><strong>LCD 快速收敛：</strong>Fig.8 展示 2×V100 上 LCD 训练过程中的 4 步样例——5K iter 前已效果惊艳。</p>
+        <p><strong>控制质量：</strong>Fig.9–10 展示 1024px 细粒度可控生成（几何构图精确到发丝）；Fig.11 为更多控制样例。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #0d6efd;">
+          <span class="tag">论点↔证据</span>
+          <ul class="exp-detail">
+            <li><strong>加速：</strong>4 步 vs α 14 步 / SDXL 25 步；A100 0.5s 闭环 Tab.2 + Fig.4 视觉对比</li>
+            <li><strong>可控：</strong>ControlNet-Transformer N=13 + sudden converge 300–1000 steps → Fig.5 消融 + Fig.5 1024px 结果</li>
+            <li><strong>可及性：</strong>32GB 训 LCM、8GB 推理、一天内完成——降低社区部署门槛</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 4 / 7：LCM 速度对比与生成样例</h3>
+      <figure>
+        <img src="assets/pixart-delta/fig4.jpg" alt="PixArt-δ 与 SDXL-LCM、PixArt-α 的 4 步生成对比">
+        <figcaption>Fig.4/7：上半 PixArt-δ vs SDXL-LCM（均 4 步）；下半 PixArt-δ vs PixArt-α Teacher（14 步）。4 步质量接近 Teacher，速度显著领先。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 9–10：1024px 多样化控制结果</h3>
+      <figure>
+        <img src="assets/pixart-delta/fig5.jpg" alt="PixArt-ControlNet 1024px 高分辨率可控生成样例">
+        <figcaption>Fig.5：1024px 细粒度可控生成——地图、多元人像等复杂 prompt 下几何构图与边缘对齐精确（发丝级细节）。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="conclusion">5. Conclusion</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>We present <span class="hl-thesis">PixArt-δ</span>, integrating <span class="hl-concept">LCM</span> for <span class="hl-evidence">4-step sampling acceleration</span> while maintaining high quality. We propose <span class="hl-thesis">ControlNet-Transformer</span> tailored for DiT, enabling precise control over generated images.</p>
+        <p>Extensive experiments demonstrate faster sampling and ControlNet-Transformer's effectiveness in high-resolution controlled generation. PixArt-δ generates high-quality 1024px controllable images in <span class="hl-evidence">~1 second</span>, pushing SOTA in faster and more controlled image generation for real-time applications.</p>
+      </div>
+      <div class="col-translation">
+        <p>我们提出 PixArt-δ，集成 LCM 实现 4 步采样加速且保持高质量；并提出面向 DiT 的 ControlNet-Transformer，实现生成图像的精确控制。</p>
+        <p>实验验证更快采样与 ControlNet-Transformer 在高分辨率可控生成上的有效性；PixArt-δ 约 1 秒内生成 1024px 高质量可控图像，推动实时应用场景下的 SOTA。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #ffc107;">
+          <span class="tag">总结</span>
+          <h4>段落功能</h4>
+          <p>收束双贡献：LCM 蒸馏（步数/延迟/显存）+ ControlNet-Transformer（DiT 可控架构）。强调开源替代 SD 生态的定位。</p>
+          <h4>潜在漏洞</h4>
+          <p>ControlNet 仅系统验证 HED；定量指标（FID/HDD）不如后续 RelaCtrl 等工作完备；内部 120K/3M 数据集不可复现。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="summary" id="notation">
+      <h2>符号速查表</h2>
+      <table class="notation">
+        <thead><tr><th>符号</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td>$f_\theta$, $f_{\theta^-}$</td><td>Student 与 EMA 一致性函数（去噪网络）</td></tr>
+          <tr><td>$\Psi(\cdot)$</td><td>ODE 求解器（DDIM-Solver），在 LCD 中计算 $\hat{z}^{\Psi,\omega}_{t_n}$</td></tr>
+          <tr><td>$\omega_{fix}$</td><td>固定 CFG scale，最优值 <strong>4.5</strong>（PixArt-α 一致）</td></tr>
+          <tr><td>$k$</td><td>Skipping interval，取 <strong>20</strong></td></tr>
+          <tr><td>$t_n$, $t_{n+k}$</td><td>蒸馏时间步对；在 $t_{n+k}$ 采样噪声，Student/Teacher 在轨迹上对齐</td></tr>
+          <tr><td>$\beta_t$, logSNR</td><td>噪声日程系数；PixArt-δ 用 linear $\beta_t$ 对齐 α 更高 logSNR</td></tr>
+          <tr><td>$N$</td><td>ControlNet-Transformer 复制的 DiT block 数，最优 <strong>13</strong>（共 28 block）</td></tr>
+          <tr><td>Zero Linear</td><td>替代 zero conv 的线性层，权重/偏置零初始化，训练初期不扰动主支</td></tr>
+          <tr><td>LCD / LCM</td><td>Latent Consistency Distillation / Model — latent 空间一致性蒸馏加速</td></tr>
+          <tr><td>PF-ODE</td><td>Probability Flow ODE — 反向扩散的连续时间视角</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="summary" id="overview">
+      <h2>论证结构总览</h2>
+      <div class="skeleton">
+        问题（PixArt-α 质量好但推理慢、DiT 缺乏有效可控方案）<br/>
+        → 观察（UNet ControlNet 直接套 DiT 效果差；LCM 在 SD 上成功但需适配 α 噪声日程）<br/>
+        → 论点①（LCD 蒸馏 + 固定 ω_fix=4.5 + linear β_t → 2–4 步、0.5s/1024px、~5K iter 收敛）<br/>
+        → 论点②（ControlNet-Transformer：复制前 N=13 block + zero linear 注入，摒弃 encoder-decoder 假象）<br/>
+        → 证据（Tab.1/2 训练显存与推理延迟；Fig.1–3 LCM 管线与超参；Fig.2 架构；Fig.4/5 速度与 1024px 控制；sudden converge 300–1000 steps）<br/>
+        → 结论（开源高速可控 T2I，ICLR 2024 technical report）
+      </div>
+      <h4>核心主张（一句话）</h4>
+      <p>在 PixArt-α 上通过 LCD 蒸馏与 DiT 原生 ControlNet-Transformer 设计，同时实现 4 步近实时生成与 1024px 细粒度条件控制，且训练/推理门槛显著低于 SDXL-LCM。</p>
+      <div class="strength"><strong>论证最强处：</strong>双模块各自有清晰 ablation（ω_fix、batch、N、UNet vs Transformer）；硬件延迟表跨 A100/V100/T4 可验证；Student 与 Teacher 同构初始化降低蒸馏难度；8GB 推理具工程落地价值。</div>
+      <div class="weakness"><strong>论证最弱处：</strong>技术报告、内部数据集；ControlNet 仅 HED 系统实验；N=13 为经验最优非理论推导；与后续 RelaCtrl 等更高效控制方案相比参数开销 +50% 已被指出；缺少公开 benchmark 定量对比表。</div>
+      <p style="margin-top:1rem;font-size:0.85rem;color:var(--muted);">来源：<a href="https://arxiv.org/abs/2401.05252">arXiv:2401.05252</a> · Technical Report · Huawei Noah's Ark Lab / Tsinghua / HKU / Hugging Face · <a href="https://github.com/PixArt-alpha/PixArt-alpha">Code</a></p>
+    </section>
+
+    <section class="summary faq" id="faq">
+      <h2>🧩 结构化十问（AI 解构）</h2>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.75rem;">让 AI 当助教，从十个角度提取论文骨架。</p>
+
+      <details open>
+        <summary>Q1 · 论文试图解决什么问题？</summary>
+        <div class="answer">在高质量 DiT 文生图基座 PixArt-α 上同时解决：<strong>① 推理慢</strong>（14+ 步、秒级延迟）；<strong>② 缺乏细粒度可控生成</strong>（边缘/深度等条件）。目标：2–4 步近实时 1024px 生成 + DiT 原生 ControlNet（§1, §3–4）。</div>
+      </details>
+      <details open>
+        <summary>Q2 · 这是否是一个新问题？</summary>
+        <div class="answer">LCM 与 ControlNet 本身非新，但<strong>在 PixArt-α DiT 上联合适配</strong>是本文贡献：固定 ω_fix、linear β_t 噪声日程、以及 ControlNet-Transformer（非 UNet 式复制）是针对 DiT 的新工程设计问题。</div>
+      </details>
+      <details open>
+        <summary>Q3 · 要验证什么科学假设？</summary>
+        <div class="answer">假设：① LCD 可将 PixArt-α 蒸馏为 4 步 Student 且质量接近 Teacher；② 固定 ω_fix=4.5 优于 LCM 随机 ω embedding；③ DiT 上「复制前 N block + zero linear 顺序注入」优于强行 encoder-decoder 式 ControlNet-UNet；④ N=13 为算力-控制精度最优。</div>
+      </details>
+      <details open>
+        <summary>Q4 · 有哪些相关研究？如何归类？</summary>
+        <div class="answer">
+          <ul>
+            <li><strong>DiT T2I：</strong>PixArt-α, DiT (Peebles &amp; Xie)</li>
+            <li><strong>加速：</strong>LCM, LCM-LoRA, Consistency Models (Song et al.)</li>
+            <li><strong>可控：</strong>ControlNet (UNet), Uni-Control, 后续 RelaCtrl/OminiControl</li>
+            <li><strong>噪声日程：</strong>Hoogeboom simple diffusion, Chen noise scheduling</li>
+          </ul>
+          作者：Junsong Chen, Yue Wu, Simian Luo, Enze Xie, Sayak Paul 等（Huawei Noah's Ark / Tsinghua / HKU / Hugging Face）。
+        </div>
+      </details>
+      <details open>
+        <summary>Q5 · 解决方案的关键是什么？</summary>
+        <div class="answer">LCM 侧：Algorithm 1 LCD + ω_fix=4.5 + linear β_t + k=20 skipping + Student 同构初始化 Teacher。控制侧：28 block DiT 复制前 N=13 block，zero linear 逐层加到冻结主支输出，保持原始前向数据流。</div>
+      </details>
+      <details open>
+        <summary>Q6 · 实验是如何设计的？</summary>
+        <div class="answer">LCM：120K 内部图文、512/1024px；消融 ω_fix / batch / 噪声日程（FID+CLIP）；跨硬件推理延迟 Tab.2。ControlNet：3M HED 对、512px；对比 ControlNet-UNet vs Transformer；N ∈ {1,4,7,13,27}；观察 sudden converge 与训练步数曲线。</div>
+      </details>
+      <details open>
+        <summary>Q7 · 用什么数据集评估？代码开源吗？</summary>
+        <div class="answer">LCM 蒸馏 120K 内部高质量图文；ControlNet 3M HED-图像对。代码开源：<a href="https://github.com/PixArt-alpha/PixArt-alpha">PixArt-alpha</a>；Hugging Face Demo 与 8-bit 推理文档可用。内部数据集不可公开复现。</div>
+      </details>
+      <details open>
+        <summary>Q8 · 实验结果是否很好支持了假设？</summary>
+        <div class="answer">较好支持：A100 0.5s/4 步、7× 加速、~5K iter 收敛；ControlNet-Transformer 定性全面优于 UNet 式；N=13 消融合理。保留：ControlNet 缺 COCO 式定量指标；LCM 仅 FID/CLIP 消融、无大规模用户研究。</div>
+      </details>
+      <details open>
+        <summary>Q9 · 这篇论文到底有什么贡献？</summary>
+        <div class="answer">① 首个将 LCM 系统适配到 PixArt-α DiT（固定 ω、噪声日程修改）；② ControlNet-Transformer 架构范式（复制前 N block）；③ 开源可部署的高速可控 1024px T2I（32GB 训、8GB 推）；④ 揭示 DiT ControlNet sudden converge 现象（300–1000 steps）。</div>
+      </details>
+      <details open>
+        <summary>Q10 · 下一步可以做什么？</summary>
+        <div class="answer">自然延伸：Canny/Depth/Seg 多条件 ControlNet；与 LCM-LoRA 组合个性化；更小 N 或 CRS 引导稀疏控制（→ RelaCtrl）；Flow-matching DiT（Flux）上的 LCM+ControlNet；公开蒸馏数据与定量 benchmark；video DiT 扩展。</div>
+      </details>
+    </section>
+
+    <section class="summary deepdive" id="deepdive">
+      <h2>🔬 深挖追问</h2>
+
+      <div class="block">
+        <h4>第一性原理 · LCM 蒸馏本质</h4>
+        <p>扩散采样本质是沿 PF-ODE 从噪声走向数据。LCM 强制 Student 在任意时间步 $t$ 上预测<strong>同一终点</strong>（自一致性映射），从而把多步积分压缩为 1–4 步跳跃。PixArt-δ 的关键适配是：<strong>噪声日程对齐 α</strong>（更高 logSNR）+ <strong>固定 CFG</strong>（蒸馏时 ω 空间更简单），使 Teacher 轨迹与 Student 学习目标一致。</p>
+      </div>
+      <div class="block">
+        <h4>第一性原理 · 为何 UNet ControlNet 不适合 DiT</h4>
+        <p>UNet ControlNet 假设：浅层 encoder 特征经 skip 注入 decoder，控制信号在<strong>多尺度层次结构</strong>中流动。DiT 是<strong>同质 self-attention block 堆叠</strong>，无天然 encoder/decoder 分界；强行 14+14 分割制造虚假信息流，破坏全局 attention 的均匀性。ControlNet-Transformer 尊重「block i 输出 → block i+1 输入」的链式结构，控制 residual 在<strong>同一语义深度</strong>注入。</p>
+      </div>
+      <div class="block">
+        <h4>第一性原理 · N=13 与 +50% 参数</h4>
+        <p>复制前 13/28 block ≈ 46% 层数 → 控制分支参数与 FLOPs 各涨约 <strong>50%</strong>（后续 RelaCtrl 以此为 baseline）。N=1 对简单边缘足够说明<strong>控制信息可在浅层完成大部分对齐</strong>；难边缘需更多层是因为轮廓高频细节需更深 attention 融合。N=13 是经验 Pareto 点，非理论最优。</p>
+      </div>
+      <div class="block crit">
+        <h4>批判性思维 · 我们还没问的根本问题（盲区）</h4>
+        <ul>
+          <li><strong>蒸馏数据 120K：</strong>相对 SDXL-LCM 650K 少 5×，泛化到开放域 prompt 是否受限？</li>
+          <li><strong>固定 ω_fix：</strong>推理时改 CFG 是否需重新蒸馏？与 LCM-LoRA 动态 ω 的兼容性？</li>
+          <li><strong>ControlNet 仅 HED：</strong>Canny/Depth 标为 future work，开源权重是否覆盖多条件？</li>
+          <li><strong>Sudden converge：</strong>300–1000 steps 现象缺乏理论解释，是否依赖 zero linear 初始化？</li>
+          <li><strong>与 SDXL-LCM 公平性：</strong>数据量、分辨率、基座容量不同，Tab.2 延迟对比是否充分？</li>
+          <li><strong>后续工作：</strong>RelaCtrl 证明 13 层全复制冗余——PixArt-δ 控制开销在 2025 视角已非最优，但架构范式仍被引用。</li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="lightbox" role="dialog" aria-modal="true" aria-label="放大查看">
+    <span class="lb-close" aria-hidden="true">&times;</span>
+    <div class="lb-content"></div>
+    <div class="lb-cap"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral', flowchart: { htmlLabels: true } });</script>
+  <script>
+    function syncScrollPad() {
+      var head = document.querySelector('.sticky-head');
+      if (head) document.documentElement.style.scrollPaddingTop = (head.offsetHeight + 8) + 'px';
+    }
+    window.addEventListener('load', syncScrollPad);
+    window.addEventListener('resize', syncScrollPad);
+    syncScrollPad();
+
+    (function () {
+      var lb = document.getElementById('lightbox');
+      var content = lb.querySelector('.lb-content');
+      var cap = lb.querySelector('.lb-cap');
+
+      function findZoomTarget(node) {
+        var el = node.closest ? node.closest('img, svg') : null;
+        if (!el) return null;
+        if (!el.closest('.diagram, .figure-row, .mermaid')) return null;
+        return el;
+      }
+      function nearestCaption(el) {
+        var fig = el.closest('figure') || el.closest('.diagram') || el.closest('.figure-row');
+        var c = fig && fig.querySelector('figcaption');
+        return c ? c.textContent.trim() : '';
+      }
+      function openLightbox(node, caption) {
+        content.innerHTML = '';
+        var clone = node.cloneNode(true);
+        clone.style.cursor = 'default';
+        clone.style.boxShadow = 'none';
+        var r = node.getBoundingClientRect();
+        var vw = window.innerWidth * 0.96, vh = window.innerHeight * 0.92;
+        var w = r.width || node.clientWidth || 600;
+        var h = r.height || node.clientHeight || 400;
+        var scale = Math.min(vw / w, vh / h);
+        if (!isFinite(scale) || scale <= 0) scale = 1;
+        clone.style.width = Math.round(w * scale) + 'px';
+        clone.style.height = Math.round(h * scale) + 'px';
+        clone.style.maxWidth = 'none';
+        clone.style.maxHeight = 'none';
+        content.appendChild(clone);
+        cap.textContent = caption || '';
+        lb.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+      function closeLightbox() {
+        lb.classList.remove('open');
+        content.innerHTML = '';
+        document.body.style.overflow = '';
+      }
+      document.addEventListener('click', function (e) {
+        if (lb.classList.contains('open')) { closeLightbox(); return; }
+        var el = findZoomTarget(e.target);
+        if (el) { e.preventDefault(); e.stopPropagation(); openLightbox(el, nearestCaption(el)); }
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && lb.classList.contains('open')) closeLightbox();
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -4,5 +4,7 @@
   "ChordEdit": "chordedit",
   "ControlNet": "controlnet",
   "CogVideoX": "cogvideox",
-  "Wan2.1": "wan21"
+  "Wan2.1": "wan21",
+  "PixArt-α": "pixart-alpha",
+  "PixArt-δ": "pixart-delta"
 }

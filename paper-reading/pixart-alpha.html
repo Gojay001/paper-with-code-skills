@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PixArt-α — Fast Training DiT for T2I · 逻辑精读</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+  <style>
+    :root {
+      --navy: #1a2744;
+      --paper: #faf8f5;
+      --thesis: #fff3cd;
+      --concept: #f8d7da;
+      --evidence: #cfe2ff;
+      --counter: #d1e7dd;
+      --method: #e2d9f3;
+      --text: #2c2c2c;
+      --muted: #6c757d;
+      --border: #e8e4df;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'IBM Plex Sans', sans-serif; background: var(--paper); color: var(--text); line-height: 1.6; }
+    .sticky-head { position: sticky; top: 0; z-index: 100; }
+    .top-nav { background: var(--navy); color: #fff; padding: 1rem 2rem; }
+    .top-nav h1 { font-size: 1.25rem; font-weight: 600; }
+    .top-nav h1 a { color: #fff; text-decoration: none; border-bottom: 1px dotted rgba(255,255,255,0.5); }
+    .top-nav h1 a:hover { border-bottom-style: solid; }
+    .top-nav .meta { font-size: 0.85rem; opacity: 0.85; margin-top: 0.25rem; }
+    .legend { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.75rem; font-size: 0.8rem; }
+    .legend span { padding: 0.15rem 0.5rem; border-radius: 3px; color: #2c2c2c; }
+    .chapter-nav { background: #fff; border-bottom: 1px solid var(--border); padding: 0.75rem 2rem; overflow-x: auto; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+    .chapter-nav a { color: var(--navy); text-decoration: none; margin-right: 1.25rem; font-size: 0.9rem; font-weight: 500; }
+    .chapter-nav a:hover { text-decoration: underline; }
+    main { max-width: 1680px; margin: 0 auto; padding: 2rem; }
+    .section-title { font-size: 1.5rem; color: var(--navy); margin: 2rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--navy); }
+    .col-labels { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 0.5rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+    .row { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; align-items: start; }
+    .col-original { font-family: 'Lora', serif; font-size: 0.95rem; line-height: 1.75; }
+    .col-original p { margin-bottom: 0.75rem; }
+    .col-translation { font-size: 0.92rem; line-height: 1.75; color: #333; }
+    .col-translation p { margin-bottom: 0.75rem; }
+    .analysis-card { background: #fff; border-left: 4px solid var(--navy); padding: 1rem 1.25rem; border-radius: 0 6px 6px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.06); font-size: 0.9rem; }
+    .analysis-card .tag { display: inline-block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0.5rem; color: var(--navy); }
+    .analysis-card h4 { font-size: 0.85rem; color: var(--muted); margin: 0.75rem 0 0.25rem; }
+    .analysis-card p { margin-bottom: 0.5rem; }
+    .analysis-card.deep { border-left-width: 5px; }
+    .analysis-detail { margin: 0.75rem 0; padding-top: 0.5rem; border-top: 1px dashed var(--border); }
+    .analysis-detail:first-of-type { border-top: none; }
+    .exp-detail { list-style: none; margin: 0.5rem 0; }
+    .exp-detail li { margin-bottom: 0.4rem; }
+    .exp-detail li strong { color: var(--navy); }
+    .exp-table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.82rem; }
+    .exp-table th, .exp-table td { border: 1px solid var(--border); padding: 0.35rem 0.5rem; text-align: left; }
+    .exp-table th { background: var(--paper); color: var(--navy); font-weight: 600; }
+    .exp-table tr.is-ours { background: var(--evidence); }
+    .exp-table tr.is-ours td { font-weight: 600; }
+    .notation { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.88rem; background: #fff; }
+    .notation th, .notation td { border: 1px solid var(--border); padding: 0.4rem 0.6rem; text-align: left; }
+    .notation th { background: var(--paper); color: var(--navy); font-weight: 600; }
+    .notation td:first-child { width: 22%; white-space: nowrap; }
+    .diagram { margin: 0.75rem 0; }
+    .diagram img, .diagram svg { max-width: 100%; height: auto; display: block; border: 1px solid var(--border); border-radius: 4px; background: #fff; }
+    .diagram figcaption { font-size: 0.78rem; color: var(--muted); margin-top: 0.35rem; }
+    .figure-row { margin: 1.5rem 0; padding: 1.25rem; background: #fff; border: 1px solid var(--border); border-radius: 8px; }
+    .figure-row figure { margin: 0; text-align: center; }
+    .figure-row img, .figure-row svg { max-width: 100%; height: auto; display: inline-block; }
+    .figure-row figcaption { font-size: 0.82rem; color: var(--muted); margin-top: 0.5rem; }
+    .figure-row h3 { color: var(--navy); font-size: 1rem; margin-bottom: 0.75rem; }
+    .mermaid { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem; margin: 0.5rem 0; text-align: center; }
+    .diagram img, .diagram svg, .figure-row img, .figure-row svg { cursor: zoom-in; transition: box-shadow .15s; }
+    .diagram img:hover, .diagram svg:hover, .figure-row img:hover, .figure-row svg:hover { box-shadow: 0 0 0 2px #0d9488; }
+    #lightbox { position: fixed; inset: 0; background: rgba(10,12,20,0.92); display: none; align-items: center; justify-content: center; z-index: 1000; cursor: zoom-out; padding: 3vh 3vw; }
+    #lightbox.open { display: flex; }
+    #lightbox .lb-content { display: flex; align-items: center; justify-content: center; }
+    #lightbox .lb-content img, #lightbox .lb-content svg { display: block; background: #fff; border-radius: 6px; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
+    #lightbox .lb-close { position: fixed; top: 1rem; right: 1.5rem; color: #fff; font-size: 2rem; line-height: 1; opacity: 0.8; }
+    #lightbox .lb-cap { position: fixed; bottom: 1.2rem; left: 0; right: 0; text-align: center; color: #e8e4df; font-size: 0.8rem; padding: 0 2rem; }
+    .hl-thesis { background: var(--thesis); padding: 0 2px; }
+    .hl-concept { background: var(--concept); padding: 0 2px; }
+    .hl-evidence { background: var(--evidence); padding: 0 2px; }
+    .hl-counter { background: var(--counter); padding: 0 2px; }
+    .hl-method { background: var(--method); padding: 0 2px; }
+    .summary { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 2rem; margin-top: 3rem; }
+    .summary h2 { color: var(--navy); margin-bottom: 1rem; }
+    .summary .skeleton { font-family: 'IBM Plex Sans', monospace; background: var(--paper); padding: 1rem; border-radius: 4px; margin: 1rem 0; line-height: 1.9; }
+    .summary .strength, .summary .weakness { padding: 0.75rem 1rem; border-radius: 4px; margin: 0.5rem 0; }
+    .summary .strength { background: var(--counter); }
+    .summary .weakness { background: var(--concept); }
+    .feynman { background: #fff; border: 1px solid var(--border); border-left: 5px solid #0d9488; border-radius: 0 8px 8px 0; padding: 1.25rem 1.5rem; margin: 1.5rem 0 2rem; }
+    .feynman h2 { color: #0d9488; font-size: 1.15rem; margin-bottom: 0.35rem; }
+    .feynman .tldr-meta { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.6rem; }
+    .feynman p { font-size: 0.95rem; line-height: 1.85; margin-bottom: 0.6rem; }
+    .faq details { background: #fff; border: 1px solid var(--border); border-radius: 6px; margin: 0.5rem 0; }
+    .faq details[open] { box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .faq summary { cursor: pointer; font-weight: 600; color: var(--navy); padding: 0.7rem 0.9rem; list-style: none; font-size: 0.92rem; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::before { content: '▸'; color: #0d9488; margin-right: 0.5rem; }
+    .faq details[open] summary::before { content: '▾'; }
+    .faq .answer { padding: 0 0.9rem 0.85rem 1.8rem; font-size: 0.9rem; line-height: 1.8; color: #333; }
+    .deepdive .block { margin: 0.9rem 0; padding: 0.85rem 1.1rem; border-radius: 4px; background: var(--paper); border-left: 3px solid #6f42c1; }
+    .deepdive .block.crit { border-left-color: #dc3545; background: #fdf0f1; }
+    .deepdive .block h4 { color: var(--navy); margin-bottom: 0.3rem; }
+    .deepdive .block ul { margin: 0.3rem 0 0 1.1rem; }
+    .deepdive .block li { margin-bottom: 0.3rem; font-size: 0.9rem; }
+    @media (max-width: 1100px) {
+      .col-labels { display: none; }
+      .row { grid-template-columns: 1fr; }
+      .row > div::before {
+        display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+        letter-spacing: 0.05em; color: var(--muted); margin-bottom: 0.35rem;
+      }
+      .col-original::before { content: '原文'; }
+      .col-translation::before { content: '翻译'; }
+      .col-analysis::before { content: '解析'; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sticky-head">
+    <header class="top-nav">
+      <h1><a href="https://arxiv.org/abs/2310.00426" target="_blank" rel="noopener">PixArt-α — Fast Training of Diffusion Transformer for Photorealistic Text-to-Image Synthesis</a></h1>
+      <div class="meta">DeepLearning-Paper-with-Code · Diffusion Model · arXiv(2023) / ICLR(2024) · Huawei Noah's Ark Lab</div>
+      <div class="legend">
+        <span class="hl-thesis">核心论点</span>
+        <span class="hl-concept">关键概念</span>
+        <span class="hl-evidence">实证证据</span>
+        <span class="hl-counter">让步/反驳</span>
+        <span class="hl-method">方法论</span>
+      </div>
+    </header>
+    <nav class="chapter-nav">
+      <a href="#feynman">速读</a>
+      <a href="#abstract">Abstract</a>
+      <a href="#intro">Introduction</a>
+      <a href="#method">Method</a>
+      <a href="#experiments">Experiments</a>
+      <a href="#conclusion">Conclusion</a>
+      <a href="#notation">符号表</a>
+      <a href="#overview">总览</a>
+      <a href="#faq">十问</a>
+      <a href="#deepdive">深挖</a>
+    </nav>
+  </div>
+
+  <main>
+
+    <section class="feynman" id="feynman">
+      <h2>🎮 费曼一分钟（通俗速读）</h2>
+      <div class="tldr-meta">通俗速读 · 先建立模糊认知，再读正文</div>
+      <p>文生图（T2I）训练极贵——Stable Diffusion 1.5 级别模型常需<strong>数百万 GPU 时</strong>。PixArt-α 的核心思路是「<strong>分阶段解耦</strong>」：不要一上来就 1024px + 文本 + 美学一起学，而是拆成三步——先学<strong>像素依赖</strong>（低分辨率、无文本），再学<strong>文图对齐</strong>，最后学<strong>美学与高分辨率</strong>。每一步只解决一个子问题，训练更稳、更省。</p>
+      <p>架构上在 DiT 里加 <strong>cross-attention</strong> 接 T5-XXL 文本，并用 <strong>adaLN-single</strong>（全局共享一组 scale/shift，而非每层独立 adaLN）把参数量从 833M 压到 <strong>611M</strong>。数据侧用 <strong>LLaVA 稠密 caption</strong> 替代短标签，提升语义对齐。全套训练约 <strong>753 A100·day</strong>（SD1.5 的 <strong>12%</strong>），成本 <strong>$28,400</strong>；COCO FID <strong>7.32</strong>，原生 <strong>1024px</strong> 输出。</p>
+      <p>关键数字：<strong>3-stage training</strong> · adaLN-single <strong>611M</strong> vs adaLN <strong>833M</strong> · T5-XXL <strong>120 tokens</strong> · Stage 1 约 <strong>64 V100 × 26 days</strong>。</p>
+    </section>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 1：质量 vs 训练成本（teaser）</h3>
+      <figure>
+        <img src="assets/pixart-alpha/fig1.jpg" alt="PixArt-α 在 COCO FID 与训练 GPU 时之间的 Pareto 优势">
+        <figcaption>Fig.1：PixArt-α 以远低于 SD1.5/SDXL 等的 GPU 时达到 competitive 甚至更优的 COCO FID——「便宜又好」的 Pareto 前沿。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="abstract">Abstract</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>We introduce <span class="hl-thesis">PixArt-α</span>, a <span class="hl-concept">Diffusion Transformer (DiT)</span> based text-to-image (T2I) model that achieves <span class="hl-evidence">photorealistic image generation quality</span> competitive with state-of-the-art image generators (e.g., Imagen, DALL·E 2, SDXL) while being <span class="hl-evidence">significantly more training-efficient</span>.</p>
+        <p>Our approach incorporates three core designs: (1) a <span class="hl-method">three-stage training strategy</span> that decouples learning of content, text-image alignment, and image quality; (2) an efficient <span class="hl-method">DiT architecture</span> with cross-attention and <span class="hl-concept">adaLN-single</span> for text conditioning; (3) <span class="hl-method">high-quality training data</span> with LLaVA-generated dense captions. PixArt-α only requires <span class="hl-evidence">753 A100 GPU days</span> (~$28,400) for training — <span class="hl-evidence">12% of Stable Diffusion v1.5</span> — and reaches <span class="hl-evidence">COCO FID 7.32</span> at 1024px resolution.</p>
+      </div>
+      <div class="col-translation">
+        <p>我们提出 PixArt-α——基于 Diffusion Transformer 的文生图模型，生成质量可与 Imagen、DALL·E 2、SDXL 等 SOTA 竞争，同时训练效率显著更高。</p>
+        <p>三大设计：① 三阶段训练，解耦内容学习、文图对齐与图像质量；② 高效 DiT 架构，cross-attention + adaLN-single 做文本条件；③ LLaVA 稠密 caption 高质量数据。训练仅需 753 A100·day（约 $28,400），为 SD1.5 的 12%，1024px 下 COCO FID 7.32。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #ffc107;">
+          <span class="tag">概括主张</span>
+          <h4>段落功能</h4>
+          <p>摘要同时承诺「质量」与「效率」两条轴：对标商业级 T2I，但训练成本数量级下降。753 A100·day / $28,400 / FID 7.32 是可核查的 hook。</p>
+          <h4>逻辑角色</h4>
+          <p>论证链起点：问题（T2I 训练贵）→ 解法（三阶段 + 轻量 DiT + 好 caption）→ 证据（12% SD1.5 成本、SOTA 级 FID）。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="intro">1. Introduction</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>Recent T2I models (Imagen, Parti, SD, DALL·E 2) achieve remarkable quality but require <span class="hl-counter">massive computational resources</span> — e.g., Stable Diffusion v1.5 training consumes ~6,250 A100 GPU days. This high cost limits research accessibility and environmental sustainability (CO₂ emissions).</p>
+        <p><span class="hl-concept">Diffusion Transformers (DiT)</span> (Peebles and Xie 2023) replace U-Net backbones with scalable Transformers, offering a promising path. However, naively training DiT for T2I from scratch at high resolution with text conditioning remains expensive and unstable.</p>
+      </div>
+      <div class="col-translation">
+        <p>Imagen、Parti、SD、DALL·E 2 等 T2I 模型质量惊艳，但计算资源消耗巨大——例如 SD1.5 训练约 6,250 A100·day，高成本限制研究可及性并带来环境负担（CO₂）。</p>
+        <p>DiT 用可扩展 Transformer 替代 U-Net，前景良好；但直接在高分辨率 + 文本条件下从零训练 DiT 仍昂贵且不稳定。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #1a2744;">
+          <span class="tag">引出问题</span>
+          <h4>段落功能</h4>
+          <p>建立「质量已够 vs 训练仍贵」的反差；DiT 是可扩展架构，但 T2I 端到端训练门槛未降。</p>
+          <h4>逻辑角色</h4>
+          <p>问题语境：为何不能简单把 DiT 当 U-Net 换皮？——多目标（像素、文本、美学、高分辨率）耦合导致训练难收敛、算力爆炸。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <p>We present <span class="hl-thesis">PixArt-α</span> with three key contributions: (1) <span class="hl-method">Training strategy decomposition</span> — three stages progressively add text and resolution; (2) <span class="hl-method">Efficient architecture</span> — cross-attention + adaLN-single reduces params from 833M to 611M vs standard adaLN; (3) <span class="hl-method">Enhanced captions</span> — LLaVA dense descriptions improve text-image alignment. Total training: <span class="hl-evidence">753 A100 days</span>, <span class="hl-evidence">$28,400</span>, <span class="hl-evidence">12% of SD1.5</span>.</p>
+      </div>
+      <div class="col-translation">
+        <p>PixArt-α 三大贡献：① 训练策略分解——三阶段逐步引入文本与分辨率；② 高效架构——cross-attention + adaLN-single，相对标准 adaLN 从 833M 降至 611M；③ 增强 caption——LLaVA 稠密描述改善文图对齐。总训练 753 A100·day、$28,400，为 SD1.5 的 12%。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #ffc107;">
+          <span class="tag">提出论点</span>
+          <h4>段落功能</h4>
+          <p>Intro 末段浓缩训练/架构/数据三线贡献，并给出可对比的绝对数字（753 day、$28,400）。</p>
+          <h4>论证技巧</h4>
+          <p>把「解耦训练」从工程 trick 升格为方法论——这是全文 pivot，后续 Method 展开三阶段细节。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 3：CO₂ / 训练成本对比</h3>
+      <figure>
+        <img src="assets/pixart-alpha/fig3.png" alt="PixArt-α 与 SD1.5、Imagen 等模型的 CO2 与训练成本对比">
+        <figcaption>Fig.3：PixArt-α 训练 CO₂ 与美元成本远低于 SD1.5、Imagen 等——效率不仅是 GPU 时，还有碳排放与金钱维度。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="method">2. Method — 三阶段 · 架构 · 数据</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>2.1 Three-Stage Training Strategy</strong></p>
+        <p><span class="hl-method">Stage 1 — Pixel dependency learning:</span> Train DiT at <strong>256×256</strong> without text conditioning to learn spatial structure and visual priors. Uses internal high-quality image data. Training: ~<span class="hl-evidence">64 V100 GPUs × 26 days</span>.</p>
+        <p><span class="hl-method">Stage 2 — Text-image alignment:</span> Introduce <span class="hl-concept">T5-XXL</span> text encoder and cross-attention at 256×256. Fine-tune with text-image pairs using dense LLaVA captions. Focus: semantic alignment between prompts and content.</p>
+        <p><span class="hl-method">Stage 3 — High-resolution &amp; aesthetic quality:</span> Scale to <strong>512→1024px</strong> with multi-aspect ratio buckets. Add aesthetic score filtering and quality-oriented data curation. Final model generates photorealistic 1024px images.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>2.1 三阶段训练策略</strong></p>
+        <p><strong>阶段 1 — 像素依赖学习：</strong>256×256、无文本条件，学习空间结构与视觉先验；内部高质量图像数据；约 64 V100 × 26 天。</p>
+        <p><strong>阶段 2 — 文图对齐：</strong>引入 T5-XXL 与 cross-attention，256×256 上用 LLaVA 稠密 caption 的图文对微调，聚焦语义对齐。</p>
+        <p><strong>阶段 3 — 高分辨率与美学：</strong>512→1024px、多宽高比分桶；美学分数过滤与质量导向数据筛选；输出 1024px 写实图像。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #6f42c1;">
+          <span class="tag">三阶段解耦</span>
+          <div class="analysis-detail">
+            <h4>训练流水线（自绘）</h4>
+            <div class="diagram">
+              <pre class="mermaid">
+flowchart LR
+  S1["Stage 1<br/>256px · 无文本<br/>像素先验"] --> S2["Stage 2<br/>256px · T5-XXL<br/>文图对齐"]
+  S2 --> S3["Stage 3<br/>512→1024px<br/>美学 + 高分辨率"]
+  S3 --> OUT["PixArt-α<br/>611M · 1024px"]
+              </pre>
+              <figcaption>解耦逻辑：先「会画画」→ 再「听得懂话」→ 最后「画好看且清晰」。每阶段继承上一阶段权重，避免单阶段多目标冲突。点击放大。</figcaption>
+            </div>
+          </div>
+          <div class="analysis-detail">
+            <h4>设计取舍</h4>
+            <p>Stage 1 无文本看似「浪费」，实则提供稳定 latent 流形；Stage 2 在低分辨率对齐文本更省算力；Stage 3 才上高分辨率——类似 curriculum learning，但按模态/分辨率解耦。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>2.2 Efficient DiT Architecture</strong></p>
+        <p>Built on DiT blocks with <span class="hl-concept">cross-attention</span> layers for T5-XXL text features (max <strong>120 tokens</strong>). Timestep conditioning via <span class="hl-concept">adaLN-single</span>: a single shared MLP produces scale/shift parameters applied to all Transformer blocks, instead of per-block adaLN (as in original DiT).</p>
+        <p>This reduces parameters from <span class="hl-evidence">833M (adaLN)</span> to <span class="hl-evidence">611M (adaLN-single)</span> with negligible quality loss. Latent space uses standard VAE (SD's f8, 4 channels). Diffusion schedule: IDDPM with $v$-prediction.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>2.2 高效 DiT 架构</strong></p>
+        <p>DiT block 加 cross-attention 接入 T5-XXL 文本特征（最多 120 tokens）。时间步条件用 adaLN-single：单个共享 MLP 产生 scale/shift，作用于所有 block，而非每层独立 adaLN。</p>
+        <p>参数量从 833M（adaLN）降至 611M（adaLN-single），质量几乎无损。潜空间用标准 VAE（SD f8，4 通道）；扩散 schedule 为 IDDPM + $v$-prediction。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #0d6efd;">
+          <span class="tag">adaLN-single</span>
+          <div class="analysis-detail">
+            <h4>adaLN vs adaLN-single</h4>
+            <p>原始 DiT 每层独立 adaLN MLP → 参数量随 depth 线性膨胀。adaLN-single 全局共享一组 $(\gamma, \beta)$，每层只复用——DiT-XL/2 规模下省 ~222M 参数。Fig.4 ablation 验证几乎无 FID 损失。</p>
+          </div>
+          <div class="analysis-detail">
+            <h4>文本编码</h4>
+            <p>T5-XXL（冻结）+ 120 token 上限：比 CLIP 文本塔语义容量更大，但推理更重——PixArt 系列后续 δ/Sigma 继续沿用此选择。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 2：DiT 架构（cross-attention · adaLN-single）</h3>
+      <figure>
+        <img src="assets/pixart-alpha/fig2.png" alt="PixArt-α DiT block：cross-attention 与 adaLN-single 结构">
+        <figcaption>Fig.2：每个 DiT block 含 self-attention、cross-attention（接 T5 文本）与 FFN；adaLN-single 从全局 timestep embedding 生成 scale/shift。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>2.3 Training Data &amp; Captions</strong></p>
+        <p>Internal dataset of tens of millions of high-quality images with resolution ≥1024px. Replace short tags with <span class="hl-method">LLaVA-generated dense captions</span> — rich semantic descriptions improve text-image alignment in Stage 2. Aesthetic scoring (LAION aesthetic predictor) filters low-quality samples in Stage 3. Multi-aspect ratio training buckets support flexible inference resolutions.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>2.3 训练数据与 Caption</strong></p>
+        <p>内部数千万张 ≥1024px 高质量图像。用 LLaVA 生成的稠密 caption 替代短标签——丰富语义描述改善 Stage 2 文图对齐。Stage 3 用 LAION 美学预测器过滤低质样本。多宽高比分桶支持灵活推理分辨率。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #6f42c1;">
+          <span class="tag">数据工程</span>
+          <h4>段落功能</h4>
+          <p>数据线是「被低估的第三支柱」：好 caption + 美学过滤 + 高分辨率源图，与三阶段训练协同——Stage 2 吃 caption 质量，Stage 3 吃美学分数。</p>
+          <h4>潜在漏洞</h4>
+          <p>内部数据集细节未完全公开；LLaVA caption 质量与偏差继承自 VLM，可能放大某些语义偏好。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="experiments">3. Experiments</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Setup:</strong> Evaluate on MS-COCO 2014 validation (30K prompts, FID-30K protocol). Compare against SDv1.5, SDXL, RAPHAEL, DeepFloyd-IF, DALL·E 2, Imagen, etc. Metrics: FID, CLIP Score, T2I-CompBench (compositional generation).</p>
+        <p><strong>Main Result:</strong> PixArt-α achieves <span class="hl-evidence">COCO FID 7.32</span> at 1024px — competitive with or surpassing models trained with orders of magnitude more compute. Training cost: <span class="hl-evidence">753 A100 GPU days</span> vs SD1.5's ~6,250 A100 days.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>设置：</strong>MS-COCO 2014 val（30K prompt，FID-30K 协议）。对比 SDv1.5、SDXL、RAPHAEL、DeepFloyd-IF、DALL·E 2、Imagen 等。指标：FID、CLIP Score、T2I-CompBench（组合生成）。</p>
+        <p><strong>主结果：</strong>PixArt-α 1024px 下 COCO FID <strong>7.32</strong>——与算力大数个数量级的模型竞争或超越。训练 753 A100·day vs SD1.5 约 6,250 A100·day。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #0d6efd;">
+          <span class="tag">效率 · 质量表</span>
+          <table class="exp-table">
+            <thead><tr><th>Method</th><th>Resolution</th><th>COCO FID↓</th><th>Training (A100·day)</th></tr></thead>
+            <tbody>
+              <tr><td>SDv1.5</td><td>512</td><td>9.62</td><td>~6,250</td></tr>
+              <tr><td>SDXL</td><td>1024</td><td>6.94</td><td>~22,000+</td></tr>
+              <tr class="is-ours"><td>PixArt-α</td><td>1024</td><td>7.32</td><td>753</td></tr>
+            </tbody>
+          </table>
+          <ul class="exp-detail">
+            <li><strong>论点↔证据：</strong>FID 7.32 略逊于 SDXL 6.94，但训练成本约为其 3.4%；相对 SD1.5 更优 FID + 12% 算力——Pareto 改进（Fig.1）。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>T2I-CompBench:</strong> PixArt-α scores competitively on color, shape, texture binding tasks — demonstrating strong <span class="hl-evidence">compositional text understanding</span> from T5-XXL + dense captions.</p>
+        <p><strong>User Study:</strong> Human evaluators prefer PixArt-α over SDv1.5 on overall quality and text alignment; competitive with SDXL on aesthetics at fraction of training cost.</p>
+        <p><strong>Ablation — adaLN-single:</strong> Replacing adaLN with adaLN-single saves ~222M parameters with <span class="hl-evidence">minimal FID degradation</span> (Fig. 4).</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>T2I-CompBench：</strong>PixArt-α 在颜色、形状、纹理绑定等组合任务上表现 competitive——T5-XXL + 稠密 caption 带来强组合理解。</p>
+        <p><strong>用户研究：</strong>人工评估在整体质量与文本对齐上偏好 PixArt-α 优于 SDv1.5；美学上与 SDXL 竞争，训练成本仅其一小部分。</p>
+        <p><strong>消融 — adaLN-single：</strong>adaLN 换 adaLN-single 省约 222M 参数，FID 几乎无下降（Fig.4）。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color: #0d6efd;">
+          <span class="tag">多维验证</span>
+          <ul class="exp-detail">
+            <li><strong>FID：</strong>自动指标锚定 COCO 分布匹配。</li>
+            <li><strong>CompBench：</strong>补 FID 不敏感的 compositional 能力。</li>
+            <li><strong>User Study：</strong>人工偏好验证感知质量，避免纯指标 gaming。</li>
+            <li><strong>Ablation：</strong>adaLN-single 是架构创新的独立证据链。</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 原文 Figure 4：adaLN vs adaLN-single 消融</h3>
+      <figure>
+        <img src="assets/pixart-alpha/fig4.jpg" alt="adaLN 与 adaLN-single 参数量与 FID 对比">
+        <figcaption>Fig.4：adaLN-single（611M）相对 adaLN（833M）FID 几乎持平——参数效率的关键 ablation。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="conclusion">4. Conclusion</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>PixArt-α demonstrates that <span class="hl-thesis">high-quality T2I models can be trained efficiently</span> through training strategy decomposition, architectural efficiency, and enhanced data curation. The <span class="hl-method">three-stage training</span> decouples pixel learning, text alignment, and aesthetic quality; <span class="hl-method">adaLN-single</span> and cross-attention enable a compact 611M DiT; <span class="hl-method">LLaVA captions</span> boost semantic alignment.</p>
+        <p>With only <span class="hl-evidence">753 A100 GPU days</span> and <span class="hl-evidence">$28,400</span>, PixArt-α achieves <span class="hl-evidence">COCO FID 7.32</span> at 1024px, democratizing T2I research and reducing environmental impact. Code and models are released at <a href="https://github.com/PixArt-alpha/PixArt-alpha" target="_blank" rel="noopener">github.com/PixArt-alpha/PixArt-alpha</a>.</p>
+      </div>
+      <div class="col-translation">
+        <p>PixArt-α 证明：通过训练策略分解、架构效率与数据 curation，可以高效训练高质量 T2I 模型。三阶段解耦像素学习、文本对齐与美学质量；adaLN-single + cross-attention 实现紧凑 611M DiT；LLaVA caption 提升语义对齐。</p>
+        <p>仅 753 A100·day、$28,400 即达 COCO FID 7.32（1024px），降低 T2I 研究门槛与环境影响。代码与模型已开源。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color: #ffc107;">
+          <span class="tag">总结</span>
+          <h4>段落功能</h4>
+          <p>收束三线贡献 → 效率-质量 Pareto → 开源承诺；强调「民主化 T2I 研究」的社会价值（ICLR 2024 叙事）。</p>
+          <h4>潜在漏洞</h4>
+          <p>FID 仍略逊于 SDXL；内部数据不可完全复现；T5-XXL 推理成本未在结论讨论；后续 PixArt-Σ 进一步改进但未在此展开。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="summary" id="notation">
+      <h2>符号速查表</h2>
+      <table class="notation">
+        <thead><tr><th>符号 / 术语</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td>DiT</td><td>Diffusion Transformer，用 Transformer block 替代 U-Net 的扩散主干</td></tr>
+          <tr><td>adaLN</td><td>Adaptive Layer Norm，每层独立 MLP 从 timestep 生成 $(\gamma, \beta)$</td></tr>
+          <tr><td>adaLN-single</td><td>全局共享一组 scale/shift，611M 参数（vs adaLN 833M）</td></tr>
+          <tr><td>T5-XXL</td><td>冻结文本编码器，最大 120 tokens</td></tr>
+          <tr><td>$v$-prediction</td><td>扩散目标预测速度场 $v$，IDDPM schedule</td></tr>
+          <tr><td>Stage 1/2/3</td><td>像素先验 → 文图对齐 → 高分辨率美学</td></tr>
+          <tr><td>LLaVA caption</td><td>VLM 生成的稠密语义描述，替代短标签</td></tr>
+          <tr><td>FID-30K</td><td>COCO 30K prompt 生成 vs 参考集的 Fréchet Inception Distance</td></tr>
+          <tr><td>753 A100·day</td><td>三阶段总训练量，约为 SD1.5 的 12%</td></tr>
+          <tr><td>64 V100 × 26 days</td><td>Stage 1 像素依赖学习阶段的典型配置</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="summary" id="overview">
+      <h2>论证结构总览</h2>
+      <div class="skeleton">
+        问题（T2I 训练百万 GPU 时 · SD1.5 ~6250 A100·day · 高 CO₂）<br/>
+        → 观察（DiT 可扩展但端到端 T2I 仍贵且不稳定）<br/>
+        → 论点（三阶段解耦 + adaLN-single/cross-attn 轻量 DiT + LLaVA 稠密 caption）<br/>
+        → 方法（Stage1 256px 无文本 → Stage2 T5 对齐 → Stage3 1024px 美学；611M；120 tokens）<br/>
+        → 证据（753 A100·day / $28,400 / 12% SD1.5；COCO FID 7.32；CompBench + User Study；Fig.1–4 ablation）<br/>
+        → 结论（高效 T2I 民主化 · ICLR 2024 · 开源）
+      </div>
+      <h4>核心主张（一句话）</h4>
+      <p>通过训练目标解耦、adaLN-single 参数压缩与高质量 caption，PixArt-α 以 SD1.5 约 12% 的训练成本达到 1024px 商业级 T2I 质量（COCO FID 7.32）。</p>
+      <div class="strength"><strong>论证最强处：</strong>效率数字（753 day、$28,400、Fig.3 CO₂）可核查且与 FID 同图展示 Pareto 优势；三阶段 + adaLN-single ablation（Fig.4）形成独立证据链；开源可复现。</div>
+      <div class="weakness"><strong>论证最弱处：</strong>内部数据集细节不透明；FID 7.32 仍略输 SDXL 6.94；T5-XXL 推理开销未充分讨论；Stage 1 无文本阶段的「必要性」主要靠 ablation 间接支撑；CompBench 为后续 benchmark，当时对比基线较少。</div>
+      <p style="margin-top:1rem;font-size:0.85rem;color:var(--muted);">来源：<a href="https://arxiv.org/abs/2310.00426">arXiv:2310.00426</a> · ICLR 2024 · Huawei Noah's Ark Lab · Code: <a href="https://github.com/PixArt-alpha/PixArt-alpha">PixArt-alpha</a></p>
+    </section>
+
+    <section class="summary faq" id="faq">
+      <h2>🧩 结构化十问（AI 解构）</h2>
+      <p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.75rem;">让 AI 当助教，从十个角度提取论文骨架。</p>
+
+      <details open>
+        <summary>Q1 · 论文试图解决什么问题？</summary>
+        <div class="answer">T2I 模型（SD1.5 等）训练消耗<strong>数百万 GPU 时</strong>与大量 CO₂，限制研究可及性。目标：在保持 photorealistic 1024px 质量的前提下，把训练成本降到可承受范围（§1）。</div>
+      </details>
+      <details open>
+        <summary>Q2 · 这是否是一个新问题？</summary>
+        <div class="answer">T2I 成本高是已知痛点；DiT 架构（Peebles &amp; Xie 2023）也非新。新在于：<strong>三阶段解耦训练</strong>用于 T2I DiT、<strong>adaLN-single</strong> 参数压缩、以及 <strong>LLaVA 稠密 caption</strong> 与三阶段协同——组合成一套可量化的低成本训练 recipe。</div>
+      </details>
+      <details open>
+        <summary>Q3 · 要验证什么科学假设？</summary>
+        <div class="answer">假设：① 解耦像素/文本/美学三目标可降训练难度与算力；② adaLN-single 可在几乎不损 FID 下省 ~222M 参数；③ 稠密 caption 改善文图对齐与 CompBench 组合能力；④ 总成本可压至 SD1.5 的 ~12% 且 FID competitive。</div>
+      </details>
+      <details open>
+        <summary>Q4 · 有哪些相关研究？如何归类？</summary>
+        <div class="answer">
+          <ul>
+            <li><strong>DiT 基础：</strong>Peebles &amp; Xie 2023（adaLN DiT）</li>
+            <li><strong>LDM/T2I：</strong>Stable Diffusion, Imagen, DALL·E 2, SDXL</li>
+            <li><strong>高效训练：</strong>curriculum / multi-stage（本文系统化三阶段）</li>
+            <li><strong>Caption：</strong>LLaVA, BLIP 等 VLM caption</li>
+          </ul>
+          作者：Junsong Chen, Jincheng Yu, Chongjian Ge, Lewei Yao, Enze Xie 等（Huawei Noah's Ark Lab）。
+        </div>
+      </details>
+      <details open>
+        <summary>Q5 · 解决方案的关键是什么？</summary>
+        <div class="answer">三件套：① <strong>三阶段训练</strong>（256px 无文本 → 256px+T5 对齐 → 1024px 美学）；② <strong>611M DiT</strong>（cross-attn + adaLN-single + T5-XXL 120 tokens）；③ <strong>LLaVA 稠密 caption + 美学过滤</strong>。Stage 1 约 64 V100 × 26 天；总计 753 A100·day。</div>
+      </details>
+      <details open>
+        <summary>Q6 · 实验是如何设计的？</summary>
+        <div class="answer">COCO FID-30K 自动评估；对比 SD1.5/SDXL/Imagen 等；T2I-CompBench 测组合生成；人工 user study 测感知质量；adaLN vs adaLN-single ablation（Fig.4）；Fig.1/3 展示质量-成本 Pareto。</div>
+      </details>
+      <details open>
+        <summary>Q7 · 用什么数据集评估？代码开源吗？</summary>
+        <div class="answer">训练：内部数千万 ≥1024px 图像 + LLaVA caption。评估：MS-COCO 2014 val（30K prompts）。代码与模型：<a href="https://github.com/PixArt-alpha/PixArt-alpha">github.com/PixArt-alpha/PixArt-alpha</a>。</div>
+      </details>
+      <details open>
+        <summary>Q8 · 实验结果是否很好支持了假设？</summary>
+        <div class="answer">较好支持：753 A100·day、FID 7.32、12% SD1.5 成本；CompBench 与 user study 补充 FID。保留：FID 略逊于 SDXL 6.94；内部数据不可完全复现；Stage 间迁移的 ablation 可更细。</div>
+      </details>
+      <details open>
+        <summary>Q9 · 这篇论文到底有什么贡献？</summary>
+        <div class="answer">① 三阶段解耦 T2I 训练 recipe；② adaLN-single 参数高效 DiT（611M）；③ LLaVA 稠密 caption 数据 pipeline；④ 753 A100·day 达到 1024px SOTA 级质量并开源（ICLR 2024）。</div>
+      </details>
+      <details open>
+        <summary>Q10 · 下一步可以做什么？</summary>
+        <div class="answer">自然延伸：PixArt-δ（LCM 加速）、PixArt-Σ（更高质量）；替换 T5 为更轻文本编码器；公开训练数据子集；video DiT 三阶段迁移；与 flow-matching（Flux）对比；Stage 1 无文本是否可用 public data 复现的 systematic ablation。</div>
+      </details>
+    </section>
+
+    <section class="summary deepdive" id="deepdive">
+      <h2>🔬 深挖追问</h2>
+
+      <div class="block">
+        <h4>第一性原理 · 为何解耦训练有效？</h4>
+        <p>扩散模型同时学 $p(x)$、$p(x|c)$ 与高分辨率 $p(x_{\rm hi}|c)$ 是<strong>多目标耦合优化</strong>：文本梯度与高频细节梯度在早期互相干扰。Stage 1 先学 $p(x_{256})$ 建立 smooth latent manifold；Stage 2 在此流形上注入 $c$；Stage 3 只做分辨率/美学微调——每步 conditioning 空间更小，sample efficiency 更高。本质是 <strong>curriculum + modality decoupling</strong>。</p>
+      </div>
+      <div class="block">
+        <h4>第一性原理 · adaLN-single 为何够用？</h4>
+        <p>adaLN 每层独立 MLP 假设「不同 depth 需要不同 timestep 调制强度」。PixArt-α 发现：T2I DiT 中<strong>全局 timestep 信号</strong>已足够——各层共享 $(\gamma, \beta)$ 不损 expressivity，因为 cross-attention 已承担文本条件，self-attention 承担 spatial mixing。省下的 222M 参数可转投 depth 或 data。</p>
+      </div>
+      <div class="block">
+        <h4>第一性原理 · Caption 即监督信号</h4>
+        <p>短 tag（「dog, park」）只覆盖名词共现；LLaVA 稠密 caption（「A golden retriever sitting on green grass in a sunny park…」）提供<strong>属性-关系-场景</strong>细粒度监督。T5-XXL 编码长文本后，cross-attention 收到 richer key/value——CompBench 颜色/形状绑定提升的 root cause 可能在此。</p>
+      </div>
+      <div class="block crit">
+        <h4>批判性思维 · 我们还没问的根本问题（盲区）</h4>
+        <ul>
+          <li><strong>753 day 的可复现性：</strong>内部数据 + LLaVA caption pipeline 是否完全开源？社区复现可能只能复现架构，难复现数据。</li>
+          <li><strong>Stage 1 必要性：</strong>若直接从 Stage 2 开始（公开 LAION + caption），成本/质量曲线如何？论文 ablation 相对简略。</li>
+          <li><strong>FID vs 感知质量：</strong>FID 7.32 vs SDXL 6.94——user study 称 aesthetic competitive，但 automatic metric 仍略输；是否存在 metric gap？</li>
+          <li><strong>T5-XXL 推理税：</strong>训练省了，推理时 T5-XXL 4.7B 参数 + 120 tokens 的 latency 未与 CLIP-text SD 公平对比。</li>
+          <li><strong>环境叙事：</strong>Fig.3 CO₂ 估算依赖 GPU 型号与能源 mix 假设；753 A100·day 是否含 Stage 1 的 V100？加总口径需仔细核对。</li>
+          <li><strong>后续演进：</strong>PixArt-Σ 进一步降低训练成本并提升质量——α 的三阶段 recipe 有多少被保留 vs 被替换？</li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="lightbox" role="dialog" aria-modal="true" aria-label="放大查看">
+    <span class="lb-close" aria-hidden="true">&times;</span>
+    <div class="lb-content"></div>
+    <div class="lb-cap"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral', flowchart: { htmlLabels: true } });</script>
+  <script>
+    function syncScrollPad() {
+      var head = document.querySelector('.sticky-head');
+      if (head) document.documentElement.style.scrollPaddingTop = (head.offsetHeight + 8) + 'px';
+    }
+    window.addEventListener('load', syncScrollPad);
+    window.addEventListener('resize', syncScrollPad);
+    syncScrollPad();
+
+    (function () {
+      var lb = document.getElementById('lightbox');
+      var content = lb.querySelector('.lb-content');
+      var cap = lb.querySelector('.lb-cap');
+
+      function findZoomTarget(node) {
+        var el = node.closest ? node.closest('img, svg') : null;
+        if (!el) return null;
+        if (!el.closest('.diagram, .figure-row, .mermaid')) return null;
+        return el;
+      }
+      function nearestCaption(el) {
+        var fig = el.closest('figure') || el.closest('.diagram') || el.closest('.figure-row');
+        var c = fig && fig.querySelector('figcaption');
+        return c ? c.textContent.trim() : '';
+      }
+      function openLightbox(node, caption) {
+        content.innerHTML = '';
+        var clone = node.cloneNode(true);
+        clone.style.cursor = 'default';
+        clone.style.boxShadow = 'none';
+        var r = node.getBoundingClientRect();
+        var vw = window.innerWidth * 0.96, vh = window.innerHeight * 0.92;
+        var w = r.width || node.clientWidth || 600;
+        var h = r.height || node.clientHeight || 400;
+        var scale = Math.min(vw / w, vh / h);
+        if (!isFinite(scale) || scale <= 0) scale = 1;
+        clone.style.width = Math.round(w * scale) + 'px';
+        clone.style.height = Math.round(h * scale) + 'px';
+        clone.style.maxWidth = 'none';
+        clone.style.maxHeight = 'none';
+        content.appendChild(clone);
+        cap.textContent = caption || '';
+        lb.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+      function closeLightbox() {
+        lb.classList.remove('open');
+        content.innerHTML = '';
+        document.body.style.overflow = '';
+      }
+      document.addEventListener('click', function (e) {
+        if (lb.classList.contains('open')) { closeLightbox(); return; }
+        var el = findZoomTarget(e.target);
+        if (el) { e.preventDefault(); e.stopPropagation(); openLightbox(el, nearestCaption(el)); }
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && lb.classList.contains('open')) closeLightbox();
+      });
+    })();
+  </script>
+</body>
+</html>

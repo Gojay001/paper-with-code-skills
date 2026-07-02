@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>U-StyDiT — 超高画质 DiT 艺术风格迁移 · 逻辑精读</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+  <style>
+    :root { --navy:#1a2744; --paper:#faf8f5; --thesis:#fff3cd; --concept:#f8d7da; --evidence:#cfe2ff; --counter:#d1e7dd; --method:#e2d9f3; --text:#2c2c2c; --muted:#6c757d; --border:#e8e4df; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'IBM Plex Sans',sans-serif; background:var(--paper); color:var(--text); line-height:1.6; }
+    .sticky-head { position:sticky; top:0; z-index:100; }
+    .top-nav { background:var(--navy); color:#fff; padding:1rem 2rem; }
+    .top-nav h1 { font-size:1.25rem; font-weight:600; }
+    .top-nav h1 a { color:#fff; text-decoration:none; border-bottom:1px dotted rgba(255,255,255,0.5); }
+    .top-nav .meta { font-size:0.85rem; opacity:0.85; margin-top:0.25rem; }
+    .legend { display:flex; flex-wrap:wrap; gap:0.75rem; margin-top:0.75rem; font-size:0.8rem; }
+    .legend span { padding:0.15rem 0.5rem; border-radius:3px; color:#2c2c2c; }
+    .chapter-nav { background:#fff; border-bottom:1px solid var(--border); padding:0.75rem 2rem; overflow-x:auto; white-space:nowrap; box-shadow:0 2px 6px rgba(0,0,0,0.06); }
+    .chapter-nav a { color:var(--navy); text-decoration:none; margin-right:1.25rem; font-size:0.9rem; font-weight:500; }
+    main { max-width:1680px; margin:0 auto; padding:2rem; }
+    .section-title { font-size:1.5rem; color:var(--navy); margin:2rem 0 1rem; padding-bottom:0.5rem; border-bottom:2px solid var(--navy); }
+    .col-labels { display:grid; grid-template-columns:1.1fr 1fr 1fr; gap:1.5rem; margin-bottom:0.5rem; font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); }
+    .row { display:grid; grid-template-columns:1.1fr 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem; align-items:start; }
+    .col-original { font-family:'Lora',serif; font-size:0.95rem; line-height:1.75; }
+    .col-original p { margin-bottom:0.75rem; }
+    .col-translation { font-size:0.92rem; line-height:1.75; color:#333; }
+    .col-translation p { margin-bottom:0.75rem; }
+    .analysis-card { background:#fff; border-left:4px solid var(--navy); padding:1rem 1.25rem; border-radius:0 6px 6px 0; box-shadow:0 1px 3px rgba(0,0,0,0.06); font-size:0.9rem; }
+    .analysis-card .tag { display:inline-block; font-size:0.75rem; font-weight:600; text-transform:uppercase; margin-bottom:0.5rem; color:var(--navy); }
+    .analysis-card h4 { font-size:0.85rem; color:var(--muted); margin:0.75rem 0 0.25rem; }
+    .analysis-card p { margin-bottom:0.5rem; }
+    .analysis-card.deep { border-left-width:5px; }
+    .exp-table { width:100%; border-collapse:collapse; margin:0.75rem 0; font-size:0.82rem; }
+    .exp-table th,.exp-table td { border:1px solid var(--border); padding:0.35rem 0.5rem; text-align:left; }
+    .exp-table th { background:var(--paper); color:var(--navy); font-weight:600; }
+    .exp-table tr.is-ours { background:var(--evidence); }
+    .notation { width:100%; border-collapse:collapse; margin:0.75rem 0; font-size:0.88rem; background:#fff; }
+    .notation th,.notation td { border:1px solid var(--border); padding:0.4rem 0.6rem; text-align:left; }
+    .notation th { background:var(--paper); color:var(--navy); }
+    .figure-row { margin:1.5rem 0; padding:1.25rem; background:#fff; border:1px solid var(--border); border-radius:8px; }
+    .figure-row figure { margin:0; text-align:center; }
+    .figure-row img { max-width:100%; height:auto; cursor:zoom-in; }
+    .figure-row figcaption { font-size:0.82rem; color:var(--muted); margin-top:0.5rem; }
+    .figure-row h3 { color:var(--navy); font-size:1rem; margin-bottom:0.75rem; }
+    .diagram { margin:0.75rem 0; }
+    .mermaid { background:#fff; border:1px solid var(--border); border-radius:4px; padding:0.5rem; }
+    .diagram img,.diagram svg,.figure-row img,.figure-row svg { cursor:zoom-in; }
+    #lightbox { position:fixed; inset:0; background:rgba(10,12,20,0.92); display:none; align-items:center; justify-content:center; z-index:1000; cursor:zoom-out; padding:3vh 3vw; }
+    #lightbox.open { display:flex; }
+    #lightbox .lb-content img,#lightbox .lb-content svg { display:block; background:#fff; border-radius:6px; box-shadow:0 8px 40px rgba(0,0,0,0.5); }
+    #lightbox .lb-cap { position:fixed; bottom:1.2rem; left:0; right:0; text-align:center; color:#e8e4df; font-size:0.8rem; }
+    .hl-thesis { background:var(--thesis); padding:0 2px; }
+    .hl-concept { background:var(--concept); padding:0 2px; }
+    .hl-evidence { background:var(--evidence); padding:0 2px; }
+    .hl-method { background:var(--method); padding:0 2px; }
+    .summary { background:#fff; border:1px solid var(--border); border-radius:8px; padding:2rem; margin-top:3rem; }
+    .summary h2 { color:var(--navy); margin-bottom:1rem; }
+    .summary .skeleton { font-family:monospace; background:var(--paper); padding:1rem; border-radius:4px; line-height:1.9; }
+    .summary .strength,.summary .weakness { padding:0.75rem 1rem; border-radius:4px; margin:0.5rem 0; }
+    .summary .strength { background:var(--counter); }
+    .summary .weakness { background:var(--concept); }
+    .feynman { background:#fff; border:1px solid var(--border); border-left:5px solid #0d9488; border-radius:0 8px 8px 0; padding:1.25rem 1.5rem; margin:1.5rem 0 2rem; }
+    .feynman h2 { color:#0d9488; font-size:1.15rem; margin-bottom:0.35rem; }
+    .feynman p { font-size:0.95rem; line-height:1.85; margin-bottom:0.6rem; }
+    .faq details { background:#fff; border:1px solid var(--border); border-radius:6px; margin:0.5rem 0; }
+    .faq summary { cursor:pointer; font-weight:600; color:var(--navy); padding:0.7rem 0.9rem; list-style:none; font-size:0.92rem; }
+    .faq summary::-webkit-details-marker { display:none; }
+    .faq .answer { padding:0 0.9rem 0.85rem 1.8rem; font-size:0.9rem; line-height:1.8; }
+    .deepdive .block { margin:0.9rem 0; padding:0.85rem 1.1rem; border-radius:4px; background:var(--paper); border-left:3px solid #6f42c1; }
+    .deepdive .block.crit { border-left-color:#dc3545; background:#fdf0f1; }
+    @media (max-width:1100px) { .col-labels{display:none;} .row{grid-template-columns:1fr;} }
+  </style>
+</head>
+<body>
+  <div class="sticky-head">
+    <header class="top-nav">
+      <h1><a href="https://arxiv.org/abs/2503.08157" target="_blank" rel="noopener">U-StyDiT — Ultra-high Quality Artistic Style Transfer Using Diffusion Transformers</a></h1>
+      <div class="meta">DeepLearning-Paper-with-Code · Diffusion Model · arXiv(2025) / ICCV(2025) · 360 AI Research · Zhanjie Zhang et al.</div>
+      <div class="legend">
+        <span class="hl-thesis">核心论点</span><span class="hl-concept">关键概念</span><span class="hl-evidence">实证证据</span><span class="hl-method">方法论</span>
+      </div>
+    </header>
+    <nav class="chapter-nav">
+      <a href="#feynman">速读</a><a href="#abstract">Abstract</a><a href="#intro">Introduction</a>
+      <a href="#data">Aes4M</a><a href="#method">Method</a><a href="#experiments">Experiments</a>
+      <a href="#conclusion">Conclusion</a><a href="#notation">符号表</a><a href="#overview">总览</a><a href="#faq">十问</a><a href="#deepdive">深挖</a>
+    </nav>
+  </div>
+
+  <main>
+    <section class="feynman" id="feynman">
+      <h2>🎮 费曼一分钟</h2>
+      <p><strong>任务</strong>：给定内容图 + 风格图，生成<strong>超高画质</strong>艺术风格化结果——结构跟内容、笔触跟风格，且无伪影/不和谐纹理。</p>
+      <p><strong>痛点</strong>：① 风格重建派（InstantX/IP-Adapter）只训风格 adapter，推理另挂 Canny 保结构 → 两路条件信息打架；② 解耦派（CSGO/StyleShot）用 UNet DiT 弱、WikiArt Canny 糊，画质上限低。</p>
+      <p><strong>U-StyDiT</strong>：在 <span class="hl-concept">FLUX.1-dev（MM-DiT）</span> 上<strong>全参微调</strong>，训练时从<strong>同一张风格图</strong>同时学内容（Canny）与风格（MSM）。</p>
+      <p><strong>MSM</strong>：$1024^2$ 风格图 → 全局 $512^2$ + 10 个局部 patch；局部 token 通道拼接 + MLP 压缩，再与全局混合 → 多视角风格 token $T_{lgs}$。</p>
+      <p><strong>StyDiT Block</strong>：$T_{gsc}=\lambda T_c + T_{gs}$，MMA 拼接 $[T_{gsc}; T_t; T_{lgs}]$；推理 $\lambda$ 调内容强度。</p>
+      <p><strong>Aes4M</strong>：10 类 × 40 万 = <strong>400 万</strong>张 $1024^2$ 高清艺术图（高美学 + 图文一致 + 清晰 Canny）。SSIM 0.421、美学分 6.974、欺骗率 78.1% SOTA。</p>
+    </section>
+
+    <h2 class="section-title" id="abstract">Abstract</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>Ultra-high quality artistic style transfer repaints a content image using style from a style image. Existing methods (style reconstruction vs. content-style disentanglement) produce <span class="hl-thesis">artifacts and disharmonious patterns</span>.</p>
+        <p><strong>U-StyDiT</strong> on DiT learns disentanglement: <span class="hl-method">MSM</span> (local+global style) + <span class="hl-method">StyDiT Block</span> (joint content/style). Dataset <strong>Aes4M</strong>: 10 categories × 400K style images. First transformer-diffusion method for ultra-high quality stylization.</p>
+      </div>
+      <div class="col-translation">
+        <p>超高画质风格迁移：用风格图重绘内容图。现有两类方法均有明显伪影。</p>
+        <p>提出 DiT 框架 U-StyDiT：多视角风格调制器 + StyDiT 块联合学内容与风格；发布 Aes4M 四百万艺术图数据集；首个基于 Transformer Diffusion 的超高画质风格迁移。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card"><span class="tag">定位</span>
+          <p>与 <strong>InstantX</strong>（外挂 Canny）相对：本文在<strong>同一 FLUX 训练流</strong>里联合优化 Canny 内容与 MSM 风格。与 <strong>CSGO</strong> 相对：换 DiT 骨干 + 自建高清数据。360 系（RelaCtrl/WISA/ArtBank 同组作者）。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 Figure 1：U-StyDiT 风格迁移结果</h3>
+      <figure><img src="assets/u-stydit/fig1.jpg" alt="风格迁移定性结果">
+      <figcaption>多组 content + style → 高保真风格化；结构保留、风格一致。点击放大。</figcaption></figure>
+    </section>
+
+    <h2 class="section-title" id="intro">1. Introduction</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Style reconstruction</strong> (IP-Adapter, InstantX, ArtBank…): train style adapter only; at inference add <strong>Canny</strong> for structure — style &amp; Canny trained on <em>different</em> data → confusion &amp; artifacts (Fig.2 col.4).</p>
+        <p><strong>Disentanglement</strong> (CSGO, StyleShot…): learn content+style jointly but UNet DiT limits + poor datasets → not ultra-high quality.</p>
+        <p>WikiArt artistic textures make <strong>Canny extraction poor</strong> — hard to co-train content &amp; style conditions (Fig.10).</p>
+      </div>
+      <div class="col-translation">
+        <p>风格重建派：只训风格，推理加 Canny → 两路条件数据集不一致，信息混淆。</p>
+        <p>解耦派：联合训练但 UNet 能力有限、数据质量不足。</p>
+        <p>WikiArt 艺术纹理导致 Canny 不清晰，阻碍内容与风格同步训练。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#0d9488;"><span class="tag">核心洞察</span>
+          <p>问题不只是「有没有 Canny」，而是<strong>Canny 与风格条件是否在同一分布、同一训练目标下学到</strong>。Aes4M 用合成高清图保证 Canny 可提取（阈值 200/100）。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 Figure 2 &amp; 10：基线对比 &amp; Aes4M vs WikiArt Canny</h3>
+      <figure><img src="assets/u-stydit/fig2.jpg" alt="与 InstantX CSGO 对比">
+      <figcaption>InstantX/CSGO 伪影与不和谐纹理；U-StyDiT 更干净。点击放大。</figcaption></figure>
+      <figure style="margin-top:1rem"><img src="assets/u-stydit/fig10.jpg" alt="Aes4M Canny 更清晰">
+      <figcaption>Aes4M 的 Canny 比 WikiArt 更清晰，利于联合训练。点击放大。</figcaption></figure>
+    </section>
+
+    <h2 class="section-title" id="data">Aes4M Dataset</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Scale:</strong> 10 categories × 400K = <strong>4M</strong> images at $1024\times1024$.</p>
+        <p><strong>Categories:</strong> oil, cartoon, Gufeng, pixel, paint, 3D, sketch, Peking opera, cute, wash painting.</p>
+        <p><strong>Pipeline:</strong> Civitai LoRA × {SD3, SD3.5, SDXL, FLUX} → GPT-4o 1.7M prompts → filter: CLIP consistency &gt;30, aesthetic &gt;7, image–Canny CLIP &gt;0.67 → ~400K/category.</p>
+      </div>
+      <div class="col-translation">
+        <p>四百万张、十类艺术风格、1024 分辨率。</p>
+        <p>油画/卡通/古风/像素/水彩/3D/素描/京剧/可爱/水墨等。</p>
+        <p>LoRA 控风格批量生成 → 三重过滤保图文一致、美学、Canny 可用性。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep"><span class="tag">数据 vs WikiArt</span>
+          <p>不是收集人类画作，而是<strong>可控合成</strong>——牺牲「纯真实」换 Canny 清晰 + 图文对齐。与 StyleShot/CSGO 三元组数据不同：训练只需<strong>单张风格图</strong>自重建（text + Canny + MSM style → 原图）。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="method">3. Methods</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Training objective:</strong> reconstruct style image $I_{gs}$ from text $I_t$, Canny content, and MSM style tokens — learned from same $I_s\in$Aes4M.</p>
+        <p>Given $1024^2$ $I_s$: resize → $I_{gs}$ ($512^2$); random crop 10 patches $\{I_{ls}^i\}$ ($512^2$ each).</p>
+        <p>Encoder → $T_{gs}$, $\{T_{ls}^i\}$. Channel-concat patches → $T_{ls}$; MLP weights $\alpha$ compress → $\hat{T}_{ls}$; Mix with $T_{gs}$ → MSA+FFN → $T_{lgs}$ (Eq. MSM).</p>
+      </div>
+      <div class="col-translation">
+        <p>训练：用文本、Canny、风格 token 重建同一张风格图（自监督式解耦）。</p>
+        <p>高分辨率图缩全局 + 随机裁 10 局部 patch，兼顾算力与细节。</p>
+        <p>局部 token 不丢弃低相似 patch（区别于 StyleMaster/LGAST），通道合并后 MLP 压缩再与全局混合。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color:#6f42c1;"><span class="tag">MSM 压缩动机</span>
+          <p>若对 $\{T_{gs}, T_{ls}^1,\ldots,T_{ls}^{10}\}$ 做全交叉注意力，序列长度爆炸。通道维 concat + 逐 token MLP 加权求和 → 把 10 路局部压回与全局可比的 token 数，再 2 层 MSA。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 Figure 3：训练流水线</h3>
+      <figure><img src="assets/u-stydit/fig3.jpg" alt="训练流水线">
+      <figcaption>Aes4M $1024^2$ → 全局 $512^2$ + 多 patch；ChatGLM 提文本；Canny 阈值 200/100。点击放大。</figcaption></figure>
+    </section>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>StyDiT Block</strong> (extends OminiControl MMA):</p>
+        <p>$$T_{gsc} = \lambda T_c + T_{gs}, \quad \lambda \in [0,1]$$</p>
+        <p>$$\mathrm{StyDiT}([T_{gs}; T_t; T_{lgs}; \lambda T_c]) = \mathrm{MMA}([T_{gsc}; T_t; T_{lgs}])$$</p>
+        <p>$T_c$: Canny VAE tokens; $T_{gs}$: resized style image tokens; $T_{lgs}$: MSM output.</p>
+      </div>
+      <div class="col-translation">
+        <p>在 OminiControl 条件 token 注入基础上，把 Canny 线性融入图像 token（非单独第四路拼接的简化表述）。</p>
+        <p>$\lambda$ 控制内容（结构）强度；训练时从风格图同时得到 $T_c$ 与 $T_{lgs}$，实现内容-风格联合学习。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card"><span class="tag">vs InstantX</span>
+          <p>InstantX：FLUX + 外挂 Canny ControlNet/IP。本文：<strong>单模型内</strong> $T_{gsc}$ 融合，训练数据保证 Canny/风格同源 → 减少 Fig.2 第 4 列类伪影。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 Figure 4：MSM &amp; StyDiT 结构</h3>
+      <figure><img src="assets/u-stydit/fig4.jpg" alt="MSM StyDiT 细节">
+      <figcaption>左：局部 patch 合并压缩；右：StyDiT 中 Canny 与风格 token 注入 MMA。点击放大。</figcaption></figure>
+    </section>
+
+    <div class="diagram">
+      <pre class="mermaid">flowchart TB
+  subgraph train [Training on Aes4M style image I_s]
+    Is[1024 style I_s] --> Gs[Global 512 I_gs]
+    Is --> P10[10x random 512 patches]
+    Gs --> Tgs[T_gs VAE tokens]
+    P10 --> TLS[MSM compress local tokens]
+    Tgs --> MSM[MSM MSA+FFN]
+    TLS --> MSM
+    MSM --> Tlgs[T_lgs mixed style]
+    Gs --> Canny[Canny T_c]
+    Canny --> Tgsc["T_gsc = λ T_c + T_gs"]
+    Tgs --> Tgsc
+    Tgsc --> MMA[StyDiT MMA + T_t + T_lgs]
+    Tlgs --> MMA
+    MMA --> Recon[Reconstruct I_gs]
+  end
+  subgraph infer [Inference]
+    Cimg[Content image] --> Cc[Canny T_c]
+    Simg[Style image] --> MSM2[MSM]
+    MSM2 --> Tlgs2[T_lgs]
+    Cc --> Gen[U-StyDiT denoise]
+    Tlgs2 --> Gen
+  end</pre>
+      <figcaption>自绘：训练自重建 vs 推理 content+style（点击放大）。</figcaption>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 Figure 13：推理流水线（附录）</h3>
+      <figure><img src="assets/u-stydit/fig13.jpg" alt="推理流水线">
+      <figcaption>内容图 → Canny + ChatGLM 文本；风格图 → resize + 10 patch（小图则 duplicate）；送入 U-StyDiT 采样。点击放大。</figcaption></figure>
+    </section>
+
+    <h2 class="section-title" id="experiments">4. Experiments</h2>
+    <div class="row">
+      <div class="col-original">
+        <table class="exp-table">
+          <thead><tr><th>Metric</th><th>U-StyDiT</th><th>InstantX</th><th>CSGO</th><th>StyleShot</th><th>StyleID</th></tr></thead>
+          <tbody>
+            <tr class="is-ours"><td>SSIM↑</td><td><strong>0.421</strong></td><td>0.231</td><td>0.256</td><td>0.153</td><td>0.376</td></tr>
+            <tr class="is-ours"><td>CLIP Score↑</td><td><strong>0.623</strong></td><td>0.551</td><td>0.560</td><td>0.615</td><td>0.552</td></tr>
+            <tr class="is-ours"><td>Aesthetic↑</td><td><strong>6.974</strong></td><td>6.332</td><td>6.159</td><td>6.720</td><td>6.611</td></tr>
+            <tr class="is-ours"><td>Deception Rate↑</td><td><strong>0.781</strong></td><td>0.645</td><td>0.597</td><td>0.586</td><td>0.531</td></tr>
+            <tr class="is-ours"><td>Time (s)↓</td><td>23.125</td><td>27.212</td><td>18.916</td><td>4.934</td><td>14.641</td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:0.85rem">50 content × 20 style → 1000 pairs. Preference study: 100 pairs, 40 users, 2000 votes — aggregate favor 59.3% vs baselines.</p>
+      </div>
+      <div class="col-translation">
+        <p>结构相似度、风格 CLIP、美学分、人类欺骗率全面第一；推理 23s（512²，A40），比 InstantX 快但慢于 StyleShot。</p>
+        <p>训练：32×A100，batch 2×accum 4，200 万 iter，全参微调 FLUX.1-dev。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card"><span class="tag">指标解读</span>
+          <p>SSIM 大幅领先 → 内容结构保留是主要卖点。美学分 6.974 &gt; InstantStyle 6.882。Preference 表里 InST 单项 61.4% 曾胜本文，但综合 59.3* 为论文宣称均值。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 Figure 5：与 SOTA 定性对比</h3>
+      <figure><img src="assets/u-stydit/fig5.jpg" alt="SOTA 定性对比">
+      <figcaption>vs InstantX, StyleID, InstantStyle, InST, StyleAligned, CSGO, StyleShot。点击放大。</figcaption></figure>
+    </section>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>MSM ablation</strong> (Fig.11): w/o $T_{ls}$ → local color confusion, lower CLIP &amp; aesthetic; w/o $T_{gs}$ → artifacts, weak global stylization.</p>
+        <p><strong>StyDiT $\lambda$ ablation</strong> (Fig.12): $\lambda$ from 0.1→1 — higher $\lambda$ → higher structural similarity to content.</p>
+      </div>
+      <div class="col-translation">
+        <p>去掉局部 token：同色物体颜色不一致；去掉全局 token：伪影、细节风格化不足。</p>
+        <p>$\lambda$ 越大越贴内容结构，越小越自由风格化。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card"><span class="tag">实用旋钮</span>
+          <p>推理时 $\lambda$ 是<strong>唯一显式内容强度旋钮</strong>（类似 ControlNet weight）。训练固定 Canny 阈值；未讨论 per-style 自适应 $\lambda$。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 Figure 11–12：MSM &amp; StyDiT 消融</h3>
+      <figure><img src="assets/u-stydit/fig11.jpg" alt="MSM 消融">
+      <figcaption>w/o 局部 / w/o 全局风格 token 对比。点击放大。</figcaption></figure>
+      <figure style="margin-top:1rem"><img src="assets/u-stydit/fig12.jpg" alt="lambda 消融">
+      <figcaption>$\lambda=0.1$ 到 $1.0$ 内容可控性渐变。点击放大。</figcaption></figure>
+    </section>
+
+    <h2 class="section-title" id="conclusion">5. Conclusion</h2>
+    <div class="row">
+      <div class="col-original">
+        <p>First transformer-diffusion framework for ultra-high quality artistic style transfer: MSM + StyDiT + Aes4M. Limitation: only 10 style categories — not open-world arbitrary style transfer at scale.</p>
+      </div>
+      <div class="col-translation">
+        <p>MSM 多视角风格 + StyDiT 联合解耦 + Aes4M 数据；局限：仅 10 类风格，算力/人力限制无法扩到开放世界任意风格。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#dc3545;"><span class="tag">局限</span>
+          <p>无官方开源权重；全参微调 FLUX 成本极高；Aes4M 合成数据域与真实油画摄影仍有 gap；推理慢于轻量 UNet 方法。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="summary" id="notation">
+      <h2>符号速查表</h2>
+      <table class="notation">
+        <thead><tr><th>符号</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td>$I_s, I_{gs}, I_{ls}^i$</td><td>原风格图 $1024^2$ / 全局 $512^2$ / 第 $i$ 个局部 patch</td></tr>
+          <tr><td>$T_{gs}, T_{ls}, T_{lgs}$</td><td>全局 / 局部 / 混合风格 token</td></tr>
+          <tr><td>$T_c, T_{gsc}$</td><td>Canny 内容 token / 与风格图 token 融合后的视觉 token</td></tr>
+          <tr><td>MSM</td><td>Multi-view Style Modulator</td></tr>
+          <tr><td>$\lambda$</td><td>Canny 内容条件强度，$[0,1]$</td></tr>
+          <tr><td>Aes4M</td><td>10 类 × 40 万，共 400 万 $1024^2$ 艺术图</td></tr>
+          <tr><td>StyDiT</td><td>扩展 MMA 的联合内容-风格 DiT 块</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="summary" id="overview">
+      <h2>论证总览</h2>
+      <div class="skeleton">
+问题：风格迁移要超高画质，但重建派 Canny+风格冲突，解耦派 UNet+低质数据上限低<br>
+↓<br>
+假说：FLUX DiT 上从<strong>同一张图</strong>联合学 Canny(内容) + MSM(风格)<br>
+↓<br>
+MSM：1024→全局512 + 10局部patch；通道合并+MLP压缩；不丢低相似patch<br>
+↓<br>
+StyDiT：T_gsc = λT_c + T_gs；MMA([T_gsc; T_t; T_lgs])<br>
+↓<br>
+Aes4M：合成400万高清图，Canny/美学/图文三重过滤<br>
+↓<br>
+全参微调 2M iter → SSIM/美学/欺骗率 SOTA；λ 推理可控
+      </div>
+      <div class="strength"><strong>强项</strong>：首个 DiT 超高画质风格迁移闭环；MSM 多视角+压缩有算力意识；Aes4M 直击 WikiArt Canny 痛点；与 OminiControl/FLUX 生态衔接自然。</div>
+      <div class="weakness"><strong>弱项</strong>：10 类封闭风格；全参 FLUX 训练门槛极高；数据全合成；Preference 并非项项第一；无公开代码。</div>
+    </section>
+
+    <section class="summary faq" id="faq">
+      <h2>🧩 结构化十问（AI 解构）</h2>
+      <details open><summary>Q1 · 这篇论文要解决什么问题？</summary><div class="answer">在<strong>艺术风格迁移</strong>中生成<strong>超高画质、无伪影</strong>的风格化图：保留内容结构、迁移风格图笔触，并克服现有方法的不和谐纹理与模糊。</div></details>
+      <details open><summary>Q2 · 现有两类方法各差在哪？</summary><div class="answer"><strong>风格重建派</strong>（InstantX 等）只训风格 adapter，推理外挂 Canny，两路条件训练数据不一致 → 信息混淆。<strong>解耦派</strong>（CSGO/StyleShot）联合学但 UNet DiT 弱 + WikiArt 等数据 Canny 差 → 画质上限低。</div></details>
+      <details open><summary>Q3 · U-StyDiT 核心创新是什么？</summary><div class="answer">① <strong>MSM</strong> 从全局+10 局部 patch 提取风格 token；② <strong>StyDiT Block</strong> 在 FLUX MMA 上联合注入 Canny 内容与混合风格 token；③ <strong>Aes4M</strong> 400 万高清合成艺术数据集。</div></details>
+      <details open><summary>Q4 · MSM 为什么不直接丢掉低相似 patch？</summary><div class="answer">低相似局部 patch 往往含风格图的<strong>独特纹理/笔触</strong>（StyleMaster/LGAST 丢弃会损风格）。本文用通道 concat + MLP 加权压缩，在保留信息的同时控制注意力复杂度。</div></details>
+      <details open><summary>Q5 · StyDiT 与 OminiControl 有何关系？</summary><div class="answer">OminiControl 把条件图 token $T_s$ 拼进 MMA：$[T_i; T_t; T_s]$。StyDiT 用 MSM 的 $T_{lgs}$ 作风格条件，并把 Canny 以 $T_{gsc}=\lambda T_c+T_{gs}$ 融入视觉 token，实现<strong>同图训练的内容-风格解耦</strong>。</div></details>
+      <details open><summary>Q6 · Aes4M 怎么构建？可信吗？</summary><div class="answer">Civitai LoRA + {SD3, SD3.5, SDXL, FLUX} 批量生成；GPT-4o 170 万 prompt；过滤图文一致、美学&gt;7、图-Canny CLIP&gt;0.67。优点是 Canny 清晰可控；风险是<strong>合成域偏差</strong>，与真实艺术品收藏分布不同。</div></details>
+      <details open><summary>Q7 · 训练与推理各输入什么？</summary><div class="answer"><strong>训练</strong>：单张 Aes4M 风格图 → 文本(ChatGLM) + Canny + MSM 风格 → 重建 $I_{gs}$。<strong>推理</strong>：内容图 Canny + 文本；风格图经 MSM；噪声采样生成风格化结果。$\lambda$ 调结构保留度。</div></details>
+      <details open><summary>Q8 · 实验能证明有效吗？</summary><div class="answer">SSIM 0.421（结构）、CLIP 0.623（风格）、美学 6.974、欺骗率 78.1% 均领先 Tab.1 七基线；Fig.5 定性伪影更少；Fig.11–12 消融支持 MSM 与 $\lambda$ 设计。</div></details>
+      <details open><summary>Q9 · 主要代价与局限？</summary><div class="answer">32×A100 全参微调 FLUX 200 万步；推理 ~23s/512²；仅 10 类风格非开放世界；作者自述无法扩到数十万风格类。</div></details>
+      <details open><summary>Q10 · 与 RelaCtrl / ArtBank 如何衔接？</summary><div class="answer">同 360/ZJU 线：ArtBank 隐式风格库、RelaCtrl 高效条件注入、本文专攻<strong>DiT 艺术风格迁移全链路</strong>。可看作「高质量风格数据(Aes4M) + FLUX 条件注入(MSM/StyDiT)」的垂直整合。</div></details>
+    </section>
+
+    <section class="summary deepdive" id="deepdive">
+      <h2>🔬 深挖</h2>
+      <div class="block">
+        <h4>训练=解耦、推理=组合</h4>
+        <p>训练从未见过「内容图+风格图」配对；而是让网络从<strong>同一张风格图</strong>分离出 Canny 与 MSM 特征并重建。推理时把 content 的 Canny 与 style 的 MSM 特征<strong>重新组合</strong>——类似 CSGO 三元组思路，但监督来自自重建而非显式三元组数据集。</p>
+      </div>
+      <div class="block">
+        <h4>1024 信息如何进 512 训练？</h4>
+        <p>全图 resize 丢细节 → 用 10 个 $512^2$ crop 补局部高频；这是 MSM 存在的直接动机，也是相对「只 resize」的信息守恒权衡。</p>
+      </div>
+      <div class="block crit">
+        <h4>批判性思维 · 盲区</h4>
+        <ul>
+          <li><strong>SSIM 与感知质量：</strong>结构指标高是否牺牲风格夸张度？CLIP 风格分仅略胜 StyleShot。</li>
+          <li><strong>10 patch 超参：</strong>$n{=}10$ 固定，无敏感性曲线（算力/质量 Pareto）。</li>
+          <li><strong>封闭类别：</strong>LoRA 十类能否泛化到用户随手拍的风格图？</li>
+          <li><strong>全参 vs LoRA：</strong>2M iter 全参 FLUX 不可复现门槛；未报告 LoRA-only 上限。</li>
+          <li><strong>Preference 细节：</strong>对 InST/InstantStyle 单项偏好低于对方，需看是否因结构过强牺牲风格主观喜好。</li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="lightbox" role="dialog" aria-modal="true" aria-label="放大查看">
+    <div class="lb-content"></div>
+    <div class="lb-cap"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral', flowchart: { htmlLabels: true } });</script>
+  <script>
+    function syncScrollPad() {
+      var head = document.querySelector('.sticky-head');
+      if (head) document.documentElement.style.scrollPaddingTop = (head.offsetHeight + 8) + 'px';
+    }
+    window.addEventListener('load', syncScrollPad);
+    window.addEventListener('resize', syncScrollPad);
+    syncScrollPad();
+    (function () {
+      var lb = document.getElementById('lightbox');
+      var content = lb.querySelector('.lb-content');
+      var cap = lb.querySelector('.lb-cap');
+      function findZoomTarget(node) {
+        var el = node.closest ? node.closest('img, svg') : null;
+        if (!el || !el.closest('.diagram, .figure-row, .mermaid')) return null;
+        return el;
+      }
+      function nearestCaption(el) {
+        var fig = el.closest('figure') || el.closest('.diagram') || el.closest('.figure-row');
+        var c = fig && fig.querySelector('figcaption');
+        return c ? c.textContent.trim() : '';
+      }
+      function openLightbox(node, caption) {
+        content.innerHTML = '';
+        var clone = node.cloneNode(true);
+        var r = node.getBoundingClientRect();
+        var scale = Math.min(window.innerWidth * 0.96 / (r.width || 600), window.innerHeight * 0.92 / (r.height || 400));
+        if (!isFinite(scale) || scale <= 0) scale = 1;
+        clone.style.width = Math.round((r.width || 600) * scale) + 'px';
+        clone.style.height = Math.round((r.height || 400) * scale) + 'px';
+        clone.style.maxWidth = clone.style.maxHeight = 'none';
+        content.appendChild(clone);
+        cap.textContent = caption || '';
+        lb.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+      function closeLightbox() { lb.classList.remove('open'); content.innerHTML = ''; document.body.style.overflow = ''; }
+      document.addEventListener('click', function (e) {
+        if (lb.classList.contains('open')) { closeLightbox(); return; }
+        var el = findZoomTarget(e.target);
+        if (el) { e.preventDefault(); e.stopPropagation(); openLightbox(el, nearestCaption(el)); }
+      });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && lb.classList.contains('open')) closeLightbox(); });
+    })();
+  </script>
+</body>
+</html>

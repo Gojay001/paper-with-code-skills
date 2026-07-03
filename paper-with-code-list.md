@@ -123,6 +123,7 @@ There are paper with code for CV / AIGC / LLM / VLM.
 | Open-Sora 2.0 | [Open-Sora 2.0: Training a Commercial-Level Video Generation Model in $200k](https://arxiv.org/abs/2503.09642) | arXiv(2025) | [PyTorch](https://github.com/hpcaitech/Open-Sora) |
 | [Wan2.1](https://gojay.top/paper-reading/wan21.html) | [Wan: Open and Advanced Large-Scale Video Generative Models](https://arxiv.org/abs/2503.20314) | arXiv(2025) | [PyTorch](https://github.com/Wan-Video/Wan2.1) |
 | Wan2.2 | [Wan: Open and Advanced Large-Scale Video Generative Models](https://arxiv.org/abs/2503.20314) | arXiv(2025) | [PyTorch](https://github.com/Wan-Video/Wan2.2) |
+| [Lay2Story](https://gojay.top/paper-reading/lay2story.html) | [Lay2Story: Extending Diffusion Transformers for Layout-Togglable Story Generation](https://arxiv.org/abs/2508.08949) | arXiv(2025) / ICCV(2025) | [code] |
 | Wan2.2-S2V-14B | [Wan-S2V: Audio-Driven Cinematic Video Generation](https://arxiv.org/abs/2508.18621) | arXiv(2025) | [PyTorch](https://github.com/Wan-Video/Wan2.2) |
 | LongCat-Video | [LongCat-Video Technical Report](https://arxiv.org/abs/2510.22200) | arXiv(2025) | [PyTorch](https://github.com/meituan-longcat/LongCat-Video) |
 | HunyuanVideo 1.5 | [HunyuanVideo 1.5 Technical Report](https://arxiv.org/abs/2511.18870) | arXiv(2025) | [PyTorch](https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5) |

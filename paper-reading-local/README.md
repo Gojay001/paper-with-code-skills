@@ -10,8 +10,7 @@
 
 ## 当前条目
 
-已发布至 `paper-reading/`：`pixart-alpha`、`pixart-delta`、`fancyvideo`、`wisa`、`relactrl`
+已发布至 `paper-reading/`：`pixart-alpha`、`pixart-delta`、`fancyvideo`、`wisa`、`relactrl`、`qihoo-t2x`、`lay2story`
 
 | slug | 论文 | arXiv | 状态 |
 |------|------|-------|------|
-| `lay2story` | Lay2Story | [2508.08949](https://arxiv.org/abs/2508.08949) | 本地 |

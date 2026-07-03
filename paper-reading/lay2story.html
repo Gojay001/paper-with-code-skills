@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lay2Story — Layout-Togglable Story Generation · 逻辑精读</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+  <style>
+    :root { --navy:#1a2744; --paper:#faf8f5; --thesis:#fff3cd; --concept:#f8d7da; --evidence:#cfe2ff; --counter:#d1e7dd; --method:#e2d9f3; --text:#2c2c2c; --muted:#6c757d; --border:#e8e4df; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'IBM Plex Sans',sans-serif; background:var(--paper); color:var(--text); line-height:1.6; }
+    .sticky-head { position:sticky; top:0; z-index:100; }
+    .top-nav { background:var(--navy); color:#fff; padding:1rem 2rem; }
+    .top-nav h1 { font-size:1.25rem; font-weight:600; }
+    .top-nav h1 a { color:#fff; text-decoration:none; border-bottom:1px dotted rgba(255,255,255,0.5); }
+    .top-nav .meta { font-size:0.85rem; opacity:0.85; margin-top:0.25rem; }
+    .legend { display:flex; flex-wrap:wrap; gap:0.75rem; margin-top:0.75rem; font-size:0.8rem; }
+    .legend span { padding:0.15rem 0.5rem; border-radius:3px; color:#2c2c2c; }
+    .chapter-nav { background:#fff; border-bottom:1px solid var(--border); padding:0.75rem 2rem; overflow-x:auto; white-space:nowrap; box-shadow:0 2px 6px rgba(0,0,0,0.06); }
+    .chapter-nav a { color:var(--navy); text-decoration:none; margin-right:1.25rem; font-size:0.9rem; font-weight:500; }
+    main { max-width:1680px; margin:0 auto; padding:2rem; }
+    .section-title { font-size:1.5rem; color:var(--navy); margin:2rem 0 1rem; padding-bottom:0.5rem; border-bottom:2px solid var(--navy); }
+    .col-labels { display:grid; grid-template-columns:1.1fr 1fr 1fr; gap:1.5rem; margin-bottom:0.5rem; font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); }
+    .row { display:grid; grid-template-columns:1.1fr 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem; align-items:start; }
+    .col-original { font-family:'Lora',serif; font-size:0.95rem; line-height:1.75; }
+    .col-original p { margin-bottom:0.75rem; }
+    .col-translation { font-size:0.92rem; line-height:1.75; color:#333; }
+    .col-translation p { margin-bottom:0.75rem; }
+    .analysis-card { background:#fff; border-left:4px solid var(--navy); padding:1rem 1.25rem; border-radius:0 6px 6px 0; box-shadow:0 1px 3px rgba(0,0,0,0.06); font-size:0.9rem; }
+    .analysis-card .tag { display:inline-block; font-size:0.75rem; font-weight:600; text-transform:uppercase; margin-bottom:0.5rem; color:var(--navy); }
+    .analysis-card h4 { font-size:0.85rem; color:var(--muted); margin:0.75rem 0 0.25rem; }
+    .analysis-card p { margin-bottom:0.5rem; }
+    .exp-table { width:100%; border-collapse:collapse; margin:0.75rem 0; font-size:0.82rem; }
+    .exp-table th,.exp-table td { border:1px solid var(--border); padding:0.35rem 0.5rem; text-align:left; }
+    .exp-table th { background:var(--paper); color:var(--navy); font-weight:600; }
+    .exp-table tr.is-ours { background:var(--evidence); }
+    .notation { width:100%; border-collapse:collapse; margin:0.75rem 0; font-size:0.88rem; background:#fff; }
+    .notation th,.notation td { border:1px solid var(--border); padding:0.4rem 0.6rem; text-align:left; }
+    .notation th { background:var(--paper); color:var(--navy); }
+    .figure-row { margin:1.5rem 0; padding:1.25rem; background:#fff; border:1px solid var(--border); border-radius:8px; }
+    .figure-row figure { margin:0; text-align:center; }
+    .figure-row img { max-width:100%; height:auto; cursor:zoom-in; }
+    .figure-row figcaption { font-size:0.82rem; color:var(--muted); margin-top:0.5rem; }
+    .figure-row h3 { color:var(--navy); font-size:1rem; margin-bottom:0.75rem; }
+    .diagram { margin:0.75rem 0; }
+    .mermaid { background:#fff; border:1px solid var(--border); border-radius:4px; padding:0.5rem; }
+    .diagram img,.diagram svg,.figure-row img,.figure-row svg { cursor:zoom-in; }
+    #lightbox { position:fixed; inset:0; background:rgba(10,12,20,0.92); display:none; align-items:center; justify-content:center; z-index:1000; cursor:zoom-out; padding:3vh 3vw; }
+    #lightbox.open { display:flex; }
+    #lightbox .lb-content img,#lightbox .lb-content svg { display:block; background:#fff; border-radius:6px; box-shadow:0 8px 40px rgba(0,0,0,0.5); }
+    #lightbox .lb-cap { position:fixed; bottom:1.2rem; left:0; right:0; text-align:center; color:#e8e4df; font-size:0.8rem; }
+    .hl-thesis { background:var(--thesis); padding:0 2px; }
+    .hl-concept { background:var(--concept); padding:0 2px; }
+    .hl-evidence { background:var(--evidence); padding:0 2px; }
+    .hl-method { background:var(--method); padding:0 2px; }
+    .summary { background:#fff; border:1px solid var(--border); border-radius:8px; padding:2rem; margin-top:3rem; }
+    .summary h2 { color:var(--navy); margin-bottom:1rem; }
+    .summary .skeleton { font-family:monospace; background:var(--paper); padding:1rem; border-radius:4px; line-height:1.9; }
+    .summary .strength,.summary .weakness { padding:0.75rem 1rem; border-radius:4px; margin:0.5rem 0; }
+    .summary .strength { background:var(--counter); }
+    .summary .weakness { background:var(--concept); }
+    .feynman { background:#fff; border:1px solid var(--border); border-left:5px solid #0d9488; border-radius:0 8px 8px 0; padding:1.25rem 1.5rem; margin:1.5rem 0 2rem; }
+    .feynman h2 { color:#0d9488; font-size:1.15rem; margin-bottom:0.35rem; }
+    .feynman p { font-size:0.95rem; line-height:1.85; margin-bottom:0.6rem; }
+    .faq details { background:#fff; border:1px solid var(--border); border-radius:6px; margin:0.5rem 0; }
+    .faq summary { cursor:pointer; font-weight:600; color:var(--navy); padding:0.7rem 0.9rem; list-style:none; font-size:0.92rem; }
+    .faq summary::-webkit-details-marker { display:none; }
+    .faq .answer { padding:0 0.9rem 0.85rem 1.8rem; font-size:0.9rem; line-height:1.8; }
+    .deepdive .block { margin:0.9rem 0; padding:0.85rem 1.1rem; border-radius:4px; background:var(--paper); border-left:3px solid #6f42c1; }
+    .deepdive .block.crit { border-left-color:#dc3545; background:#fdf0f1; }
+    @media (max-width:1100px) { .col-labels{display:none;} .row{grid-template-columns:1fr;} }
+  </style>
+</head>
+<body>
+  <div class="sticky-head">
+    <header class="top-nav">
+      <h1><a href="https://arxiv.org/abs/2508.08949" target="_blank" rel="noopener">Lay2Story — Extending Diffusion Transformers for Layout-Togglable Story Generation</a></h1>
+      <div class="meta">DeepLearning-Paper-with-Code · Video Generation · arXiv(2025) / ICCV(2025) · JD.com · Ao Ma et al.</div>
+      <div class="legend">
+        <span class="hl-thesis">核心论点</span><span class="hl-concept">关键概念</span><span class="hl-evidence">实证证据</span><span class="hl-method">方法论</span>
+      </div>
+    </header>
+    <nav class="chapter-nav">
+      <a href="#feynman">速读</a><a href="#abstract">Abstract</a><a href="#intro">Introduction</a>
+      <a href="#data">Lay2Story-1M</a><a href="#method">Method</a><a href="#experiments">Experiments</a>
+      <a href="#conclusion">Conclusion</a><a href="#notation">符号表</a><a href="#overview">总览</a><a href="#faq">十问</a><a href="#deepdive">深挖</a>
+    </nav>
+  </div>
+
+  <main>
+    <section class="feynman" id="feynman">
+      <h2>🎮 费曼一分钟</h2>
+      <p><strong>Storytelling</strong>：用一组 prompt 生成多帧图，主角外观要一致。现有 training-free（改 cross-frame attention）和 training-based 都难精细控制<strong>位置、衣着、表情、姿势</strong>，且缺大规模带 layout 标注的数据。</p>
+      <p><strong>Lay2Story</strong> 定义新任务 <strong>Layout-Togglable Storytelling</strong>：可选输入主体 bbox + 细粒度 subject caption（绿字描述 + 红框位置）。训练时随机 dropout layout → 推理时可开可关。</p>
+      <p>模型：以 <strong>PixArt-α</strong> DiT 为 <strong>global branch</strong>（全局 caption）；仿 ControlNet 加 <strong>subject branch</strong>（masked self/cross-attn + masked 3D self-attn，reference image 拼 9 通道 latent）。数据 <strong>Lay2Story-1M</strong>（102 万张、720p+ 卡通）+ 评测 <strong>Lay2Story-Bench</strong>（3000 prompts）。</p>
+      <p>关键数：w/ layout — DreamSim <strong>0.1324</strong> CLIP-I <strong>0.9299</strong> FID <strong>26.71</strong> Recall@1 <strong>0.7012</strong> · 推理 <strong>14s</strong>（25 steps）vs FLUX IPA <strong>61s</strong>。</p>
+    </section>
+
+    <section class="figure-row">
+      <h3>📄 Figure 1：与 SOTA 定性对比</h3>
+      <figure><img src="assets/lay2story/fig1.png" alt="Lay2Story vs 1Prompt1Story vs FLUX IP-Adapter">
+      <figcaption>6 帧故事：Lay2Story 额外接收 subject captions（绿）与 positions（红框），一致性与可控性优于 1Prompt1Story、FLUX.1-dev IP-Adapter。720×1280 vs 他人 1024²。点击放大。</figcaption></figure>
+    </section>
+
+    <h2 class="section-title" id="abstract">Abstract</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>Storytelling lacks <span class="hl-concept">fine-grained guidance</span> and <span class="hl-concept">inter-frame interaction</span>; scarce data blocks control of position, appearance, clothing, expression, posture.</p>
+        <p><span class="hl-thesis">Layout conditions</span> (position + detailed attributes) strengthen consistency and enable precise control → <span class="hl-method">Layout-Togglable Storytelling</span>.</p>
+        <p><span class="hl-evidence">Lay2Story-1M</span> (1M+ images, 11,300h cartoon video), <span class="hl-evidence">Lay2Story-Bench</span> (3K prompts), <span class="hl-method">Lay2Story</span> on DiTs — SOTA on consistency, semantics, aesthetics.</p>
+      </div>
+      <div class="col-translation">
+        <p>故事生成缺细粒度引导与帧间交互；数据稀缺导致无法控制主体位置/外观/衣着/表情/姿势。</p>
+        <p>布局条件（位置+细节属性）增强一致性并精确控制 → 定义 Layout-Togglable Storytelling。</p>
+        <p>Lay2Story-1M、Lay2Story-Bench、基于 DiT 的 Lay2Story — 一致性/语义/美学 SOTA。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card"><span class="tag">三线贡献</span>
+          <p>任务定义 + 百万级 layout 数据 + 双分支 DiT 架构。与 WISA 同组（JD/360 系），但聚焦<strong>卡通故事一致性</strong>而非物理定律。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="intro">1. Introduction</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Training-free</strong> (ConsiStory, 1Prompt1Story, StoryDiffusion): modify cross-frame self-attention on frozen T2I — versatile but weak fine control.</p>
+        <p><strong>Training-based</strong> (StoryGen, FLUX IP-Adapter): learn from frame sequences — limited by small datasets without subject refinement.</p>
+        <p>Baselines compared: BLIP-Diffusion, StoryGen, ConsiStory, StoryDiffusion, 1Prompt1Story, FLUX.1-dev IP-Adapter.</p>
+      </div>
+      <div class="col-translation">
+        <p>Training-free：改跨帧注意力，通用但难精细控制。</p>
+        <p>Training-based：序列学习，缺主体细化标注的数据集限制上限。</p>
+        <p>全面对比上述 SOTA 方法。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#0d9488;"><span class="tag">定位</span>
+          <p>「Togglable」= 训练时 layout dropout，推理可选 bbox+caption。比纯 layout-to-image 更贴近 story 产品：同一 identity，逐帧变 pose/服装/场景。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="data">3. Lay2Story-1M &amp; Bench</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>~200K sequences × 4–6 frames = <strong>1.02M images</strong>, ≥720p. Annotations: global caption (<span class="hl-method">identity + frame prompt</span>), subject bbox, subject detail caption.</p>
+        <p><strong>Sources:</strong> PBS Kids, Khan Academy (~12K), Internet Archive (~8K), YouTube (~20K cartoon). Filter: Laion-Aes + SD Safety → ~25K videos, 11,300h.</p>
+        <p><strong>Pipeline:</strong> FFmpeg 0.25 FPS → GroundingDINO top box → CLIP + K-means (150 frames / 12 centers) → group 4/5/6 frames (50/30/20%) → GPT-4o mini annotate.</p>
+      </div>
+      <div class="col-translation">
+        <p>约 20 万序列、每序列 4–6 帧，共 102 万张 ≥720p。标注：全局 caption（identity+frame）、主体框、主体细节描述。</p>
+        <p>视频源：教育平台 + 档案馆 + YouTube 卡通；美学+NSFW 过滤后约 2.5 万条、1.13 万小时。</p>
+        <p>流水线：抽帧 → 检测主体 → 聚类去冗余 → 分组 → GPT-4o mini 标注。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep"><span class="tag">数据对比 Tab.1</span>
+          <table class="exp-table">
+            <thead><tr><th>Dataset</th><th>Images</th><th>Res</th><th>Subject detail</th></tr></thead>
+            <tbody>
+              <tr><td>StorySalon</td><td>160K</td><td>432×803</td><td>no</td></tr>
+              <tr><td>StoryDB</td><td>100K</td><td>512²</td><td>no</td></tr>
+              <tr><td>StoryStream</td><td>258K</td><td>480×854</td><td>no</td></tr>
+              <tr class="is-ours"><td>Lay2Story-1M</td><td>1.02M</td><td>720×1080</td><td>yes</td></tr>
+            </tbody>
+          </table>
+          <p>仅标注<strong>最显眼单一角色</strong>（卡通简化任务）。只发布 YouTube ID + 处理代码，不直接发 raw 视频。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 Figure 2–3：视频时长分布 &amp; 数据流水线</h3>
+      <figure><img src="assets/lay2story/fig2.png" alt="视频时长分布"><figcaption>过滤后 &gt;60% 视频时长 15–40 分钟。点击放大。</figcaption></figure>
+      <figure style="margin-top:1rem"><img src="assets/lay2story/fig3.png" alt="Lay2Story-1M 数据流水线"><figcaption>抽帧 → 检测 → 聚类 → 分组 → GPT 标注。点击放大。</figcaption></figure>
+    </section>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Lay2Story-Bench:</strong> 3,000 samples from top 10% aesthetic videos; 655 prompt sets; lengths 4/5/6 = 375/180/100; ≤8 sets per category; train/test video ID disjoint.</p>
+      </div>
+      <div class="col-translation">
+        <p>评测集 3000 样本，美学 top 10%；655 组 prompt；与 ConsiStory（100 组/500 prompt/无 GT）相比更大、有 HQ 原图与主体标注。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card"><span class="tag">Bench</span><p>ConsiStory: 100 sets / 500 prompts / 无原图 GT。Lay2Story-Bench: 655 sets / 3000 / 有 HQ GT + layout 标注。</p></div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="method">4. Method</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>Inputs: reference image $\mathcal{I}_{ref}$, bboxes $\mathcal{B}_{ref},\mathcal{B}$ → masks $\mathcal{M}_{ref},\mathcal{M}$; global caption $T_{global}$; subject caption $T_{subject}$.</p>
+        <p><strong>Global branch:</strong> PixArt-α fine-tuned — AdaLN-single + self-attn + cross-attn(T5 $TM_{global}$).</p>
+        <p><strong>Subject branch</strong> (ControlNet-style, every 2 global blocks): masked self-attn, masked cross-attn, masked 3D self-attn; zero-init skip $\mathcal{Z}^n = \mathcal{Z}^n + F_m(\mathcal{Z}^m_{sub})$.</p>
+      </div>
+      <div class="col-translation">
+        <p>输入：参考图、bbox→mask、全局/主体文本。</p>
+        <p>全局支路：PixArt-α 微调，负责整体画质。</p>
+        <p>主体支路：掩码注意力 + 3D 跨帧注意力；每 2 个 global block 注入一次 zero linear 输出。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color:#6f42c1;"><span class="tag">统一掩码注意力</span>
+          <p>$$\mathrm{MA}(Q,K,V,M)=\mathrm{softmax}\!\left(\frac{QK^T}{\sqrt{d_k}}+M\right)V$$</p>
+          <p>背景位置 $M$ 为大负数 → 只在主体区域算注意力。3D 版 reshape 为 $(fhw)\times(fhw)$ 做跨帧主体一致。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Reference concat:</strong> VAE $\mathcal{F}_{rep}$ (4ch) + mask $\mathcal{M}_{ref}$ (1ch) + noise $\mathcal{Z}$ (4ch) → pad to $f$ frames → 9ch conv → 4ch $\mathcal{Z}_{sub}$.</p>
+        <p><strong>Layout-togglable training:</strong> 25% masks fully valid (no bbox); 25% replace $T_{subject}$ with $T_{global}$.</p>
+      </div>
+      <div class="col-translation">
+        <p>参考图 VAE 特征 + mask + 噪声拼 9 通道再压回 4 通道。</p>
+        <p>训练随机：25% 全图有效 mask（模拟无 bbox）；25% 用全局 caption 替代 subject caption（模拟无细描述）。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card"><span class="tag">Togglable 机制</span>
+          <p>Dropout layout 条件 → 推理时 w/o lc 仍可用（仅 identity+frame prompt），w/ lc 开启精细控制。Fig.6 显示早期去噪步（T=5）layout 帮助最大。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 Figure 4：Lay2Story 双分支架构</h3>
+      <figure><img src="assets/lay2story/fig4.png" alt="Global branch + Subject branch">
+      <figcaption>Global：self + cross-attn；Subject：masked self/cross/3D self-attn + reference concat。点击放大。</figcaption></figure>
+    </section>
+
+    <div class="diagram">
+      <pre class="mermaid">flowchart TB
+  subgraph global [Global Branch — PixArt-α]
+    Z[Noise latent Z] --> SA[Self-Attn]
+    SA --> CA[Cross-Attn + T5 global]
+  end
+  subgraph subject [Subject Branch]
+    Ref[Ref VAE + mask + Z] --> MSA[Masked Self-Attn]
+    MSA --> MCA[Masked Cross-Attn + T5 subject]
+    MCA --> M3D[Masked 3D Self-Attn]
+  end
+  M3D -->|zero linear every 2 blocks| SA
+  Bbox[Layout bbox M] --> MSA
+  Bbox --> MCA
+  Bbox --> M3D</pre>
+      <figcaption>自绘：双分支与 layout 掩码注入（点击放大）。</figcaption>
+    </div>
+
+    <h2 class="section-title" id="experiments">5. Experiments</h2>
+    <div class="row">
+      <div class="col-original">
+        <table class="exp-table">
+          <thead><tr><th>Method</th><th>DreamSim↓</th><th>CLIP-I↑</th><th>FID↓</th><th>R@1↑</th><th>Human↑</th><th>Time(s)</th></tr></thead>
+          <tbody>
+            <tr><td>1Prompt1Story</td><td>0.2429</td><td>0.8461</td><td>66.79</td><td>0.5583</td><td>0.6742</td><td>20.69</td></tr>
+            <tr><td>FLUX.1-dev IPA</td><td>0.1533</td><td>0.9138</td><td>33.18</td><td>0.6482</td><td>0.7059</td><td>61.38</td></tr>
+            <tr class="is-ours"><td>Lay2Story w/o lc</td><td>0.1602</td><td>0.9214</td><td>35.82</td><td>0.6376</td><td>0.7123</td><td>13.63</td></tr>
+            <tr class="is-ours"><td>Lay2Story w/ lc</td><td>0.1324</td><td>0.9299</td><td>26.71</td><td>0.7012</td><td>0.7561</td><td>14.02</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="col-translation">
+        <p>w/ layout 全指标 SOTA；w/o layout 仍次优（CLIP-I 第二）。推理 14s，仅比 BLIP-Diffusion 慢但远快于 FLUX IPA。</p>
+        <p>评测：DreamSim + CLIP-I（CarveKit 去背景）；FID；Recall@1；3 人人工偏好。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card"><span class="tag">消融 Tab.4</span>
+          <p>去 subject branch：FID 110.58；去 ref image：50.27；去 masked 3D SA：66.14；完整：26.71。3D 跨帧注意力对一致性最关键。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 Figure 5–6：定性对比 &amp; Layout 消融</h3>
+      <figure><img src="assets/lay2story/fig5.png" alt="定性对比"><figcaption>vs StoryDiffusion / ConsiStory / 1Prompt1Story / FLUX；末两行 w/o vs w/ layout。点击放大。</figcaption></figure>
+      <figure style="margin-top:1rem"><img src="assets/lay2story/fig6.png" alt="layout 条件消融"><figcaption>同 prompt 不同去噪步：有 layout 时主体更早成形（T=5 大象更清晰）。点击放大。</figcaption></figure>
+    </section>
+
+    <h2 class="section-title" id="conclusion">6. Conclusion</h2>
+    <div class="row">
+      <div class="col-original">
+        <p>Layout-Togglable Storytelling + Lay2Story-1M + Lay2Story-Bench + DiT dual-branch Lay2Story — best consistency, semantics, aesthetics on story generation.</p>
+      </div>
+      <div class="col-translation">
+        <p>定义可开关 layout 的故事生成任务；百万数据与 benchmark；双分支 DiT 方法全面超越现有 story 方法。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#dc3545;"><span class="tag">局限</span>
+          <p>仅卡通单主体；无公开代码（截至 2026）；真人/多主体未覆盖；layout 推理需额外检测或人工框。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="summary" id="notation">
+      <h2>符号速查表</h2>
+      <table class="notation">
+        <thead><tr><th>符号</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td>Layout-Togglable</td><td>layout（bbox + subject caption）可开关的故事生成</td></tr>
+          <tr><td>$\mathcal{Z},\mathcal{Z}_{sub}$</td><td>全局 / 主体支路噪声 latent</td></tr>
+          <tr><td>$\mathcal{M},\mathcal{M}_s,\mathcal{M}_c,\mathcal{M}_t$</td><td>空间 / self / cross / 3D 注意力掩码</td></tr>
+          <tr><td>identity + frame prompt</td><td>全局 caption 格式：角色身份 + 本帧情节</td></tr>
+          <tr><td>w/ lc / w/o lc</td><td>推理是否注入 layout 条件</td></tr>
+          <tr><td>Lay2Story-1M</td><td>102 万图、20 万序列、layout 标注</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="summary" id="overview">
+      <h2>论证结构总览</h2>
+      <div class="skeleton">
+        问题（story 一致性 + 缺精细控制 + 缺 layout 数据）<br/>
+        → 洞察（layout 引导帧间细粒度交互）<br/>
+        → 任务（Layout-Togglable Storytelling）<br/>
+        → 数据（Lay2Story-1M 流水线 + Bench）<br/>
+        → 方法（PixArt-α global + ControlNet式 subject + masked 3D SA）<br/>
+        → 训练（25% mask/caption dropout）<br/>
+        → 证据（Tab.3 SOTA + 消融 + Fig.5/6）
+      </div>
+      <div class="strength"><strong>最强：</strong>百万 layout 数据 + togglable 训练策略 + 双分支设计形成闭环；指标全面领先且推理快。</div>
+      <div class="weakness"><strong>最弱：</strong>卡通单主体偏置；无开源；layout 推理链路未产品化；与 FLUX 分辨率/域不同难公平比美学。</div>
+      <p style="margin-top:1rem;font-size:0.85rem;color:var(--muted);"><a href="https://arxiv.org/abs/2508.08949">arXiv:2508.08949</a> · ICCV 2025 · JD.com · 本地精读（gitignored）</p>
+    </section>
+
+    <section class="summary faq" id="faq">
+      <h2>🧩 结构化十问</h2>
+      <details open><summary>Q1 · 解决什么问题？</summary><div class="answer">多帧故事生成中主体不一致，且无法控制位置/外观/衣着/表情/姿势；缺大规模带 layout 的训练数据。</div></details>
+      <details open><summary>Q2 · 新问题吗？</summary><div class="answer">Storytelling 已有大量工作；新在 <strong>Layout-Togglable</strong> 任务定义 + 百万 layout 标注数据 + DiT 双分支专门设计。</div></details>
+      <details open><summary>Q3 · 核心假设？</summary><div class="answer">主体 bbox + 细粒度 subject caption 能引导帧间细交互；训练时 dropout layout 可兼顾有/无 layout 推理。</div></details>
+      <details open><summary>Q4 · 相关工作？</summary><div class="answer">Training-free: ConsiStory, 1Prompt1Story, StoryDiffusion。Training-based: StoryGen, FLUX IP-Adapter, BLIP-Diffusion。数据: StorySalon, StoryDB, StoryStream。</div></details>
+      <details open><summary>Q5 · 方案关键？</summary><div class="answer">Lay2Story-1M 数据；Global（PixArt-α）+ Subject（masked attn + 3D SA + ref concat）；ControlNet 式 zero skip；layout dropout 训练。</div></details>
+      <details open><summary>Q6 · 实验设计？</summary><div class="answer">Lay2Story-Bench 3000 prompts；DreamSim/CLIP-I/FID/Recall@1/人工；对比 6 条 baseline；w/ vs w/o layout；组件消融。</div></details>
+      <details open><summary>Q7 · 数据集与开源？</summary><div class="answer">Lay2Story-1M/Bench；发布 YouTube ID + 处理脚本。官方 GitHub <strong>暂无</strong>（2026 初）。</div></details>
+      <details open><summary>Q8 · 结果支持假设？</summary><div class="answer">支持：w/ lc 全面 SOTA；w/o lc 仍强；去 3D SA 崩。保留：仅卡通域；评测偏 CLIP 系指标。</div></details>
+      <details open><summary>Q9 · 贡献？</summary><div class="answer">① Layout-Togglable 任务；② Lay2Story-1M 最大高分辨率 story 数据；③ Lay2Story-Bench；④ DiT 双分支 Lay2Story SOTA。</div></details>
+      <details open><summary>Q10 · 下一步？</summary><div class="answer">真人/多主体；开源训练代码；自动 layout 预测；接入 FLUX/Wan 等更强 DiT；视频级 story（非独立帧）。</div></details>
+    </section>
+
+    <section class="summary deepdive" id="deepdive">
+      <h2>🔬 深挖追问</h2>
+      <div class="block"><h4>为何 masked 3D self-attn？</h4>
+        <p>Story 一致性本质是<strong>跨帧同一主体 token 的信息共享</strong>。只在 bbox 内做 3D full attention，避免背景噪声稀释 identity signal；比 training-free 改全局 attention 更可控。</p>
+      </div>
+      <div class="block"><h4>Layout-togglable vs ControlNet</h4>
+        <p>ControlNet 条件通常必选；Lay2Story 训练时随机去掉 bbox/caption，使模型学会<strong>退化到普通 story 模式</strong>——产品可「高级用户开 layout、普通用户只写 prompt」。</p>
+      </div>
+      <div class="block crit"><h4>盲区</h4>
+        <ul>
+          <li>仅标注最显眼角色 → 多角色故事失效</li>
+          <li>卡通域 → open-set 真人迁移未验证</li>
+          <li>推理 w/ lc 需 bbox：GroundingDINO 误差会传播</li>
+          <li>与 WISA 同团队：数据工程能力强，但 code 释放滞后影响复现</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <div id="lightbox" role="dialog" aria-modal="true"><div class="lb-content"></div><div class="lb-cap"></div></div>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({startOnLoad:true,theme:'neutral'});</script>
+  <script>
+    (function(){
+      var lb=document.getElementById('lightbox'),content=lb.querySelector('.lb-content'),cap=lb.querySelector('.lb-cap');
+      function findZoomTarget(n){var el=n.closest&&n.closest('img,svg');return el&&el.closest('.diagram,.figure-row,.mermaid')?el:null;}
+      function openLB(node,caption){
+        content.innerHTML='';var clone=node.cloneNode(true);
+        var r=node.getBoundingClientRect(),vw=innerWidth*0.96,vh=innerHeight*0.92;
+        var w=r.width||600,h=r.height||400,scale=Math.min(vw/w,vh/h)||1;
+        clone.style.width=Math.round(w*scale)+'px';clone.style.height=Math.round(h*scale)+'px';
+        clone.style.maxWidth=clone.style.maxHeight='none';
+        content.appendChild(clone);cap.textContent=caption||'';lb.classList.add('open');document.body.style.overflow='hidden';
+      }
+      function closeLB(){lb.classList.remove('open');content.innerHTML='';document.body.style.overflow='';}
+      document.addEventListener('click',function(e){
+        if(lb.classList.contains('open')){closeLB();return;}
+        var el=findZoomTarget(e.target);
+        if(el){e.preventDefault();var fig=el.closest('figure')||el.closest('.diagram');var c=fig&&fig.querySelector('figcaption');openLB(el,c?c.textContent.trim():'');}
+      });
+      document.addEventListener('keydown',function(e){if(e.key==='Escape')closeLB();});
+    })();
+  </script>
+</body>
+</html>

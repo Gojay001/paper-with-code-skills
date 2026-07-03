@@ -8,9 +8,12 @@
 2. 浏览器打开：`file://.../paper-reading-local/{slug}.html`
 3. 满意后再迁入 `paper-reading/` 并更新 `paper-with-code-list.md`
 
-## 当前条目
+## 已发布（`paper-reading/`）
 
-已发布至 `paper-reading/`：`pixart-alpha`、`pixart-delta`、`fancyvideo`、`wisa`、`relactrl`、`qihoo-t2x`、`lay2story`
+共 16 篇：`chordedit`、`cogvideox`、`controlnet`、`ddpm`、`fancyvideo`、`fm`、`lay2story`、`pixart-alpha`、`pixart-delta`、`qihoo-t2x`、`relactrl`、`sd`、`sd3`、`u-stydit`、`wan21`、`wisa`
+
+## 本地草稿
 
 | slug | 论文 | arXiv | 状态 |
 |------|------|-------|------|
+| `innoads-composer` | InnoAds-Composer | [2603.05898](https://arxiv.org/abs/2603.05898) | 本地 |

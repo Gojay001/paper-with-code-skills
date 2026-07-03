@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Qihoo-T2X — Proxy-Tokenized DiT for Text-to-Any-Task · 逻辑精读</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+  <style>
+    :root { --navy:#1a2744; --paper:#faf8f5; --thesis:#fff3cd; --concept:#f8d7da; --evidence:#cfe2ff; --counter:#d1e7dd; --method:#e2d9f3; --text:#2c2c2c; --muted:#6c757d; --border:#e8e4df; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'IBM Plex Sans',sans-serif; background:var(--paper); color:var(--text); line-height:1.6; }
+    .sticky-head { position:sticky; top:0; z-index:100; }
+    .top-nav { background:var(--navy); color:#fff; padding:1rem 2rem; }
+    .top-nav h1 { font-size:1.25rem; font-weight:600; }
+    .top-nav h1 a { color:#fff; text-decoration:none; border-bottom:1px dotted rgba(255,255,255,0.5); }
+    .top-nav .meta { font-size:0.85rem; opacity:0.85; margin-top:0.25rem; }
+    .legend { display:flex; flex-wrap:wrap; gap:0.75rem; margin-top:0.75rem; font-size:0.8rem; }
+    .legend span { padding:0.15rem 0.5rem; border-radius:3px; color:#2c2c2c; }
+    .chapter-nav { background:#fff; border-bottom:1px solid var(--border); padding:0.75rem 2rem; overflow-x:auto; white-space:nowrap; box-shadow:0 2px 6px rgba(0,0,0,0.06); }
+    .chapter-nav a { color:var(--navy); text-decoration:none; margin-right:1.25rem; font-size:0.9rem; font-weight:500; }
+    main { max-width:1680px; margin:0 auto; padding:2rem; }
+    .section-title { font-size:1.5rem; color:var(--navy); margin:2rem 0 1rem; padding-bottom:0.5rem; border-bottom:2px solid var(--navy); }
+    .col-labels { display:grid; grid-template-columns:1.1fr 1fr 1fr; gap:1.5rem; margin-bottom:0.5rem; font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); }
+    .row { display:grid; grid-template-columns:1.1fr 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem; align-items:start; }
+    .col-original { font-family:'Lora',serif; font-size:0.95rem; line-height:1.75; }
+    .col-original p { margin-bottom:0.75rem; }
+    .col-translation { font-size:0.92rem; line-height:1.75; color:#333; }
+    .col-translation p { margin-bottom:0.75rem; }
+    .analysis-card { background:#fff; border-left:4px solid var(--navy); padding:1rem 1.25rem; border-radius:0 6px 6px 0; box-shadow:0 1px 3px rgba(0,0,0,0.06); font-size:0.9rem; }
+    .analysis-card .tag { display:inline-block; font-size:0.75rem; font-weight:600; text-transform:uppercase; margin-bottom:0.5rem; color:var(--navy); }
+    .analysis-card p { margin-bottom:0.5rem; }
+    .analysis-card.deep { border-left-width:5px; }
+    .exp-table { width:100%; border-collapse:collapse; margin:0.75rem 0; font-size:0.82rem; }
+    .exp-table th,.exp-table td { border:1px solid var(--border); padding:0.35rem 0.5rem; text-align:left; }
+    .exp-table th { background:var(--paper); color:var(--navy); font-weight:600; }
+    .exp-table tr.is-ours { background:var(--evidence); }
+    .notation { width:100%; border-collapse:collapse; margin:0.75rem 0; font-size:0.88rem; background:#fff; }
+    .notation th,.notation td { border:1px solid var(--border); padding:0.4rem 0.6rem; text-align:left; }
+    .notation th { background:var(--paper); color:var(--navy); }
+    .figure-row { margin:1.5rem 0; padding:1.25rem; background:#fff; border:1px solid var(--border); border-radius:8px; }
+    .figure-row figure { margin:0; text-align:center; }
+    .figure-row img { max-width:100%; height:auto; cursor:zoom-in; }
+    .figure-row figcaption { font-size:0.82rem; color:var(--muted); margin-top:0.5rem; }
+    .figure-row h3 { color:var(--navy); font-size:1rem; margin-bottom:0.75rem; }
+    .diagram { margin:0.75rem 0; }
+    .mermaid { background:#fff; border:1px solid var(--border); border-radius:4px; padding:0.5rem; }
+    .diagram img,.diagram svg,.figure-row img,.figure-row svg { cursor:zoom-in; }
+    #lightbox { position:fixed; inset:0; background:rgba(10,12,20,0.92); display:none; align-items:center; justify-content:center; z-index:1000; cursor:zoom-out; padding:3vh 3vw; }
+    #lightbox.open { display:flex; }
+    #lightbox .lb-content img,#lightbox .lb-content svg { display:block; background:#fff; border-radius:6px; box-shadow:0 8px 40px rgba(0,0,0,0.5); }
+    #lightbox .lb-cap { position:fixed; bottom:1.2rem; left:0; right:0; text-align:center; color:#e8e4df; font-size:0.8rem; }
+    .hl-thesis { background:var(--thesis); padding:0 2px; }
+    .hl-concept { background:var(--concept); padding:0 2px; }
+    .hl-evidence { background:var(--evidence); padding:0 2px; }
+    .hl-method { background:var(--method); padding:0 2px; }
+    .summary { background:#fff; border:1px solid var(--border); border-radius:8px; padding:2rem; margin-top:3rem; }
+    .summary h2 { color:var(--navy); margin-bottom:1rem; }
+    .summary .skeleton { font-family:monospace; background:var(--paper); padding:1rem; border-radius:4px; line-height:1.9; }
+    .summary .strength,.summary .weakness { padding:0.75rem 1rem; border-radius:4px; margin:0.5rem 0; }
+    .summary .strength { background:var(--counter); }
+    .summary .weakness { background:var(--concept); }
+    .feynman { background:#fff; border:1px solid var(--border); border-left:5px solid #0d9488; border-radius:0 8px 8px 0; padding:1.25rem 1.5rem; margin:1.5rem 0 2rem; }
+    .feynman h2 { color:#0d9488; font-size:1.15rem; margin-bottom:0.35rem; }
+    .feynman p { font-size:0.95rem; line-height:1.85; margin-bottom:0.6rem; }
+    .faq details { background:#fff; border:1px solid var(--border); border-radius:6px; margin:0.5rem 0; }
+    .faq summary { cursor:pointer; font-weight:600; color:var(--navy); padding:0.7rem 0.9rem; list-style:none; font-size:0.92rem; }
+    .faq summary::-webkit-details-marker { display:none; }
+    .faq .answer { padding:0 0.9rem 0.85rem 1.8rem; font-size:0.9rem; line-height:1.8; }
+    .deepdive .block { margin:0.9rem 0; padding:0.85rem 1.1rem; border-radius:4px; background:var(--paper); border-left:3px solid #6f42c1; }
+    .deepdive .block.crit { border-left-color:#dc3545; background:#fdf0f1; }
+    .code-section { background:#fff; border:1px solid var(--border); border-radius:8px; padding:1.5rem 1.75rem; margin:2rem 0; }
+    .code-section h3 { color:var(--navy); font-size:1.05rem; margin:1.5rem 0 0.75rem; }
+    .code-section h3:first-of-type { margin-top:0; }
+    .code-section p,.code-section li { font-size:0.9rem; line-height:1.75; margin-bottom:0.5rem; }
+    .code-block { font-family:'IBM Plex Mono','IBM Plex Sans',monospace; font-size:0.78rem; line-height:1.65; background:#1e293b; color:#e2e8f0; padding:1rem 1.15rem; border-radius:6px; overflow-x:auto; margin:0.75rem 0; white-space:pre; }
+    .code-block .cm { color:#94a3b8; font-style:italic; }
+    .code-block .kw { color:#7dd3fc; }
+    .code-note { font-size:0.82rem; color:var(--muted); margin:0.35rem 0 1rem; padding-left:0.75rem; border-left:3px solid #0d9488; }
+    .code-map { width:100%; border-collapse:collapse; margin:0.75rem 0; font-size:0.82rem; }
+    .code-map th,.code-map td { border:1px solid var(--border); padding:0.4rem 0.55rem; text-align:left; vertical-align:top; }
+    .code-map th { background:var(--paper); color:var(--navy); font-weight:600; }
+    .code-map code { font-size:0.78rem; background:var(--paper); padding:0.1rem 0.3rem; border-radius:3px; }
+    @media (max-width:1100px) { .col-labels{display:none;} .row{grid-template-columns:1fr;} }
+  </style>
+</head>
+<body>
+  <div class="sticky-head">
+    <header class="top-nav">
+      <h1><a href="https://arxiv.org/abs/2409.04005" target="_blank" rel="noopener">Qihoo-T2X — An Efficient Proxy-Tokenized Diffusion Transformer for Text-to-Any-Task</a></h1>
+      <div class="meta">DeepLearning-Paper-with-Code · Diffusion Model · arXiv(2024) / ICLR(2025) · 360 AI Research · Jing Wang, Ao Ma et al.</div>
+      <div class="legend">
+        <span class="hl-thesis">核心论点</span><span class="hl-concept">关键概念</span><span class="hl-evidence">实证证据</span><span class="hl-method">方法论</span>
+      </div>
+    </header>
+    <nav class="chapter-nav">
+      <a href="#feynman">速读</a><a href="#abstract">Abstract</a><a href="#intro">Introduction</a>
+      <a href="#method">Method</a><a href="#code">代码</a><a href="#experiments">Experiments</a>
+      <a href="#conclusion">Conclusion</a><a href="#notation">符号表</a><a href="#overview">总览</a><a href="#faq">十问</a><a href="#deepdive">深挖</a>
+    </nav>
+  </div>
+
+  <main>
+    <section class="feynman" id="feynman">
+      <h2>🎮 费曼一分钟</h2>
+      <p><strong>问题</strong>：DiT 全局 self-attention 对视觉 token 是 $O(N^2)$，高分辨率图/长视频算不动；且 PixArt 注意力图显示<strong>同窗口内 token 对远处位置注意力几乎一样</strong>——大量全局注意力是冗余的。</p>
+      <p><strong>PT-DiT</strong>：每个时空窗口做 <span class="hl-method">平均池化</span> 得一个 <strong>proxy token</strong>；proxy 之间做 self-attention（GIIM）建模全局，再 cross-attention 广播回全部 latent；局部细节用 <span class="hl-method">Swin 式 window + shift-window attention</span>（TCM）补纹理。</p>
+      <p><strong>Qihoo-T2X 家族</strong>：同一 PT-DiT 骨架 → <strong>T2I / T2V / T2MV</strong>（文生图、文生视频、文生多视角）。压缩比随分辨率变：(1,2,2)→(1,4,4)→(1,8,8)→(1,16,16)。</p>
+      <p><strong>效率</strong>：同参数量下 GFLOPs ≈ DiT 的 51%、PixArt-α 的 66%；T2V 上 FVD 384（DiT 系 SOTA），显存随帧数增长远慢于 EasyAnimateV4 全 3D attention。</p>
+    </section>
+
+    <h2 class="section-title" id="abstract">Abstract</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>Global self-attention in DiT is redundant because visual information is sparse/repetitive; tokens in the same window have similar attention to distant locations.</p>
+        <p><strong>PT-DiT</strong>: sparse representative (proxy) token attention — average per spatial-temporal window → proxy SA → cross-attn to all latents; plus window/shift-window attention for detail.</p>
+        <p><strong>Qihoo-T2X</strong>: T2I, T2V, T2MV. ~49% complexity reduction vs DiT, ~34% vs PixArt-α.</p>
+      </div>
+      <div class="col-translation">
+        <p>视觉信息稀疏重复 → 全局注意力冗余；同窗口 token 对远处注意力图几乎相同。</p>
+        <p>用窗口平均 proxy token 做稀疏全局建模 + cross-attn 注入；window/shift-window 补局部纹理。</p>
+        <p>推出 Qihoo-T2I/V/MV；算力显著低于 DiT/PixArt-α。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card"><span class="tag">与 DAM / AgentAttention</span>
+          <p>DAM 用 mediator token 代理 Q/K；本文用<strong>空间先验平均</strong>得 proxy，再 GIIM+TCM 分工。比「直接砍 attention 矩阵」更保留局部邻域差异（TCM 负责）。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 Figure 1：Qihoo-T2I 样例</h3>
+      <figure><img src="assets/qihoo-t2x/fig1.jpg" alt="Qihoo-T2I 生成样例">
+      <figcaption>高保真、美学良好、文本对齐。点击放大。</figcaption></figure>
+    </section>
+
+    <h2 class="section-title" id="intro">1. Introduction</h2>
+    <div class="row">
+      <div class="col-original">
+        <p>Sora/Vidu/CogVideoX/Lumina-T2X 等证明 DiT 可扩展，但全局 attention $O(N^2)$ 阻碍高分辨率与长视频。</p>
+        <p>3D full attention 强于 2D+1D temporal，但算力爆炸；2D+1D 时空建模弱。</p>
+        <p><strong>Key observation</strong> (Fig. attn): within a $4\times4$ window, attention to <em>distant</em> tokens is nearly identical across window tokens; <em>neighboring</em> tokens differ — dense long-range SA is redundant, local SA is critical.</p>
+      </div>
+      <div class="col-translation">
+        <p>DiT 质量好但全局注意力贵；全 3D attention 强但不可扩展。</p>
+        <p>核心观察：同窗口内 token 对「远处」注意力几乎一样 → 可用少量 proxy 代表；对「近处」差异大 → 需 window attention。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#0d9488;"><span class="tag">设计分裂</span>
+          <p><strong>GIIM</strong> = 廉价全局（proxy SA + cross）；<strong>TCM</strong> = 昂贵但局部的 window/shift-window。与 RelaCtrl「按层选条件」正交——本文是<strong>按空间稀疏化 token 参与全局 attention</strong>。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 Figure 2：PixArt-α 注意力冗余可视化</h3>
+      <figure><img src="assets/qihoo-t2x/fig2.jpg" alt="注意力图">
+      <figcaption>同窗口 16 token 对全图注意力：横轴位置相同则纵轴几乎平行（远处冗余）；近邻 token 差异明显。点击放大。</figcaption></figure>
+      <div class="analysis-card" style="margin-top:1rem;border-left-color:#0d9488;">
+        <span class="tag">简版读图</span>
+        <p><strong>左图</strong>：$N\times N$ self-attention，$N=h\times w$（latent patch 网格展平后的 token 数）。格子 $(i,j)$ = token $i$ 对 token $j$ 的权重；对角线亮 = 看自己及空间近邻权重大。</p>
+        <p><strong>右上</strong>：<em>Latent Code</em> 为 $w\times h$ 二维网格，浅蓝框 = 其中一个 $4\times4$ 空间窗；<em>Token Index</em> 为展平后的 1D 序列（省略号表示全长），浅蓝格 = 窗内 token 的 index（行优先时四行 index 段间常隔 $w$，不一定连续）；<em>Attention Map</em> 每条横线 = 某 token 对全图 $N$ 个 target 的一行权重。</p>
+        <p><strong>右下</strong>：每条横带 = 窗内 <strong>1 个</strong> token 的 attention 行；图只画 4 条示意，论文实际 assemble <strong>16 条</strong>（$4\times4$）。单行内近处 target 亮、远处暗，属正常分布。</p>
+        <p><strong>论文结论（竖着比行）</strong>：固定横轴某一列（同一 target）——若 target <strong>远离</strong> 该窗，16 行在该列几乎同色 → 重复计算 → GIIM 用窗口 mean proxy；若 target <strong>靠近</strong> 窗，16 行明显不同 → 不能压成 1 个 proxy → TCM 用 window / shift-window 保留邻域差异。冗余指「行间对 distant target 几乎平行」，不是「远处暗就可删」。</p>
+      </div>
+      <figure style="margin-top:1rem"><img src="assets/qihoo-t2x/fig4.jpg" alt="GFLOPs 对比">
+      <figcaption>PT-DiT/L vs PixArt-α 多分辨率 GFLOPs（约 −33%）。点击放大。</figcaption></figure>
+    </section>
+
+    <h2 class="section-title" id="method">3. Method</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>Latent $z \in \mathbb{R}^{C\times F\times H\times W}$ → patch embed → $z_s \in \mathbb{R}^{N\times D}$ + 3D PE → <strong>PT-Block</strong> (GIIM + TCM + text cross-attn + MLP).</p>
+        <p><strong>GIIM</strong> (Eq. GIIM): reshape $z_s$ to $f\times h\times w$; per window $p_t\times p_h\times p_w$ average → proxy $P_a$; $\mathrm{SA}(P_a)$ then $\mathrm{CS}(z_s, \cdot)$; zero-init linear for stability.</p>
+        <p>$$z_s = \mathrm{CS}\big(z_s,\; \mathrm{SA}(\mathrm{Averaging}(z_s))\big)$$</p>
+      </div>
+      <div class="col-translation">
+        <p>3D VAE latent patch 化后进 PT-Block。</p>
+        <p>GIIM：窗口平均得 proxy → proxy 自注意力 → latent 作 Q、proxy 作 KV 的 cross-attention 广播全局信息。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep"><span class="tag">复杂度</span>
+          <p>全 SA：$2N^2D$。GIIM+TCM：$2\frac{N^2}{(p_fp_hp_w)^2}D + 2\frac{N^2}{p_fp_hp_w}D + \cdots$。2048² 时仅剩全 attention 的 <strong>2.3%</strong>（论文式 17）。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 Figure 3：PT-DiT 架构</h3>
+      <figure><img src="assets/qihoo-t2x/fig3.jpg" alt="PT-DiT 架构">
+      <figcaption>GIIM（proxy-tokenized 全局）+ TCM（window/shift-window 纹理）+ 文本 cross-attn。点击放大。</figcaption></figure>
+    </section>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>TCM</strong> (Eq. TCM): reshape to windows; $\hat{z_s}=\mathrm{WSA}(z_s)+z_s$; $z_w=\mathrm{SWSA}(\hat{z_s})+\hat{z_s}$ — Swin-style shift avoids grid artifacts (Fig. ablation_shift).</p>
+        <p><strong>Compression ratios</strong> (image): $(p_f,p_h,p_w)$ = (1,2,2)/(1,4,4)/(1,8,8)/(1,16,16) at 256/512/1024/2048 — keep <em>window count</em> stable across resolutions for curriculum training.</p>
+        <p><strong>Video</strong>: $p_f=4$ fixed; proxy compresses across time → efficient 3D spatiotemporal modeling.</p>
+      </div>
+      <div class="col-translation">
+        <p>TCM：窗口内 self-attention + 移位窗口，补 GIIM 稀疏全局丢掉的纹理细节。</p>
+        <p>分辨率越高压缩比越大，但窗口总数保持一致以利低→高分辨率训练。</p>
+        <p>视频固定时间维压缩 $p_f=4$。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card"><span class="tag">消融要点</span>
+          <p>w/o TCM：FID 19.30→69.07（ImageNet 256）；w/o GIIM：23.71；w/o shift-window：23.59 + 明显 grid。Proxy 提取：<strong>Average</strong> 19.30 &gt; Top-Left 20.84 &gt; Random 21.00。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="diagram">
+      <pre class="mermaid">flowchart TB
+  subgraph PTBlock [PT-Block]
+    Z[Latent tokens z_s] --> GIIM
+    subgraph GIIM [GIIM]
+      Avg[Window average → proxy P_a] --> PSA[Proxy self-attention]
+      PSA --> CSA[Cross-attn: z_s Q, proxy KV]
+    end
+    CSA --> TCM
+    subgraph TCM [TCM]
+      WSA[Window self-attention] --> SWSA[Shift-window attention]
+    end
+    SWSA --> TXT[Text cross-attention + MLP]
+  end</pre>
+      <figcaption>自绘：单 PT-Block 数据流（点击放大）。</figcaption>
+    </div>
+
+    <section class="code-section" id="code">
+      <h2 class="section-title" style="margin-top:0;border:none;padding:0;">💻 代码对照 — MindSpeed-MM PT-DiT</h2>
+      <p>官方推理代码在昇腾 <a href="https://gitee.com/ascend/MindSpeed-MM/tree/master/examples/qihoo_t2x" target="_blank" rel="noopener">MindSpeed-MM/examples/qihoo_t2x</a>（GitHub <a href="https://github.com/360CVGroup/Qihoo-T2X" target="_blank" rel="noopener">360CVGroup/Qihoo-T2X</a> 为 README/权重索引）。核心实现：<code>mindspeed_mm/models/predictor/dits/pt_dit_diffusers.py</code> 中 <code>ProxyTokensTransformerBlock</code>。</p>
+
+      <table class="code-map">
+        <thead><tr><th>论文模块</th><th>代码</th><th>说明</th></tr></thead>
+        <tbody>
+          <tr><td>GIIM · Averaging</td><td><code>get_proxy_token(..., mode="mean")</code></td><td>按 <code>compress_ratios</code> 窗口 reshape 后 mean → proxy</td></tr>
+          <tr><td>GIIM · Proxy SA</td><td><code>proxy_attn1</code></td><td>proxy token 间 self-attention</td></tr>
+          <tr><td>GIIM · Cross broadcast</td><td><code>pvisual_attn2</code> + <code>linear_1_visual</code> (zero-init)</td><td>latent Q × proxy KV；zero_module 稳定训练</td></tr>
+          <tr><td>TCM · Window SA</td><td><code>attn1</code> on window-grouped tokens</td><td>每窗口内 self-attention</td></tr>
+          <tr><td>TCM · Shift-window</td><td><code>window_shift</code> / <code>window_Ishift</code></td><td>3D cyclic shift，对应 SWSA</td></tr>
+          <tr><td>压缩比</td><td><code>compress_ratios</code>, <code>proxy_compress_ratios</code></td><td>分辨率相关 $(p_f,p_h,p_w)$</td></tr>
+          <tr><td>推理入口</td><td><code>inference_qihoo.py</code> + <code>qihoo_pipeline.py</code></td><td><code>examples/qihoo_t2x/inference_qihoo.sh</code></td></tr>
+        </tbody>
+      </table>
+
+      <h3>① Proxy token 提取 — 对应 Eq. GIIM Averaging</h3>
+      <div class="code-block"><span class="cm"># pt_dit_diffusers.py — get_proxy_token</span>
+<span class="kw">def</span> get_proxy_token(hidden_states, compress_ratios, scale_ratio, window_number, mode=<span class="str">'first'</span>):
+    <span class="cm"># reshape to (batch, f, h, w, window_tokens, dim) then pool</span>
+    ...
+    <span class="kw">if</span> mode == <span class="str">'mean'</span>:
+        proxy_hidden_states = proxy_hidden_states.mean(<span class="str">1</span>)  <span class="cm"># 论文默认：窗口平均</span>
+    proxy_hidden_states = rearrange(proxy_hidden_states, <span class="str">"(b p) n c -> b (p n) c"</span>, p=window_number)
+    <span class="kw">return</span> proxy_hidden_states</div>
+      <p class="code-note">消融表：mean(19.30) &gt; top-left(20.84) &gt; random(21.00) — 与论文 Table proxy 一致。</p>
+
+      <h3>② PT-Block forward — GIIM → TCM 顺序</h3>
+      <div class="code-block"><span class="cm"># ProxyTokensTransformerBlock.forward (简化)</span>
+<span class="cm"># 1. GIIM: proxy self-attention</span>
+proxy_hidden_states = self.get_proxy_token(hidden_states, compress_ratios, self.scale_ratio, window_number, mode=<span class="str">"mean"</span>)
+proxy_hidden_states = self.proxy_attn1(self.proxy_norm1(proxy_hidden_states), ...) + proxy_hidden_states
+
+<span class="cm"># 2. GIIM: proxy → all latent cross-attention (zero-init linear_1_visual)</span>
+pvisual_out = self.pvisual_attn2(a_hidden_states, encoder_hidden_states=proxy_hidden_states, ...)
+hidden_states = hidden_states + self.linear_1_visual(pvisual_out)
+
+<span class="cm"># 3. TCM: window self-attention</span>
+hidden_states = self.attn1(norm_hidden_states, ...) + hidden_states
+
+<span class="cm"># 4. TCM: shift-window (if shift_window=True)</span>
+<span class="kw">if</span> self.shift_window:
+    shifted = self.window_shift(hidden_states, window_number, compress_ratios, num_frames, height, width)
+    ...  <span class="cm"># shift-window attn + window_Ishift 还原</span></div>
+
+      <h3>③ 推理配置</h3>
+      <p><code>examples/qihoo_t2x/inference_model_image.json</code> 指定权重路径；<code>demo.txt</code> 写 prompt；T5-XXL + Open-Sora-Plan VAE 1.2。权重：<a href="https://huggingface.co/qihoo360/Qihoo-T2X" target="_blank" rel="noopener">HuggingFace qihoo360/Qihoo-T2X</a>。</p>
+    </section>
+
+    <h2 class="section-title" id="experiments">4. Experiments</h2>
+    <div class="row">
+      <div class="col-original">
+        <table class="exp-table">
+          <thead><tr><th>Task</th><th>Metric</th><th>Qihoo</th><th>Best baseline</th></tr></thead>
+          <tbody>
+            <tr class="is-ours"><td>T2I</td><td>COCO FID-30k↓</td><td>15.70</td><td>Imagen 7.27</td></tr>
+            <tr class="is-ours"><td>T2V</td><td>UCF FVD↓</td><td><strong>384.03</strong></td><td>PixelDance 242.82 (U-Net)</td></tr>
+            <tr class="is-ours"><td>T2V</td><td>MSR-VTT FVD↓</td><td><strong>375.23</strong></td><td>DynamiCrafter 219.31</td></tr>
+            <tr class="is-ours"><td>T2V DiT</td><td>UCF FVD</td><td><strong>384</strong></td><td>CogVideoX 680</td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:0.85rem">训练：PT-DiT/XL 1.1B；T2I 50M（32M LAION+18M HQ）三阶段 256→512→1024；T2V WebVid 10M + 3M HQ video。v-prediction, T5, cfg=6, 50 steps。</p>
+      </div>
+      <div class="col-translation">
+        <p>T2I FID 受数据分布影响非 SOTA，但质量定性可比 Flux/PixArt。T2V 在 DiT 系 UCF/MSR-VTT FVD 领先 CogVideoX/EasyAnimateV4。</p>
+        <p>64GB Ascend 910B 可训 PT-DiT/XL：图 2048² 或视频 512²×288 帧。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card"><span class="tag">效率 Fig.8–9</span>
+          <p>PT-DiT/H vs Lumina-Next：512/2048 上 GFLOPs −82%。PT-DiT/XL T2V 算力仅为 CogVideoX/EasyAnimate 的 <strong>50%</strong>；训练显存随帧数近线性，EasyAnimate 全 3D attention 陡增。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 Figure 5–7：T2I / T2V / T2MV 定性</h3>
+      <figure><img src="assets/qihoo-t2x/fig5.jpg" alt="T2I 对比"><figcaption>vs PixArt-α、Flux 等。点击放大。</figcaption></figure>
+      <figure style="margin-top:1rem"><img src="assets/qihoo-t2x/fig6.jpg" alt="T2V 对比"><figcaption>vs EasyAnimateV4、CogVideoX。点击放大。</figcaption></figure>
+      <figure style="margin-top:1rem"><img src="assets/qihoo-t2x/fig7.jpg" alt="T2MV"><figcaption>纯文本生成 512×512×24 多视角，无相机参数。点击放大。</figcaption></figure>
+    </section>
+
+    <section class="figure-row">
+      <h3>📄 Figure 8–10：算力对比 &amp; Shift-window 消融</h3>
+      <figure><img src="assets/qihoo-t2x/fig8.jpg" alt="T2I GFLOPs"><figcaption>多尺度 PT-DiT vs Lumina-Next / DiT / DAM。点击放大。</figcaption></figure>
+      <figure style="margin-top:1rem"><img src="assets/qihoo-t2x/fig9.jpg" alt="T2V GFLOPs 显存"><figcaption>左：GFLOPs；右：训练显存 vs 帧数。点击放大。</figcaption></figure>
+      <figure style="margin-top:1rem"><img src="assets/qihoo-t2x/fig10.jpg" alt="shift window 消融"><figcaption>无 shift-window 出现 grid 伪影。点击放大。</figcaption></figure>
+    </section>
+
+    <h2 class="section-title" id="conclusion">5. Conclusion</h2>
+    <div class="row">
+      <div class="col-original">
+        <p>PT-DiT uses proxy-tokenized attention + window/shift-window for efficient DiT on T2I/T2V/T2MV. Competitive quality, major FLOPs/memory savings — especially for long video sequences.</p>
+      </div>
+      <div class="col-translation">
+        <p>用 proxy 稀疏全局 + 局部 window 补细节；一套架构覆盖文生图/视频/多视角；为长高分辨率 DiT 提供可扩展路径。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#dc3545;"><span class="tag">局限</span>
+          <p>COCO FID 非顶尖；推理依赖昇腾 MindSpeed 栈；T2MV 仅 40k Objaverse 子集；与 FlashAttention/稀疏 kernel 未联合报告。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="summary" id="notation">
+      <h2>符号速查表</h2>
+      <table class="notation">
+        <thead><tr><th>符号</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td>PT-DiT</td><td>Proxy-Tokenized Diffusion Transformer</td></tr>
+          <tr><td>GIIM</td><td>Global Information Interaction Module（proxy SA + cross）</td></tr>
+          <tr><td>TCM</td><td>Texture Complement Module（WSA + SWSA）</td></tr>
+          <tr><td>$P_a$</td><td>窗口平均得到的 proxy token 集合</td></tr>
+          <tr><td>$(p_f,p_h,p_w)$</td><td>时间/高/宽压缩比</td></tr>
+          <tr><td>Qihoo-T2I/V/MV</td><td>文生图 / 文生视频 / 文生多视角产品</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="summary" id="overview">
+      <h2>论证总览</h2>
+      <div class="skeleton">
+观察：同窗口 token 对远处注意力几乎相同 → 全局 dense SA 冗余<br>
+↓<br>
+GIIM：窗口平均 proxy → SA(proxy) → CS(latent, proxy)<br>
+↓<br>
+TCM：window + shift-window 补局部纹理（防 grid）<br>
+↓<br>
+分辨率自适应压缩比 + 视频 p_f=4 → 同一骨架 T2I/T2V/T2MV<br>
+↓<br>
+算力：≈51% DiT / 66% PixArt；T2V FVD DiT 系 SOTA；显存随帧数缓增
+      </div>
+      <div class="strength"><strong>强项</strong>：动机有注意力可视化支撑；GIIM+TCM 分工清晰；一套 PT-DiT 统一多任务；开源推理+HF 权重。</div>
+      <div class="weakness"><strong>弱项</strong>：T2I 零样本 FID 一般；工程绑定 Ascend；与 Mamba/线性 attention 路线未充分对比。</div>
+    </section>
+
+    <section class="summary faq" id="faq">
+      <h2>🧩 结构化十问（AI 解构）</h2>
+      <details open><summary>Q1 · 解决什么问题？</summary><div class="answer">DiT 全局 self-attention 对高分辨率图和长视频算力为 $O(N^2)$，且视觉 token 在窗口内对远处位置的注意力高度冗余。需要<strong>保留全局语义同时砍掉冗余计算</strong>。</div></details>
+      <details open><summary>Q2 · PT-DiT 核心机制？</summary><div class="answer">每时空窗口平均出一个 <strong>proxy token</strong>；proxy 间 self-attention 建模全局；cross-attention 把信息广播回所有 latent；再用 window/shift-window attention 补局部纹理。</div></details>
+      <details open><summary>Q3 · 与 DAM / AgentAttention 区别？</summary><div class="answer">DAM 用 mediator 改 Q/K 路径；AgentAttention 面向 ViT 理解。本文针对<strong>扩散生成</strong>，用空间平均 proxy + 独立 TCM，并给出 T2V 三维压缩与多任务产品化。</div></details>
+      <details open><summary>Q4 · 为什么用平均而不是取左上角 token？</summary><div class="answer">消融：Average FID 19.30 vs Top-Left 20.84 vs Random 21.00。单点 token 不能代表窗口整体语义，损害 proxy 全局建模。</div></details>
+      <details open><summary>Q5 · 压缩比怎么设？</summary><div class="answer">图像：256/512/1024/2048 对应 (1,2,2)/(1,4,4)/(1,8,8)/(1,16,16)，保持窗口数量跨分辨率一致以利课程学习。视频：$p_f=4$ 固定。</div></details>
+      <details open><summary>Q6 · TCM 为什么必要？</summary><div class="answer">去掉 TCM 后 ImageNet FID 从 19.30 崩到 69.07——稀疏全局无法刻画细纹理。Shift-window 再避免 window 边界 grid（FID 19.30→23.59）。</div></details>
+      <details open><summary>Q7 · Qihoo-T2X 包含哪些任务？</summary><div class="answer"><strong>T2I</strong> Qihoo-T2I（PT-DiT/XL 1.1B，三阶段分辨率）；<strong>T2V</strong> Qihoo-T2V（WebVid+HQ）；<strong>T2MV</strong> 纯文本生成 24 视角（G-Objaverse 40k）。</div></details>
+      <details open><summary>Q8 · 实验效果？</summary><div class="answer">T2V UCF FVD 384、MSR-VTT FVD 375，DiT 系优于 CogVideoX/EasyAnimateV4；GFLOPs/显存显著更低。T2I COCO FID 15.7 受数据域影响，定性可比 SOTA。</div></details>
+      <details open><summary>Q9 · 代码在哪？</summary><div class="answer">推理：<code>MindSpeed-MM/examples/qihoo_t2x</code>；模型 <code>pt_dit_diffusers.py</code>；权重 HuggingFace <code>qihoo360/Qihoo-T2X</code>。GitHub 360CVGroup/Qihoo-T2X 主要为文档入口。</div></details>
+      <details open><summary>Q10 · 与 CogVideoX / FancyVideo 关系？</summary><div class="answer">同 360 系（Ao Ma 等）：CogVideoX 用全 3D expert attention；FancyVideo 改 cross-frame 文本。Qihoo-T2X 走<strong>另一条效率路线</strong>——proxy 稀疏化 attention，可视为 DiT 架构层优化而非条件注入层优化。</div></details>
+    </section>
+
+    <section class="summary deepdive" id="deepdive">
+      <h2>🔬 深挖</h2>
+      <div class="block">
+        <h4>「远处冗余、近处关键」的设计含义</h4>
+        <p>GIIM 负责<strong>低频全局布局</strong>（谁在哪、整体色调）；TCM 负责<strong>高频邻域关系</strong>（边缘、纹理）。这与多尺度信号处理直觉一致，也解释为何不能只砍 attention 而不加 window。</p>
+      </div>
+      <div class="block">
+        <h4>T2MV = 静态物体「假视频」</h4>
+        <p>把环绕物体的多视角当作 $F=24$ 视频，复用 PT-DiT 时空压缩——同一套 proxy 机制在「帧间冗余极大」时收益最高。</p>
+      </div>
+      <div class="block crit">
+        <h4>批判性思维</h4>
+        <ul>
+          <li><strong>FID 基准：</strong>MS-COCO 零样本对自有 50M 混合数据不友好，需更多 in-domain 指标。</li>
+          <li><strong>与 kernel 融合：</strong>proxy 减的是有效 $N$，FlashAttention 减的是常数；二者是否可叠加未测。</li>
+          <li><strong>平均池化信息损失：</strong>极高压缩比 (1,16,16) 下单 proxy 能否代表复杂语义？Table ratio 在 (1,4,4) 已开始退化。</li>
+          <li><strong>生态：</strong>主力代码在 Gitee+Ascend，PyTorch/CUDA 社区复现门槛高于 CogVideoX。</li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="lightbox" role="dialog" aria-modal="true" aria-label="放大查看">
+    <div class="lb-content"></div>
+    <div class="lb-cap"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral', flowchart: { htmlLabels: true } });</script>
+  <script>
+    function syncScrollPad() {
+      var head = document.querySelector('.sticky-head');
+      if (head) document.documentElement.style.scrollPaddingTop = (head.offsetHeight + 8) + 'px';
+    }
+    window.addEventListener('load', syncScrollPad);
+    window.addEventListener('resize', syncScrollPad);
+    syncScrollPad();
+    (function () {
+      var lb = document.getElementById('lightbox');
+      var content = lb.querySelector('.lb-content');
+      var cap = lb.querySelector('.lb-cap');
+      function findZoomTarget(node) {
+        var el = node.closest ? node.closest('img, svg') : null;
+        if (!el || !el.closest('.diagram, .figure-row, .mermaid')) return null;
+        return el;
+      }
+      function nearestCaption(el) {
+        var fig = el.closest('figure') || el.closest('.diagram') || el.closest('.figure-row');
+        var c = fig && fig.querySelector('figcaption');
+        return c ? c.textContent.trim() : '';
+      }
+      function openLightbox(node, caption) {
+        content.innerHTML = '';
+        var clone = node.cloneNode(true);
+        var r = node.getBoundingClientRect();
+        var scale = Math.min(window.innerWidth * 0.96 / (r.width || 600), window.innerHeight * 0.92 / (r.height || 400));
+        if (!isFinite(scale) || scale <= 0) scale = 1;
+        clone.style.width = Math.round((r.width || 600) * scale) + 'px';
+        clone.style.height = Math.round((r.height || 400) * scale) + 'px';
+        clone.style.maxWidth = clone.style.maxHeight = 'none';
+        content.appendChild(clone);
+        cap.textContent = caption || '';
+        lb.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+      function closeLightbox() { lb.classList.remove('open'); content.innerHTML = ''; document.body.style.overflow = ''; }
+      document.addEventListener('click', function (e) {
+        if (lb.classList.contains('open')) { closeLightbox(); return; }
+        var el = findZoomTarget(e.target);
+        if (el) { e.preventDefault(); e.stopPropagation(); openLightbox(el, nearestCaption(el)); }
+      });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && lb.classList.contains('open')) closeLightbox(); });
+    })();
+  </script>
+</body>
+</html>

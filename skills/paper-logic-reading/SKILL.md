@@ -32,7 +32,7 @@ After commit & push here → in blog repo **Gojay001.github.io** update submodul
 
 1. Resolve arXiv ID / PDF URL from `paper-with-code-list.md`
 2. **Extract figures** — follow [references/figure-extraction.md](references/figure-extraction.md) (tex source first, not PDF crop)
-3. Draft content: Feynman → sections (三栏) → **`#code` 代码对照（有官方 repo 时）** → deep cards → notation / FAQ / deepdive
+3. Draft content: Feynman → sections (**三栏**：左=论文英文原文、中=翻译、右=解析) → **`#code` 代码对照（有官方 repo 时）** → deep cards → notation / FAQ / deepdive
 4. Embed **lightbox** — copy from [references/lightbox-snippet.md](references/lightbox-snippet.md)
 5. Put paper figures in `<section class="figure-row">`; self-drawn SVG/Mermaid in `.diagram`
 6. **Code section** — if list has official repo: follow [references/code-section-snippet.md](references/code-section-snippet.md); place after Method, before Experiments
@@ -92,6 +92,30 @@ Helper: `skills/paper-logic-reading/scripts/extract-figures.py` or `scripts/fetc
 Repeat for a `.figure-row img` (paper raster figure).
 
 ### 3. HTML conventions
+
+#### Three-column semantics（三栏分工）
+
+Each `.row` under a section **must** have exactly three columns. Labels: `原文 | 翻译 | 解析`.
+
+| Column | Class | Language | Content |
+|--------|-------|----------|---------|
+| **Left — 原文** | `.col-original` | **Paper language (usually English)** | Wording **traceable to the paper**: abstract sentences, section paragraphs, list items, table numbers, equations as in PDF. May **condense** (merge sentences, drop redundancy) but **must not** paraphrase into Chinese, add interpretation, or replace with bullet summaries written by the agent. |
+| **Middle — 翻译** | `.col-translation` | **Chinese** | **Faithful translation of the left column only** — same paragraph / list / table structure, sentence-by-sentence. Terminology may be clarified (e.g. permutation → 排列不变性) but **no extra compression, no arrow pipelines, no reader interpretation**. |
+| **Right — 解析** | `.col-analysis` | **Chinese** | `.analysis-card` only: **理解、压缩、归纳**、对比、局限、消融、表格解读、与 Fig/附录联动 — anything not a straight translation of the left column. |
+
+**Do / Don't**
+
+| Do | Don't |
+|----|-------|
+| Left: quote or tight excerpt from paper § / abstract / appendix | Left: Chinese prose |
+| Left: English table headers matching paper (Method, Metric, …) | Left: agent-written 「动机 / 局限 / 流水线总结」 |
+| Middle: **逐段/逐句**翻译左栏；列表项一一对应；表格行一一对应 | Middle: 速记（「A → B → C」）、合并段落、分析性评价、左栏未出现的信息 |
+| Right: 理解压缩、与 Phantom 对比、消融、可复现性 | Right: repeat translation |
+| `math-block` / `.notation` between rows: bilingual notes OK | Put `math-block` dimension notes inside `.col-original` as if they were paper text |
+
+**Non–three-column blocks** (no column split): `#feynman`, `.figure-row`, `.math-block`, `.diagram`, `#code`, `#notation`, `#faq`, `#deepdive`. Agent commentary there is allowed.
+
+**Reference rows:** `paper-reading/lay2story.html` (Abstract), `paper-reading/controlnet.html` (Method).
 
 - Paper originals: `<section class="figure-row"><figure><img src="assets/{slug}/figN.jpg"><figcaption>…点击放大。</figcaption></figure></section>`
 - Self-drawn: `.diagram` with inline SVG or `<pre class="mermaid">`
@@ -153,7 +177,7 @@ python3 -m venv .cache/.venv
 - [ ] `#faq` 十问全部 `<details open>`（默认展开）
 - [ ] `<title>` and `.meta` aligned with `paper-with-code-list.md`
 - [ ] If official repo: `#code` with `code-map` + ≥2 伪代码/摘录小节；`chapter-nav` 含「代码」
-- [ ] KaTeX 无 Tab 破坏（`$z_{\text{…}}$` 勿写成 `$z_{` + Tab + `ext{…}}$`）
+- [ ] Three-column rows: `.col-original` = paper English; `.col-translation` = **忠实翻译左栏**（禁压缩/速记/理解）；`.col-analysis` = 理解/压缩/解析
 - [ ] If Title ≠ slug: `slug-aliases.json` + Overview sync (blog repo)
 - [ ] New/updated list row placed in **arxiv_id ascending** order within its section
 

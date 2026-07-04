@@ -10,10 +10,8 @@
 
 ## 已发布（`paper-reading/`）
 
-共 16 篇：`chordedit`、`cogvideox`、`controlnet`、`ddpm`、`fancyvideo`、`fm`、`lay2story`、`pixart-alpha`、`pixart-delta`、`qihoo-t2x`、`relactrl`、`sd`、`sd3`、`u-stydit`、`wan21`、`wisa`
+共 18 篇：`chordedit`、`cogvideox`、`controlnet`、`ddpm`、`fancyvideo`、`fm`、`innoads-composer`、`lay2story`、`mofu`、`pixart-alpha`、`pixart-delta`、`qihoo-t2x`、`relactrl`、`sd`、`sd3`、`u-stydit`、`wan21`、`wisa`
 
 ## 本地草稿
 
-| slug | 论文 | arXiv | 状态 |
-|------|------|-------|------|
-| `innoads-composer` | InnoAds-Composer | [2603.05898](https://arxiv.org/abs/2603.05898) | 本地 |
+（无）

@@ -101,6 +101,7 @@ There are paper with code for CV / AIGC / LLM / VLM.
 | GPT-Image-1.5 | [The new ChatGPT Images is here](https://openai.com/index/new-chatgpt-images-is-here/) | OpenAI(2025) | [code] |
 | Nano Banana Pro | [Introducing Nano Banana Pro](https://blog.google/innovation-and-ai/products/nano-banana-pro/) | Google(2025) | [code] |
 | [ChordEdit](https://gojay.top/paper-reading/chordedit.html) | [ChordEdit: One-Step Low-Energy Transport for Image Editing](https://arxiv.org/abs/2602.19083) | arXiv(2026) / CVPR(2026) | [PyTorch](https://github.com/ChordEdit/ChordEdit) |
+| [InnoAds-Composer](https://gojay.top/paper-reading/innoads-composer.html) | [InnoAds-Composer: Efficient Condition Composition for E-Commerce Poster Generation](https://arxiv.org/abs/2603.05898) | arXiv(2026) / CVPR(2026) | [code] |
 | Nano Banana 2 | [Nano Banana 2: Google's latest AI image generation model](https://blog.google/innovation-and-ai/technology/ai/nano-banana-2/) | Google(2026) | [code] |
 | Qwen-Image-2.0 | [Qwen-Image-2.0 Technical Report](https://arxiv.org/abs/2605.10730) | arXiv(2026) | [PyTorch](https://github.com/QwenLM/Qwen-Image) |
 | GPT-Image-2 | [Introducing ChatGPT Images 2.0](https://openai.com/index/introducing-chatgpt-images-2-0/) | OpenAI(2026) | [code] |
@@ -127,6 +128,7 @@ There are paper with code for CV / AIGC / LLM / VLM.
 | Wan2.2-S2V-14B | [Wan-S2V: Audio-Driven Cinematic Video Generation](https://arxiv.org/abs/2508.18621) | arXiv(2025) | [PyTorch](https://github.com/Wan-Video/Wan2.2) |
 | LongCat-Video | [LongCat-Video Technical Report](https://arxiv.org/abs/2510.22200) | arXiv(2025) | [PyTorch](https://github.com/meituan-longcat/LongCat-Video) |
 | HunyuanVideo 1.5 | [HunyuanVideo 1.5 Technical Report](https://arxiv.org/abs/2511.18870) | arXiv(2025) | [PyTorch](https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5) |
+| [MoFu](https://gojay.top/paper-reading/mofu.html) | [MoFu: Scale-Aware Modulation and Fourier Fusion for Multi-Subject Video Generation](https://arxiv.org/abs/2512.22310) | arXiv(2025) / AAAI(2026) | [code] |
 | LongCat-Video-Avatar | [LongCat-Video-Avatar: Super-Realistic Lip-Synchronized Long Video Generation](https://meigen-ai.github.io/LongCat-Video-Avatar/) | blog(2025) | [PyTorch](https://github.com/meituan-longcat/LongCat-Video) |
 | LTX-2 | [LTX-2: Efficient Joint Audio-Visual Foundation Model](https://arxiv.org/abs/2601.03233) | arXiv(2026) | [PyTorch](https://github.com/Lightricks/LTX-2) |
 | LTX-2.3 | [LTX-2: Efficient Joint Audio-Visual Foundation Model](https://arxiv.org/abs/2601.03233) | blog(2026) | [PyTorch](https://github.com/Lightricks/LTX-2) |

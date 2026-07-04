@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MoFu — Scale-Aware Modulation and Fourier Fusion for Multi-Subject Video Generation · 逻辑精读</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+  <style>
+    :root { --navy:#1a2744; --paper:#faf8f5; --thesis:#fff3cd; --concept:#f8d7da; --evidence:#cfe2ff; --counter:#d1e7dd; --method:#e2d9f3; --text:#2c2c2c; --muted:#6c757d; --border:#e8e4df; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'IBM Plex Sans',sans-serif; background:var(--paper); color:var(--text); line-height:1.6; }
+    .sticky-head { position:sticky; top:0; z-index:100; }
+    .top-nav { background:var(--navy); color:#fff; padding:1rem 2rem; }
+    .top-nav h1 { font-size:1.25rem; font-weight:600; }
+    .top-nav h1 a { color:#fff; text-decoration:none; border-bottom:1px dotted rgba(255,255,255,0.5); }
+    .top-nav .meta { font-size:0.85rem; opacity:0.85; margin-top:0.25rem; }
+    .legend { display:flex; flex-wrap:wrap; gap:0.75rem; margin-top:0.75rem; font-size:0.8rem; }
+    .legend span { padding:0.15rem 0.5rem; border-radius:3px; color:#2c2c2c; }
+    .chapter-nav { background:#fff; border-bottom:1px solid var(--border); padding:0.75rem 2rem; overflow-x:auto; white-space:nowrap; box-shadow:0 2px 6px rgba(0,0,0,0.06); }
+    .chapter-nav a { color:var(--navy); text-decoration:none; margin-right:1.25rem; font-size:0.9rem; font-weight:500; }
+    main { max-width:1680px; margin:0 auto; padding:2rem; }
+    .section-title { font-size:1.5rem; color:var(--navy); margin:2rem 0 1rem; padding-bottom:0.5rem; border-bottom:2px solid var(--navy); }
+    .col-labels { display:grid; grid-template-columns:1.1fr 1fr 1fr; gap:1.5rem; margin-bottom:0.5rem; font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); }
+    .row { display:grid; grid-template-columns:1.1fr 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem; align-items:start; }
+    .col-original { font-family:'Lora',serif; font-size:0.95rem; line-height:1.75; }
+    .col-original p { margin-bottom:0.75rem; }
+    .col-translation { font-size:0.92rem; line-height:1.75; color:#333; }
+    .col-translation p { margin-bottom:0.75rem; }
+    .analysis-card { background:#fff; border-left:4px solid var(--navy); padding:1rem 1.25rem; border-radius:0 6px 6px 0; box-shadow:0 1px 3px rgba(0,0,0,0.06); font-size:0.9rem; }
+    .analysis-card .tag { display:inline-block; font-size:0.75rem; font-weight:600; text-transform:uppercase; margin-bottom:0.5rem; color:var(--navy); }
+    .analysis-card p { margin-bottom:0.5rem; }
+    .analysis-card.deep { border-left-width:5px; }
+    .exp-table { width:100%; border-collapse:collapse; margin:0.75rem 0; font-size:0.82rem; }
+    .exp-table th,.exp-table td { border:1px solid var(--border); padding:0.35rem 0.5rem; text-align:left; }
+    .exp-table th { background:var(--paper); color:var(--navy); font-weight:600; }
+    .exp-table tr.is-ours { background:var(--evidence); }
+    .notation { width:100%; border-collapse:collapse; margin:0.75rem 0; font-size:0.88rem; background:#fff; }
+    .notation th,.notation td { border:1px solid var(--border); padding:0.4rem 0.6rem; text-align:left; }
+    .notation th { background:var(--paper); color:var(--navy); }
+    .figure-row { margin:1.5rem 0; padding:1.25rem; background:#fff; border:1px solid var(--border); border-radius:8px; }
+    .figure-row figure { margin:0; text-align:center; }
+    .figure-row img { max-width:100%; height:auto; cursor:zoom-in; }
+    .figure-row figcaption { font-size:0.82rem; color:var(--muted); margin-top:0.5rem; }
+    .figure-row h3 { color:var(--navy); font-size:1rem; margin-bottom:0.75rem; }
+    .diagram { margin:0.75rem 0; }
+    .mermaid { background:#fff; border:1px solid var(--border); border-radius:4px; padding:0.5rem; }
+    .diagram img,.diagram svg,.figure-row img,.figure-row svg { cursor:zoom-in; }
+    #lightbox { position:fixed; inset:0; background:rgba(10,12,20,0.92); display:none; align-items:center; justify-content:center; z-index:1000; cursor:zoom-out; padding:3vh 3vw; }
+    #lightbox.open { display:flex; }
+    #lightbox .lb-content img,#lightbox .lb-content svg { display:block; background:#fff; border-radius:6px; box-shadow:0 8px 40px rgba(0,0,0,0.5); }
+    #lightbox .lb-cap { position:fixed; bottom:1.2rem; left:0; right:0; text-align:center; color:#e8e4df; font-size:0.8rem; }
+    .hl-thesis { background:var(--thesis); padding:0 2px; }
+    .hl-concept { background:var(--concept); padding:0 2px; }
+    .hl-evidence { background:var(--evidence); padding:0 2px; }
+    .hl-method { background:var(--method); padding:0 2px; }
+    .summary { background:#fff; border:1px solid var(--border); border-radius:8px; padding:2rem; margin-top:3rem; }
+    .summary h2 { color:var(--navy); margin-bottom:1rem; }
+    .summary .skeleton { font-family:monospace; background:var(--paper); padding:1rem; border-radius:4px; line-height:1.9; }
+    .summary .strength,.summary .weakness { padding:0.75rem 1rem; border-radius:4px; margin:0.5rem 0; }
+    .summary .strength { background:var(--counter); }
+    .summary .weakness { background:var(--concept); }
+    .feynman { background:#fff; border:1px solid var(--border); border-left:5px solid #0d9488; border-radius:0 8px 8px 0; padding:1.25rem 1.5rem; margin:1.5rem 0 2rem; }
+    .feynman h2 { color:#0d9488; font-size:1.15rem; margin-bottom:0.35rem; }
+    .feynman p { font-size:0.95rem; line-height:1.85; margin-bottom:0.6rem; }
+    .faq details { background:#fff; border:1px solid var(--border); border-radius:6px; margin:0.5rem 0; }
+    .faq summary { cursor:pointer; font-weight:600; color:var(--navy); padding:0.7rem 0.9rem; list-style:none; font-size:0.92rem; }
+    .faq summary::-webkit-details-marker { display:none; }
+    .faq .answer { padding:0 0.9rem 0.85rem 1.8rem; font-size:0.9rem; line-height:1.8; }
+    .deepdive .block { margin:0.9rem 0; padding:0.85rem 1.1rem; border-radius:4px; background:var(--paper); border-left:3px solid #6f42c1; }
+    .deepdive .block.crit { border-left-color:#dc3545; background:#fdf0f1; }
+    .math-block { background:#fff; border:1px solid var(--border); border-radius:8px; padding:1.25rem 1.5rem; margin:1rem 0; font-size:0.92rem; line-height:2; }
+    .math-block .step { margin-bottom:0.75rem; }
+    .math-block .dim-note { font-size:0.82rem; color:var(--muted); margin-top:0.5rem; }
+    .pipeline-list { margin:0.75rem 0 0.75rem 1.25rem; font-size:0.9rem; line-height:1.85; }
+    .pipeline-list li { margin-bottom:0.5rem; }
+    @media (max-width:1100px) { .col-labels{display:none;} .row{grid-template-columns:1fr;} }
+  </style>
+</head>
+<body>
+  <div class="sticky-head">
+    <header class="top-nav">
+      <h1><a href="https://arxiv.org/abs/2512.22310" target="_blank" rel="noopener">MoFu — Scale-Aware Modulation and Fourier Fusion for Multi-Subject Video Generation</a></h1>
+      <div class="meta">DeepLearning-Paper-with-Code · Video Generation · arXiv(2025) / AAAI(2026) · JD.com · Run Ling, Ke Cao, Ao Ma et al.</div>
+      <div class="legend">
+        <span class="hl-thesis">核心论点</span><span class="hl-concept">关键概念</span><span class="hl-evidence">实证证据</span><span class="hl-method">方法论</span>
+      </div>
+    </header>
+    <nav class="chapter-nav">
+      <a href="#feynman">速读</a><a href="#abstract">Abstract</a><a href="#intro">Introduction</a>
+      <a href="#data">Data</a><a href="#method">Method</a><a href="#training">Training</a>
+      <a href="#experiments">Experiments</a><a href="#metrics">Metrics</a>
+      <a href="#conclusion">Conclusion</a><a href="#notation">符号表</a><a href="#overview">总览</a><a href="#faq">十问</a><a href="#deepdive">深挖</a>
+    </nav>
+  </div>
+
+  <main>
+    <section class="feynman" id="feynman">
+      <h2>🎮 费曼一分钟</h2>
+      <p><strong>任务</strong>：多主体视频生成——给定文本 + 多张参考图，生成多主体一致、尺度自然的视频。</p>
+      <p><strong>痛点 ① 尺度不一致</strong>：参考图里主体大小各异 → 生成时大象/麻雀比例失真。<strong>痛点 ② 排列敏感</strong>：参考图输入顺序一变 → 主体缺失或扭曲。</p>
+      <p><strong>MoFu</strong>：DiT 骨干 + <span class="hl-method">SMO</span>（冻结 LLM 从 prompt 抽尺度关系 → Scale Control Adapter 调制 DiT 特征）+ <span class="hl-method">Fourier Fusion</span>（多参考特征 FFT → 高低频分别求和 → IFFT，利用高维近似正交实现排列不变）+ <span class="hl-method">SPSL</span>（面积加权 scale loss + 排列 permutation loss）。</p>
+      <p><strong>数据/评测</strong>：MoFu-1M（100 万 clip、81 帧、RGBA 参考）；MoFu-Bench（1000 对，可控尺度扰动 + 参考顺序打乱）。MoFu-Bench 上 6 项指标全面 SOTA，ScaleScore <strong>0.585</strong>。</p>
+    </section>
+
+    <section class="figure-row">
+      <h3>📄 Figure 1：两大挑战示意</h3>
+      <figure><img src="assets/mofu/fig1.jpg" alt="尺度不一致与排列敏感">
+      <figcaption>现有方法：尺度失真 + 换参考顺序主体变形。MoFu 同时解决。点击放大。</figcaption></figure>
+    </section>
+
+    <h2 class="section-title" id="abstract">Abstract</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>Multi-subject video generation aims to synthesize videos from textual prompts and multiple reference images, ensuring that each subject preserves natural scale and visual fidelity. However, current methods face two challenges: <span class="hl-concept">scale inconsistency</span>, where variations in subject size lead to unnatural generation, and <span class="hl-concept">permutation sensitivity</span>, where the order of reference inputs causes subject distortion.</p>
+        <p>In this paper, we propose MoFu, a unified framework that tackles both challenges. For scale inconsistency, we introduce <span class="hl-method">Scale-Aware Modulation (SMO)</span>, an LLM-guided module that extracts implicit scale cues from the prompt and modulates features to ensure consistent subject sizes. To address permutation sensitivity, we present a simple yet effective <span class="hl-method">Fourier Fusion</span> strategy that processes the frequency information of reference features via the Fast Fourier Transform to produce a unified representation. Besides, we design a <span class="hl-method">Scale-Permutation Stability Loss</span> to jointly encourage scale-consistent and permutation-invariant generation.</p>
+        <p>To further evaluate these challenges, we establish a dedicated benchmark with controlled variations in subject scale and reference permutation. Extensive experiments demonstrate that MoFu significantly outperforms existing methods in preserving natural scale, subject fidelity, and overall visual quality.</p>
+      </div>
+      <div class="col-translation">
+        <p>多主体视频生成旨在根据文本提示与多张参考图合成视频，使每个主体保持自然尺度与视觉保真度。然而现有方法面临两大挑战：<span class="hl-concept">尺度不一致</span>——主体尺寸差异导致生成不自然；<span class="hl-concept">排列敏感性</span>——参考图输入顺序变化导致主体扭曲。</p>
+        <p>本文提出统一框架 MoFu 同时应对上述挑战。针对尺度不一致，引入 <span class="hl-method">尺度感知调制（SMO）</span>：LLM 引导模块从 prompt 提取隐式尺度线索并调制特征，保证主体尺寸一致。针对排列敏感性，提出 <span class="hl-method">Fourier Fusion</span>：对参考特征做 FFT 处理频域信息，得到统一表征。此外设计 <span class="hl-method">尺度–排列稳定性损失（SPSL）</span>，联合鼓励尺度一致与排列不变的生成。</p>
+        <p>为进一步评测上述挑战，建立含可控主体尺度与参考排列变化的专用 benchmark。大量实验表明 MoFu 在保持自然尺度、主体保真与整体视觉质量方面显著优于现有方法。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card"><span class="tag">与 Phantom / VACE</span>
+          <p>Phantom、MAGREF 等多参考 I2V 侧重 identity，<strong>不显式建模参考图尺度差异与顺序</strong>。MoFu-Bench 首次系统评测这两维。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="intro">1. Introduction</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>Multi-subject video generation aims to synthesize videos from textual prompts and multiple reference images, producing temporally consistent results where each subject preserves visual fidelity, appears at a natural scale, and remains unaffected by permutations of reference images.</p>
+        <p>Despite recent progress, multi-subject video generation faces two challenges. The first is <strong>scale inconsistency</strong>: reference images often vary significantly in subject scales due to different zoom levels, causing subjects in generated videos to appear unnaturally large or small. Another is <strong>permutation sensitivity</strong>: existing methods process images sequentially, inserting them one by one along the frame or channel dimension. This leads to subject distortion, disappearance, or physically implausible interactions that depend on the input order.</p>
+        <p>Several recent works attempt to address scale inconsistency by fusing textual prompts into the reference image representation. However, without an explicit mechanism to interpret and enforce natural scale, these methods produce subjects with unnatural scales that contradict the prompt, especially when the reference images themselves vary significantly in scale. To address permutation sensitivity, some methods concatenate multiple reference images onto a single blank canvas. While this avoids sequential processing, it introduces spatial biases determined by subject placement in the composite image.</p>
+        <p>To address these challenges, we propose MoFu, a unified framework that tackles both scale inconsistency and permutation sensitivity. For the former, we introduce Scale-Aware Modulation (SMO), an LLM-based module that extracts implicit scale relationships from the prompt and injects the condition into the model via modulation. For the latter, we propose a simple yet effective Fourier Fusion strategy that aggregates reference features in the frequency domain via FFT, leveraging near-orthogonality to produce a permutation-invariant representation. We also introduce the Scale-Permutation Stability Loss and construct MoFu-1M and MoFu-Bench.</p>
+      </div>
+      <div class="col-translation">
+        <p>多主体视频生成旨在根据文本提示与多张参考图合成时序一致的视频，使每个主体保持视觉保真、自然尺度，且不受参考图排列影响。</p>
+        <p>尽管已有进展，仍面临两大挑战。其一是<strong>尺度不一致</strong>：参考图因 zoom 不同导致主体尺度差异大，生成视频中主体显得过大或过小。其二是<strong>排列敏感性</strong>：现有方法按序逐张插入参考（沿帧或通道维），导致主体扭曲、消失或物理不合理的交互，且参考数增多时计算成本陡增。</p>
+        <p>近期工作尝试将文本 prompt 融入参考图表征以缓解尺度不一致，但缺乏显式解释与 enforce 自然尺度的机制，尤其在参考图本身尺度差异大时仍会产生与 prompt 矛盾的尺度。针对排列敏感性，部分方法将多张参考拼到空白 canvas；虽避免逐序处理，但 composite 图中主体位置引入空间偏置。</p>
+        <p>为此提出 MoFu 统一框架。对前者：Scale-Aware Modulation（SMO），LLM 模块从 prompt 提取隐式尺度关系并经调制注入模型。对后者：Fourier Fusion，FFT 后在频域聚合参考特征，利用近正交性得到排列不变表征。另引入 Scale-Permutation Stability Loss，并构建 MoFu-1M 与 MoFu-Bench。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#0d9488;"><span class="tag">360 系脉络</span>
+          <p>Ke Cao、Ao Ma 等亦参与 FancyVideo、Qihoo-T2X、Lay2Story。MoFu 聚焦<strong>多参考 I2V 的条件鲁棒性</strong>，与单主体 ConsisID 路线互补。</p>
+        </div>
+        <div class="analysis-card" style="margin-top:0.75rem;"><span class="tag">相关 work</span>
+          <p>Phantom / SkyReels 融 prompt 仍缺显式尺度机制；MAGREF 拼 canvas 仍有空间偏置 — 左栏第二段所批评的方法类型。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="data">3.2 Dataset &amp; Benchmark</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>To train and evaluate MoFu, we construct a high-quality multi-subject video dataset, <strong>MoFu-1M</strong>, and a dedicated benchmark, <strong>MoFu-Bench</strong>, specifically designed to assess scale consistency and permutation invariance.</p>
+        <ul class="pipeline-list">
+          <li><strong>Video Preprocessing and Captioning.</strong> Large-scale raw videos are segmented into coherent clips using scene detection. Low-quality clips are filtered via aesthetic and motion metrics, and the remaining clips are automatically captioned with Qwen2.5-VL.</li>
+          <li><strong>Subject Processing and Filtering.</strong> We first filter out videos with poor text–video alignment using GmeScore. Next, we extract entities (e.g., people, animals, objects) from captions using LLM-based parsing and localize them in video frames with Grounded-SAM. Finally, we filter out videos where the extracted subjects are either too large or too small based on their relative area in the frames.</li>
+          <li><strong>Face Processing.</strong> Faces, which require higher fidelity, undergo additional detection and filtering to preserve identity clarity, completing the final MoFu-1M dataset.</li>
+          <li><strong>MoFu-Bench Construction.</strong> We build MoFu-Bench by introducing controlled variations to the reference images: subject-centric zoom operations to create scale inconsistencies and randomly shuffled reference order to simulate permutation changes.</li>
+        </ul>
+      </div>
+      <div class="col-translation">
+        <p>为训练与评测 MoFu，构建高质量多主体视频数据集 <strong>MoFu-1M</strong> 与专用 benchmark <strong>MoFu-Bench</strong>，专测尺度一致性与排列不变性。</p>
+        <ul class="pipeline-list">
+          <li><strong>视频预处理与 caption。</strong> 大规模原始视频经场景检测切分为连贯 clip；低质 clip 用美学与运动指标过滤；剩余 clip 用 Qwen2.5-VL 自动 caption。</li>
+          <li><strong>主体处理与过滤。</strong> 先用 GmeScore 过滤图文不对齐视频；LLM 解析 caption 中实体（人/动物/物体）并用 Grounded-SAM 在帧中定位；最后按帧内相对面积过滤过大/过小主体。</li>
+          <li><strong>人脸处理。</strong> 人脸需更高保真，额外检测与过滤以保证 identity 清晰，完成 MoFu-1M。</li>
+          <li><strong>MoFu-Bench 构建。</strong> 对参考图引入可控变化：subject-centric zoom 制造尺度不一致，并随机 shuffle 参考顺序模拟排列变化。</li>
+        </ul>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card"><span class="tag">Fig.3</span>
+          <p>流水线与 Fig.3 对应；规模与 Benchmark 细节见下一行 Implementation Details。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <p>We train our model on a high-quality, self-curated video dataset. Starting from 15M clips obtained after scene detection, we perform a two-stage filtering process to ensure semantic alignment and appropriate subject visibility. This yields 2.5M high-quality clips, each paired with multiple reference images stored as RGBA. Each clip consists of 81 frames. From these, we select 1M unique clips to form the final training set MoFu-1M.</p>
+        <p>To evaluate scale consistency and permutation invariance, we construct MoFu-Bench, a dedicated benchmark with 1,000 subject-text pairs. Cases are partially adapted from ConsisID, A2-Bench, and OpenS2V-Bench, with the remainder curated for broad subject diversity. Each case includes up to three reference images with systematic scale variations and randomized permutations, paired with a high-quality prompt for semantic alignment. Compared to existing benchmarks, MoFu-Bench is the first to explicitly assess both scale consistency and permutation invariance.</p>
+      </div>
+      <div class="col-translation">
+        <p>在自策展高质量视频数据集上训练。场景检测后得 1500 万 clip，经两阶段过滤保证语义对齐与主体可见性，得 250 万高质量 clip，每 clip 配多张 RGBA 参考图，每 clip 81 帧；从中选 100 万 unique clip 构成 MoFu-1M。</p>
+        <p>为评测尺度一致性与排列不变性，构建 MoFu-Bench：1000 组 subject–text 对，部分改编自 ConsisID、A2-Bench、OpenS2V-Bench，其余人工策展以保证主体多样性；每例最多 3 张参考，含系统尺度变化与随机排列，并配高质量 prompt。相较现有 benchmark，MoFu-Bench 首次显式评测尺度一致性与排列不变性。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card"><span class="tag">附录 Benchmark 分布</span>
+          <p>MoFu-Bench 参考类别：human 26%、animals 17%、objects 30%、clothing 10%、cartoons 4%、others 13%。Prompt 长度多 100–200 词（Fig.8 / 附录）。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <table class="exp-table">
+          <thead><tr><th>Stage</th><th>Input</th><th>Output</th><th>Tools / threshold</th></tr></thead>
+          <tbody>
+            <tr><td>Scene detection</td><td>Raw videos</td><td>Coherent clips</td><td>PySceneDetect</td></tr>
+            <tr><td>Filter I</td><td>Clips</td><td>High-quality clips</td><td>Aesthetic + motion metrics</td></tr>
+            <tr><td>Captioning</td><td>Clips</td><td>Text–video pairs</td><td>Qwen2.5-VL</td></tr>
+            <tr><td>Filter II</td><td>Caption + video</td><td>Aligned samples</td><td>GmeScore</td></tr>
+            <tr><td>Subject extraction</td><td>Entity list</td><td>Mask + crop</td><td>LLM parsing + Grounded-SAM</td></tr>
+            <tr><td>Filter III</td><td>Subject mask</td><td>Area-valid samples</td><td>Entity area ratio</td></tr>
+            <tr><td>Face branch</td><td>Face regions</td><td>Identity-clear refs</td><td>Face detector + filter</td></tr>
+            <tr><td>Bench perturbation</td><td>Reference images</td><td>Scale ↑↓ + shuffle</td><td>Subject-centric zoom</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="col-translation">
+        <table class="exp-table">
+          <thead><tr><th>阶段</th><th>输入</th><th>输出</th><th>工具 / 阈值</th></tr></thead>
+          <tbody>
+            <tr><td>场景检测</td><td>原始视频</td><td>连贯 clip</td><td>PySceneDetect</td></tr>
+            <tr><td>Filter I</td><td>Clip</td><td>高质量 clip</td><td>美学 + 运动指标</td></tr>
+            <tr><td>Caption</td><td>Clip</td><td>图文对</td><td>Qwen2.5-VL</td></tr>
+            <tr><td>Filter II</td><td>Caption + 视频</td><td>对齐样本</td><td>GmeScore</td></tr>
+            <tr><td>主体提取</td><td>实体列表</td><td>Mask + crop</td><td>LLM 解析 + Grounded-SAM</td></tr>
+            <tr><td>Filter III</td><td>主体 mask</td><td>面积合格样本</td><td>实体面积比</td></tr>
+            <tr><td>人脸支路</td><td>人脸区域</td><td>identity 清晰参考</td><td>人脸检测 + 过滤</td></tr>
+            <tr><td>Bench 扰动</td><td>参考图</td><td>尺度放大/缩小 + shuffle</td><td>Subject-centric zoom</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#0d9488;"><span class="tag">与训练目标对齐</span>
+          <p>Filter I–III 逐级收紧：画质/运动 → 图文对齐 → 主体定位与面积。MoFu-1M 为 SPSL 提供监督（ref mask 面积 $a_r$）；MoFu-Bench 在参考侧做 controlled variation，测泛化到刻意扰动。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 Figure 3：MoFu-1M / MoFu-Bench 构建</h3>
+      <figure><img src="assets/mofu/fig3.jpg" alt="数据与 benchmark 流水线">
+      <figcaption>视频预处理 → 多主体提取 → 多尺度/人脸 → benchmark 尺度扰动与排列打乱。点击放大。</figcaption></figure>
+    </section>
+
+    <h2 class="section-title" id="method">3. Method</h2>
+    <section class="figure-row">
+      <h3>📄 Figure 2：MoFu 总览</h3>
+      <figure><img src="assets/mofu/fig2.jpg" alt="MoFu 架构">
+      <figcaption>DiT + SMO + Fourier Fusion + SPSL。点击放大。</figcaption></figure>
+    </section>
+
+    <h3 class="section-title" style="font-size:1.2rem;margin-top:2rem;" id="smo">3.3.1 Scale-Aware Modulation（SMO）</h3>
+    <div class="math-block">
+      <p><strong>Step 1 · 尺度语义编码</strong></p>
+      <div class="step">$$\mathbf{e}_p = \text{LLM}(p) \in \mathbb{R}^{d}$$</div>
+      <p class="dim-note">$p$：文本 prompt；LLM 为<strong>冻结</strong> Qwen2.5；附录用专用 instruction 让 LLM 推断实体间相对大小，取 <code>[CLS]</code> embedding 作为 $\mathbf{e}_p$（非自由文本输出）。</p>
+      <p><strong>Step 2 · Scale Control Adapter（SCA）</strong></p>
+      <div class="step">$$\gamma,\ \beta,\ \eta = f_{\text{SCA}}(\mathbf{e}_p)$$</div>
+      <p class="dim-note">$f_{\text{SCA}}$：轻量 MLP；$\gamma,\beta,\eta \in \mathbb{R}^{d}$，逐 channel 的 scale / shift / gate。</p>
+      <p><strong>Step 3 · 特征调制（每个 DiT block 的 MHA 或 FFN 前）</strong></p>
+      <div class="step">$$\hat{\mathbf{F}} = \gamma \odot \mathbf{F} + \beta$$</div>
+      <div class="step">$$\mathbf{F}_{\text{out}} = \mathbf{F} + \eta \odot \text{Layer}(\hat{\mathbf{F}})$$</div>
+      <p class="dim-note">$\mathbf{F} \in \mathbb{R}^{B \times L \times d}$：batch $B$，token 数 $L$（81 帧 × 空间 patch），隐藏维 $d$；$\odot$ 为 broadcast 逐元素乘；Layer = MHA 或 FFN；$\eta$ 门控残差强度。</p>
+    </div>
+
+    <table class="notation">
+      <thead><tr><th>符号</th><th>维度</th><th>含义</th></tr></thead>
+      <tbody>
+        <tr><td>$p$</td><td>字符串</td><td>输入文本 prompt</td></tr>
+        <tr><td>$\mathbf{e}_p$</td><td>$\mathbb{R}^{d}$</td><td>冻结 LLM 的尺度语义 embedding</td></tr>
+        <tr><td>$\gamma,\beta,\eta$</td><td>$\mathbb{R}^{d}$</td><td>SCA 输出的 scale / shift / gate</td></tr>
+        <tr><td>$\mathbf{F}$</td><td>$B \times L \times d$</td><td>DiT block 输入特征</td></tr>
+        <tr><td>$\hat{\mathbf{F}}$</td><td>$B \times L \times d$</td><td>仿射调制后特征</td></tr>
+        <tr><td>$\mathbf{F}_{\text{out}}$</td><td>$B \times L \times d$</td><td>门控残差输出，送入下一子层</td></tr>
+      </tbody>
+    </table>
+
+    <div class="row">
+      <div class="col-original">
+        <p>The purpose of SMO is to explicitly capture scale relationships from the textual prompt and inject them into the generation process. We first encode the prompt $p$ using a frozen LLM to obtain a semantic embedding $\mathbf{e}_p = \text{LLM}(p)$, then pass it through a lightweight Scale Control Adapter (SCA) to predict modulation parameters $\gamma, \beta, \eta = f_{\text{SCA}}(\mathbf{e}_p)$.</p>
+        <p>Given a DiT block feature map $\mathbf{F}$, SMO performs adaptive feature modulation: $\hat{\mathbf{F}} = \gamma \odot \mathbf{F} + \beta$, $\mathbf{F}_{out} = \mathbf{F} + \eta \cdot \text{Layer}(\hat{\mathbf{F}})$, where $\text{Layer}$ represents either the MHA or FFN module. This modulation is inserted at MHA and FFN layers, ensuring natural subject scales.</p>
+      </div>
+      <div class="col-translation">
+        <p>SMO 旨在从文本 prompt 显式捕获尺度关系并注入生成过程。先用冻结 LLM 编码 prompt $p$ 得语义 embedding $\mathbf{e}_p = \text{LLM}(p)$，再经轻量 Scale Control Adapter（SCA）预测调制参数 $\gamma, \beta, \eta = f_{\text{SCA}}(\mathbf{e}_p)$。</p>
+        <p>对 DiT block 特征图 $\mathbf{F}$，SMO 做自适应特征调制：$\hat{\mathbf{F}} = \gamma \odot \mathbf{F} + \beta$，$\mathbf{F}_{out} = \mathbf{F} + \eta \cdot \text{Layer}(\hat{\mathbf{F}})$，其中 $\text{Layer}$ 为 MHA 或 FFN。该调制插入 MHA 与 FFN 层，保证主体自然尺度。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep"><span class="tag">与 AdaLN / ControlNet 对比</span>
+          <p>AdaLN：单全局向量调 scale/shift。SMO：LLM 从「大象与麻雀」类描述抽<strong>相对尺度关系</strong> → SCA → 逐 block 注入；尺度来自 prompt 语义，非参考 bbox。消融：无 SMO 时 sparrow 相对 elephant 过大（Fig.7 左）。</p>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="section-title" style="font-size:1.2rem;margin-top:2rem;" id="ff">3.3.2 Fourier Fusion</h3>
+    <div class="math-block">
+      <p><strong>Step 1 · 参考预处理与编码</strong></p>
+      <div class="step">Grounded-SAM$(x_i) \rightarrow$ crop &amp; resize $\rightarrow$ $\mathbf{F}_i = \mathcal{E}(x_i) \in \mathbb{R}^{d \times H \times W}$</div>
+      <p class="dim-note">$N$ 张参考 $\{x_1,\ldots,x_N\}$；$\mathcal{E}$ 为 $3\times3$ CNN；$H,W$ 为参考特征空间分辨率。</p>
+      <p><strong>Step 2 · 2D FFT 到频域</strong></p>
+      <div class="step">$$\mathcal{F}_i = \text{FFT2D}(\mathbf{F}_i) \in \mathbb{C}^{d \times H \times W}$$</div>
+      <p><strong>Step 3 · 径向频率 mask 分 HF / LF</strong></p>
+      <div class="step">$$\mathcal{F}_i^{\text{HF}} = M_{\text{freq}} \odot \mathcal{F}_i,\quad \mathcal{F}_i^{\text{LF}} = (1 - M_{\text{freq}}) \odot \mathcal{F}_i$$</div>
+      <p class="dim-note">$M_{\text{freq}} \in \{0,1\}^{H \times W}$：由径向频率图二值化，中心为 LF、边缘为 HF。</p>
+      <p><strong>Step 4 · 跨参考求和（排列不变）</strong></p>
+      <div class="step">$$\mathcal{F}^{\text{HF}} = \sum_{i=1}^{N} \mathcal{F}_i^{\text{HF}},\quad \mathcal{F}^{\text{LF}} = \sum_{i=1}^{N} \mathcal{F}_i^{\text{LF}}$$</div>
+      <p class="dim-note">求和满足交换律 → 参考顺序改变不影响 $\mathcal{F}^{\text{HF/LF}}$。论文引用高维随机向量近正交（Vershynin）解释「直接相加干扰小」。</p>
+      <p><strong>Step 5 · IFFT 重建并条件注入</strong></p>
+      <div class="step">$$\mathbf{F}_{\text{fused}} = \text{IFFT2D}(\mathcal{F}^{\text{HF}} + \mathcal{F}^{\text{LF}}) \in \mathbb{R}^{d \times H \times W}$$</div>
+      <p class="dim-note">$\mathbf{F}_{\text{fused}}$ 与视频 latent 特征 concat，作为多参考条件输入 DiT。</p>
+    </div>
+
+    <table class="notation">
+      <thead><tr><th>符号</th><th>维度</th><th>含义</th></tr></thead>
+      <tbody>
+        <tr><td>$x_i$</td><td>$3 \times H_0 \times W_0$</td><td>第 $i$ 张参考图（crop 后）</td></tr>
+        <tr><td>$\mathbf{F}_i$</td><td>$d \times H \times W$</td><td>CNN 编码特征图</td></tr>
+        <tr><td>$\mathcal{F}_i$</td><td>$\mathbb{C}^{d \times H \times W}$</td><td>2D FFT 复数谱</td></tr>
+        <tr><td>$M_{\text{freq}}$</td><td>$H \times W$</td><td>径向 HF/LF 二值 mask</td></tr>
+        <tr><td>$\mathcal{F}^{\text{HF/LF}}$</td><td>$\mathbb{C}^{d \times H \times W}$</td><td>$N$ 张参考 HF 或 LF 之和</td></tr>
+        <tr><td>$\mathbf{F}_{\text{fused}}$</td><td>$d \times H \times W$</td><td>融合后实空间特征，concat 进 DiT</td></tr>
+      </tbody>
+    </table>
+
+    <div class="row">
+      <div class="col-original">
+        <p>To address permutation sensitivity, we propose the Fourier Fusion strategy, which aggregates multiple reference images without introducing positional or order bias. Given $N$ reference images, we apply Grounded-SAM to segment each image, crop and resize subject regions, and encode each with a $3 \times 3$ CNN to obtain feature maps $\mathbf{F}_i$.</p>
+        <p>Each feature map is transformed into the frequency domain using FFT and decomposed into high-frequency (HF) and low-frequency (LF) components using a radial frequency mask $M_{\text{freq}}$. Leveraging the near-orthogonality of high-dimensional vectors, we aggregate these components across all references by simple summation, then reconstruct via IFFT. The fused representation is concatenated with the video features to condition the generation process.</p>
+      </div>
+      <div class="col-translation">
+        <p>为应对排列敏感性，提出 Fourier Fusion：聚合多张参考图且不引入位置或顺序偏置。对 $N$ 张参考，Grounded-SAM 分割各图，crop 并 resize 主体区域，再经 $3 \times 3$ CNN 编码得特征图 $\mathbf{F}_i$。</p>
+        <p>各特征图 FFT 到频域，用径向频率 mask $M_{\text{freq}}$ 分解为高频（HF）与低频（LF）。利用高维向量近正交性，跨参考对分量简单求和，再 IFFT 重建；融合表征与视频特征 concat 以条件化生成。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card"><span class="tag">消融（Fig.7 右）</span>
+          <p>无 Fourier Fusion：换参考顺序 → 丢 wooden box / 赛车倒退。有 FF：任意排列均完整生成。Permutation loss 训练时进一步约束 $F(\mathcal{R}_p)$ 一致。</p>
+        </div>
+        <div class="analysis-card" style="margin-top:0.75rem;"><span class="tag">机制速记</span>
+          <p>频域求和满足交换律 → 排列不变；Vershynin 近正交启发式解释「直接相加干扰小」。</p>
+        </div>
+        <div class="analysis-card" style="margin-top:0.75rem;border-left-color:#dc3545;"><span class="tag">局限</span>
+          <p>求和不区分「哪张参考对应哪个主体」——适合多主体同框、各 ref 各管一个 identity；精细 ref-to-subject 绑定仍弱于 MAGREF 式对齐。</p>
+        </div>
+      </div>
+    </div>
+
+    <h3 class="section-title" style="font-size:1.2rem;margin-top:2rem;" id="spsl">3.3.3 Scale-Permutation Stability Loss（SPSL）</h3>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Scale loss.</strong> The scale loss leverages reference masks and their relative area ratios to adaptively re-weight the standard flow-matching loss:</p>
+        <p>$$\mathbf{M} = \sum_{r=1}^{R} w_r \cdot \text{Resize}(m_r),\quad w_r = \frac{\exp(a_r)}{\sum_{r'} \exp(a_{r'})}$$</p>
+        <p>$$\mathcal{L}_{\text{scale}} = \frac{\sum (\mathcal{L}_{\text{mse}} \odot \mathbf{M})}{\sum \mathbf{M} + \epsilon}$$</p>
+        <p><strong>Permutation loss.</strong> To ensure that the change in the permutation of references does not affect the generation, we compute an MSE loss in the frequency domain across $P$ permutations of reference inputs:</p>
+        <p>$$\mathcal{L}_{\text{perm}} = \frac{1}{P} \sum_{p=1}^{P} \left\| F(\mathcal{R}_p) - F(\mathcal{R}_{\text{ref}}) \right\|_2^2$$</p>
+        <p>$$\mathcal{L}_{\text{SPSL}} = \mathcal{L}_{\text{scale}} + \mathcal{L}_{\text{perm}}$$</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>Scale loss。</strong> 利用参考 mask 及其相对面积比，自适应重加权标准 flow-matching 损失：</p>
+        <p>$$\mathbf{M} = \sum_{r=1}^{R} w_r \cdot \text{Resize}(m_r),\quad w_r = \frac{\exp(a_r)}{\sum_{r'} \exp(a_{r'})}$$</p>
+        <p>$$\mathcal{L}_{\text{scale}} = \frac{\sum (\mathcal{L}_{\text{mse}} \odot \mathbf{M})}{\sum \mathbf{M} + \epsilon}$$</p>
+        <p><strong>Permutation loss。</strong> 为保证参考排列变化不影响生成，对 $P$ 种参考排列，在频域计算 MSE：</p>
+        <p>$$\mathcal{L}_{\text{perm}} = \frac{1}{P} \sum_{p=1}^{P} \left\| F(\mathcal{R}_p) - F(\mathcal{R}_{\text{ref}}) \right\|_2^2$$</p>
+        <p>$$\mathcal{L}_{\text{SPSL}} = \mathcal{L}_{\text{scale}} + \mathcal{L}_{\text{perm}}$$</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card"><span class="tag">总损失</span>
+          <p>主任务：flow-matching loss $\mathcal{L}_{\text{FM}}$。辅助：$\mathcal{L}_{\text{SPSL}} = \mathcal{L}_{\text{scale}} + \mathcal{L}_{\text{perm}}$。Scale loss 强调相对面积更大主体的重建；Perm loss 约束 Fourier Fusion 输出对排列不变。论文未单独报告 $\lambda$ — 两项直接相加。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="training">4.1 Training Strategies</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>We train our model using the AdamW optimizer, configured with $\beta_1 = 0.9$, $\beta_2 = 0.999$, and a weight decay of 0.01. The learning rate is initialized at $1 \times 10^{-5}$ and follows a cosine annealing schedule with periodic restarts. Model training is conducted on 16 NVIDIA H800 GPUs for 7 days. Input videos are processed at a resolution of 480P, with a sequence length of 81 frames.</p>
+        <table class="exp-table">
+          <thead><tr><th>Item</th><th>Configuration</th></tr></thead>
+          <tbody>
+            <tr><td>Optimizer</td><td>AdamW</td></tr>
+            <tr><td>$\beta_1, \beta_2$</td><td>0.9, 0.999</td></tr>
+            <tr><td>Weight decay</td><td>0.01</td></tr>
+            <tr><td>Learning rate</td><td>$1 \times 10^{-5}$ (initial)</td></tr>
+            <tr><td>LR schedule</td><td>Cosine annealing with periodic restarts</td></tr>
+            <tr><td>Hardware</td><td>16 × NVIDIA H800</td></tr>
+            <tr><td>Training time</td><td>7 days</td></tr>
+            <tr><td>Resolution</td><td>480P</td></tr>
+            <tr><td>Sequence length</td><td>81 frames / clip</td></tr>
+            <tr><td>Training data</td><td>MoFu-1M (1M clips, RGBA refs)</td></tr>
+            <tr><td>Objective</td><td>Flow-matching + SPSL</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="col-translation">
+        <p>使用 AdamW 优化器，$\beta_1 = 0.9$，$\beta_2 = 0.999$，weight decay 0.01。学习率初值 $1 \times 10^{-5}$，余弦退火并周期重启。16 块 NVIDIA H800 训练 7 天。输入视频 480P 分辨率，序列长度 81 帧。</p>
+        <table class="exp-table">
+          <thead><tr><th>项</th><th>配置</th></tr></thead>
+          <tbody>
+            <tr><td>优化器</td><td>AdamW</td></tr>
+            <tr><td>$\beta_1, \beta_2$</td><td>0.9, 0.999</td></tr>
+            <tr><td>Weight decay</td><td>0.01</td></tr>
+            <tr><td>学习率</td><td>$1 \times 10^{-5}$（初值）</td></tr>
+            <tr><td>LR schedule</td><td>余弦退火 + 周期重启</td></tr>
+            <tr><td>硬件</td><td>16 × NVIDIA H800</td></tr>
+            <tr><td>训练时长</td><td>7 天</td></tr>
+            <tr><td>分辨率</td><td>480P</td></tr>
+            <tr><td>序列长度</td><td>81 帧 / clip</td></tr>
+            <tr><td>训练数据</td><td>MoFu-1M（100 万 clip，RGBA 参考）</td></tr>
+            <tr><td>目标函数</td><td>Flow-matching + SPSL</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card"><span class="tag">实现要点</span>
+          <p>标准 DiT flow-matching 栈；SMO 中 LLM 冻结，SCA + DiT + Fourier Fusion CNN 可训。480P×81 帧 × 16 H800 × 7 天 — 算力与数据门槛高。SPSL 与 SMO/FF 耦合，论文因此未单独消融 SPSL 子项。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="diagram">
+      <pre class="mermaid">flowchart TB
+  subgraph inputs [Inputs]
+    P[Text prompt p] --> LLM[Frozen LLM]
+    R[Ref images x1..xN] --> SAM[Grounded-SAM + CNN E]
+  end
+  LLM --> SCA[Scale Control Adapter]
+  SCA --> SMO[SMO modulate DiT MHA/FFN]
+  SAM --> FFT[FFT → sum HF/LF → IFFT]
+  FFT --> FF[Fourier Fusion cond]
+  Z[Video latent] --> DiT[DiT backbone]
+  SMO --> DiT
+  FF --> DiT
+  DiT --> SPSL[SPSL: scale + perm loss]</pre>
+      <figcaption>自绘：MoFu 数据流（点击放大）。</figcaption>
+    </div>
+
+    <h2 class="section-title" id="experiments">4. Experiments</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>As shown in Tab., MoFu achieves state-of-the-art performance across nearly all metrics on MoFu-Bench. It attains the highest Aesthetics and FaceSim scores, producing visually appealing videos with strong identity preservation. MoFu also leads on GmeScore, reflecting superior text–video alignment, and achieves balanced Motion results by maintaining temporal coherence without sacrificing fidelity. Moreover, it yields substantial gains on ScaleScore and SubjectSim, demonstrating robust scale consistency and subject stability across permutations.</p>
+        <table class="exp-table">
+          <thead><tr><th>Method</th><th>Aesth↑</th><th>FaceSim↑</th><th>Gme↑</th><th>Motion↔</th><th>Scale↑</th><th>Subj↑</th></tr></thead>
+          <tbody>
+            <tr><td>Phantom</td><td>0.355</td><td><u>0.375</u></td><td>0.706</td><td>0.229</td><td>0.536</td><td><u>0.748</u></td></tr>
+            <tr><td>SkyReels-A2</td><td>0.286</td><td>0.341</td><td>0.691</td><td>0.233</td><td>0.527</td><td>0.737</td></tr>
+            <tr><td>VACE</td><td><u>0.392</u></td><td>0.247</td><td><u>0.732</u></td><td>0.214</td><td><u>0.547</u></td><td>0.692</td></tr>
+            <tr><td>MAGREF</td><td>0.369</td><td>0.362</td><td>0.717</td><td>0.207</td><td>0.511</td><td>0.731</td></tr>
+            <tr class="is-ours"><td>MoFu</td><td><strong>0.401</strong></td><td><strong>0.396</strong></td><td><strong>0.745</strong></td><td>0.221</td><td><strong>0.585</strong></td><td><strong>0.755</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="col-translation">
+        <p>如表所示，MoFu 在 MoFu-Bench 上几乎全指标达到 SOTA。Aesthetics 与 FaceSim 最高，生成视频美观且 identity 保持强。GmeScore 亦领先，反映更优图文对齐；Motion 在保持时序连贯的同时未牺牲保真度。ScaleScore 与 SubjectSim 提升显著，表明尺度一致性与排列下主体稳定性 robust。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card"><span class="tag">指标</span>
+          <p>六项指标定义见 <a href="#metrics">附录 · Evaluation Metrics</a>。MoFu ScaleScore <strong>0.585</strong> vs VACE 0.547 领先最明显；SubjectSim 0.755 亦第一。</p>
+        </div>
+        <div class="analysis-card" style="margin-top:0.75rem;"><span class="tag">Trade-off</span>
+          <p>Motion 非最优（0.221 vs SkyReels 0.233）— 未以运动平滑为主打。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 Figure 4–8：定性 / 对比 / 消融 / Benchmark 统计</h3>
+      <figure><img src="assets/mofu/fig4.jpg" alt="定性结果"><figcaption>多案例：自然尺度 + 排列不变 + 文本对齐。点击放大。</figcaption></figure>
+      <figure style="margin-top:1rem"><img src="assets/mofu/fig5.jpg" alt="尺度对比"><figcaption>vs Phantom 等：碗/卡车相对环境尺度更自然。点击放大。</figcaption></figure>
+      <figure style="margin-top:1rem"><img src="assets/mofu/fig6.jpg" alt="排列对比"><figcaption>换参考顺序：他人丢主体或运动反向；MoFu 稳定。点击放大。</figcaption></figure>
+      <figure style="margin-top:1rem"><img src="assets/mofu/fig7.jpg" alt="消融"><figcaption>左：无 SMO 尺度失真；右：无 Fourier Fusion 排列敏感。点击放大。</figcaption></figure>
+      <figure style="margin-top:1rem"><img src="assets/mofu/fig8.jpg" alt="Benchmark 统计"><figcaption>MoFu-Bench 主体/尺度/排列分布统计。点击放大。</figcaption></figure>
+    </section>
+
+    <h2 class="section-title" id="metrics">附录 · Evaluation Metrics</h2>
+    <p style="font-size:0.9rem;color:var(--muted);margin-bottom:1rem;">Following the evaluation principles established in OpenS2V, we adopt six complementary metrics (Appendix · Experiments).</p>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Aesthetics:</strong> We evaluate the perceptual quality and artistic appeal of the generated frames with Aesthetics Score, using an aesthetics prediction model trained on large-scale image quality datasets. Higher scores indicate visually pleasing and artifact-free results.</p>
+        <p><strong>FaceSim:</strong> For videos containing human subjects, we employ FaceSim to measure the similarity between generated faces and reference faces using a face recognition network (e.g., ArcFace).</p>
+        <p><strong>GmeScore:</strong> We use GmeScore, a retrieval-based metric built on a Qwen2-VL model fine-tuned for vision-language alignment, to quantify how accurately the model maintains subject shapes and key structural features.</p>
+        <p><strong>Motion Score:</strong> We assess temporal coherence by Motion Score, implemented by OpenCV, measuring inter-frame motion stability using optical flow smoothness and frame-level warping error.</p>
+        <p><strong>ScaleScore:</strong> To evaluate ScaleScore, we leverage GPT-4o to judge whether the relative sizes of subjects in the generated video match the relationships implied by the input prompt. We provide GPT-4o with the text description and 10 sampled frames from the video, and ask it to output a scale consistency score from 1 to 5.</p>
+        <p><strong>SubjectSim:</strong> SubjectSim measures the overall similarity between generated subjects and their reference images, combining accurate subject localization and feature similarity. We obtain subject masks in reference images using GroundSAM; for sampled generated frames, candidate regions are detected and matched to the reference subject via CLIP feature similarity.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>Aesthetics：</strong> 用 Aesthetics Score 评估生成帧感知质量与艺术性，基于大规模图像质量数据集训练的美学预测模型；分数越高表示越美观、伪影越少。</p>
+        <p><strong>FaceSim：</strong> 含人类主体时，用 FaceSim（如 ArcFace 人脸识别网络）度量生成脸与参考脸的相似度，保证面部结构与属性。</p>
+        <p><strong>GmeScore：</strong> 基于微调 Qwen2-VL 的检索指标，量化主体形状与关键结构特征保持程度。</p>
+        <p><strong>Motion Score：</strong> 用 OpenCV 实现，以光流平滑度与帧级 warp error 度量帧间运动稳定性；运动伪影越少分数越高。</p>
+        <p><strong>ScaleScore：</strong> 用 GPT-4o 判断生成视频中主体相对大小是否符合 prompt 隐含关系；输入文本描述与 10 帧采样，输出 1–5 分尺度一致性。</p>
+        <p><strong>SubjectSim：</strong> 度量生成主体与参考图整体相似度，结合定位与特征相似；参考侧 GroundSAM 得 mask，生成帧检测候选区域并经 CLIP 匹配。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card"><span class="tag">指标分工</span>
+          <p>Aesthetics / Motion → 画质与时序；FaceSim / SubjectSim → identity；GmeScore → 图文语义；<strong>ScaleScore → 本文核心贡献维度</strong>。MoFu ScaleScore 0.585 vs VACE 0.547 领先最明显。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <p>SubjectSim matching (frame $t$, subject $i$):</p>
+        <p>$$j^{*} = \arg\max_j \frac{f(b_{t,j}) \cdot f(S^{\text{ref}}_i)}{\|f(b_{t,j})\| \|f(S^{\text{ref}}_i)\|}$$</p>
+        <p>where $b_{t,j}$ is the $j$-th detected region at frame $t$ and $S^{\text{ref}}_i$ is the reference subject. We then compute the cosine similarity of the matched regions' CLIP embeddings and average over all frames and subjects:</p>
+        <p>$$\text{SubjectSim} = \frac{1}{N} \sum_{i=1}^{N} \frac{1}{T} \sum_{t=1}^{T} \frac{f(S^{\text{gen}}_{i,t}) \cdot f(S^{\text{ref}}_i)}{\|f(S^{\text{gen}}_{i,t})\| \|f(S^{\text{ref}}_i)\|}$$</p>
+        <p>Higher SubjectSim values indicate better preservation of subject identity and appearance. Together, these metrics provide a holistic evaluation of spatial coherence, subject identity preservation, temporal stability, and scale robustness.</p>
+      </div>
+      <div class="col-translation">
+        <p>SubjectSim 匹配（帧 $t$、主体 $i$）：</p>
+        <p>$$j^{*} = \arg\max_j \frac{f(b_{t,j}) \cdot f(S^{\text{ref}}_i)}{\|f(b_{t,j})\| \|f(S^{\text{ref}}_i)\|}$$</p>
+        <p>其中 $b_{t,j}$ 为帧 $t$ 第 $j$ 个检测区域，$S^{\text{ref}}_i$ 为参考主体。对匹配区域 CLIP embedding 求余弦相似度，再对所有帧与主体平均：</p>
+        <p>$$\text{SubjectSim} = \frac{1}{N} \sum_{i=1}^{N} \frac{1}{T} \sum_{t=1}^{T} \frac{f(S^{\text{gen}}_{i,t}) \cdot f(S^{\text{ref}}_i)}{\|f(S^{\text{gen}}_{i,t})\| \|f(S^{\text{ref}}_i)\|}$$</p>
+        <p>SubjectSim 越高表示主体 identity 与外观保持越好。六项指标合评空间连贯、身份、时序与尺度鲁棒性。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#dc3545;"><span class="tag">可复现性</span>
+          <p>ScaleScore 依赖 GPT-4o API；Aesthetics/GmeScore 需特定预训练权重。SubjectSim 与 FaceSim 相对可复现。论文 MoFu-Bench 为统一评测协议。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="conclusion">5. Conclusion</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>We proposed MoFu, a unified framework that addresses scale inconsistency and permutation sensitivity in multi-subject video generation. By introducing Scale-Aware Modulation and the Fourier Fusion strategy, MoFu explicitly enforces natural subject scales and permutation-invariant conditioning. Besides, we build MoFu-1M for training, and establish a dedicated benchmark MoFu-Bench for assessing scale consistency and permutation-invariance.</p>
+      </div>
+      <div class="col-translation">
+        <p>我们提出 MoFu 统一框架，解决多主体视频生成中的尺度不一致与排列敏感性。通过 Scale-Aware Modulation 与 Fourier Fusion，MoFu 显式 enforce 自然主体尺度与排列不变条件。此外构建 MoFu-1M 用于训练，并建立专用 benchmark MoFu-Bench 以评估尺度一致性与排列不变性。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#dc3545;"><span class="tag">局限</span>
+          <p>无公开代码/权重；ScaleScore 依赖 GPT-4o；Fourier 求和假设高维正交，参考数 $N$ 很大时是否仍成立未充分分析；480P 训练上限。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="summary" id="notation">
+      <h2>符号速查表</h2>
+      <table class="notation">
+        <thead><tr><th>符号</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td>SMO</td><td>Scale-Aware Modulation（LLM + SCA 调制 DiT）</td></tr>
+          <tr><td>SCA</td><td>Scale Control Adapter（MLP 预测 $\gamma,\beta,\eta$）</td></tr>
+          <tr><td>Fourier Fusion</td><td>多参考 FFT → HF/LF 求和 → IFFT</td></tr>
+          <tr><td>SPSL</td><td>Scale-Permutation Stability Loss</td></tr>
+          <tr><td>MoFu-1M</td><td>100 万 clip，81 帧，RGBA 多参考</td></tr>
+          <tr><td>MoFu-Bench</td><td>1000 对，尺度扰动 + 参考排列变化</td></tr>
+          <tr><td>ScaleScore</td><td>GPT-4o 评估 prompt 隐式尺度一致性</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="summary" id="overview">
+      <h2>论证总览</h2>
+      <div class="skeleton">
+多参考 I2V：参考尺度不一 → 生成比例失真；参考顺序敏感 → 主体错乱<br>
+↓<br>
+SMO：LLM 从 prompt 抽尺度语义 → 调制 DiT 特征<br>
+↓<br>
+Fourier Fusion：频域 HF/LF 分别求和 → 排列不变多参考条件<br>
+↓<br>
+SPSL：面积加权 scale loss + 排列 permutation loss<br>
+↓<br>
+MoFu-1M 训练 + MoFu-Bench 评测 → 6 指标 SOTA，ScaleScore 提升最大
+      </div>
+      <div class="strength"><strong>强项</strong>：问题定义清晰（scale + permutation）；FF 简单有效；专用 benchmark 填补评测空白；与 360 多主体视频线一致。</div>
+      <div class="weakness"><strong>弱项</strong>：未开源；ScaleScore 外部 API 依赖；正交求和理论偏启发式；Motion 非最优。</div>
+    </section>
+
+    <section class="summary faq" id="faq">
+      <h2>🧩 结构化十问（AI 解构）</h2>
+      <details open><summary>Q1 · 解决什么问题？</summary><div class="answer">多主体视频生成：多张参考图 + 文本 → 视频。现有方法存在<strong>参考图主体尺度不一致导致生成比例失真</strong>，以及<strong>参考图输入顺序变化导致主体扭曲/丢失</strong>。</div></details>
+      <details open><summary>Q2 · SMO 做什么？</summary><div class="answer">冻结 LLM 编码 prompt 得语义向量，经 Scale Control Adapter 预测 $\gamma,\beta,\eta$，对 DiT 的 MHA/FFN 特征做仿射调制 + 门控残差，把<strong>文本中的隐式尺度关系</strong>注入生成过程。</div></details>
+      <details open><summary>Q3 · Fourier Fusion 为何排列不变？</summary><div class="answer">每张参考特征 FFT 后分高低频，各频率分量跨参考<strong>直接求和</strong>再 IFFT。求和满足交换律；论文并用高维向量近似正交解释「叠加不互相干扰」。</div></details>
+      <details open><summary>Q4 · SPSL 两项损失？</summary><div class="answer"><strong>Scale loss</strong>：按参考 mask 面积比加权 MSE，强调大主体重建。<strong>Perm loss</strong>：打乱参考顺序后 Fourier Fusion 输出应与原顺序一致（MSE）。</div></details>
+      <details open><summary>Q5 · MoFu-1M 怎么建？</summary><div class="answer">15M 视频 clip → 过滤至 2.5M → 取 1M（81 帧）；LLM 实体解析 + Grounded-SAM 定位；GmeScore/面积过滤；人脸支路额外清洗；多尺度增强。</div></details>
+      <details open><summary>Q6 · MoFu-Bench 特殊在哪？</summary><div class="answer">1000 对；每例最多 3 张参考，<strong>刻意做主体 zoom 尺度扰动</strong>和<strong>参考顺序随机化</strong>，专测 scale consistency 与 permutation invariance — 论文称首个双维度 benchmark。</div></details>
+      <details open><summary>Q7 · 对比谁？结果？</summary><div class="answer">Phantom、SkyReels-A2、VACE、MAGREF。MoFu-Bench 上 Aesthetics 0.401、FaceSim 0.396、GmeScore 0.745、ScaleScore <strong>0.585</strong>、SubjectSim 0.755 — 六项第一。</div></details>
+      <details open><summary>Q8 · 与 Lay2Story / ConsisID 关系？</summary><div class="answer">ConsisID 单主体身份一致；Lay2Story 多帧故事 + 显式 bbox layout。MoFu 是<strong>多参考视频</strong>，尺度来自文本 SMO、无 bbox，强调<strong>多 ref 融合鲁棒性</strong>。</div></details>
+      <details open><summary>Q9 · 消融验证什么？</summary><div class="answer">无 SMO：大象/麻雀相对尺度失真。无 Fourier Fusion：换参考顺序丢杯子或车辆运动反向。两模块分别对应两大挑战。</div></details>
+      <details open><summary>Q10 · 代码开源？</summary><div class="answer">截至论文发表<strong>无公开 GitHub 仓库</strong>。复现需自建 MoFu-1M 级数据管线 + DiT flow-matching 训练栈。</div></details>
+    </section>
+
+    <section class="summary deepdive" id="deepdive">
+      <h2>🔬 深挖</h2>
+      <div class="block">
+        <h4>尺度条件：文本 vs 显式 layout</h4>
+        <p>MoFu 不画 bbox，靠 LLM 理解「大象」「麻雀」等词的相对尺度 — 适合 prompt 已描述关系的数据；对「参考图很大但 prompt 没提尺度」可能仍弱，故 MoFu-Bench 用 GPT-4o ScaleScore 补评测。</p>
+      </div>
+      <div class="block">
+        <h4>频域求和 vs Attention 融合</h4>
+        <p>Fourier Fusion 计算轻、顺序无关，但<strong>丢失参考间细粒度对应</strong>（谁是谁）。适合「多主体同框、各参考对应不同主体」场景；若需精确 ref-to-subject 绑定，可能仍需 cross-attn 或 MAGREF 式对齐。</p>
+      </div>
+      <div class="block crit">
+        <h4>批判性思维</h4>
+        <ul>
+          <li><strong>正交启发式</strong>：CNN 特征经 FFT 后「直接求和」的置换不变性有实验支撑，但 $N&gt;3$、特征纠缠时理论保证弱。</li>
+          <li><strong>ScaleScore 可复现性</strong>：依赖 GPT-4o，闭源 API 使 benchmark 分数难完全复现。</li>
+          <li><strong>训练成本</strong>：16×H800×7 天 + 百万数据，门槛高于 training-free 1Prompt1Story 类方法。</li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="lightbox" role="dialog" aria-modal="true" aria-label="放大查看">
+    <div class="lb-content"></div>
+    <div class="lb-cap"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral', flowchart: { htmlLabels: true } });</script>
+  <script>
+    function syncScrollPad() {
+      var head = document.querySelector('.sticky-head');
+      if (head) document.documentElement.style.scrollPaddingTop = (head.offsetHeight + 8) + 'px';
+    }
+    window.addEventListener('load', syncScrollPad);
+    window.addEventListener('resize', syncScrollPad);
+    syncScrollPad();
+    (function () {
+      var lb = document.getElementById('lightbox');
+      var content = lb.querySelector('.lb-content');
+      var cap = lb.querySelector('.lb-cap');
+      function findZoomTarget(node) {
+        var el = node.closest ? node.closest('img, svg') : null;
+        if (!el || !el.closest('.diagram, .figure-row, .mermaid')) return null;
+        return el;
+      }
+      function nearestCaption(el) {
+        var fig = el.closest('figure') || el.closest('.diagram') || el.closest('.figure-row');
+        var c = fig && fig.querySelector('figcaption');
+        return c ? c.textContent.trim() : '';
+      }
+      function openLightbox(node, caption) {
+        content.innerHTML = '';
+        var clone = node.cloneNode(true);
+        var r = node.getBoundingClientRect();
+        var scale = Math.min(window.innerWidth * 0.96 / (r.width || 600), window.innerHeight * 0.92 / (r.height || 400));
+        if (!isFinite(scale) || scale <= 0) scale = 1;
+        clone.style.width = Math.round((r.width || 600) * scale) + 'px';
+        clone.style.height = Math.round((r.height || 400) * scale) + 'px';
+        clone.style.maxWidth = clone.style.maxHeight = 'none';
+        content.appendChild(clone);
+        cap.textContent = caption || '';
+        lb.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+      function closeLightbox() { lb.classList.remove('open'); content.innerHTML = ''; document.body.style.overflow = ''; }
+      document.addEventListener('click', function (e) {
+        if (lb.classList.contains('open')) { closeLightbox(); return; }
+        var el = findZoomTarget(e.target);
+        if (el) { e.preventDefault(); e.stopPropagation(); openLightbox(el, nearestCaption(el)); }
+      });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && lb.classList.contains('open')) closeLightbox(); });
+    })();
+  </script>
+</body>
+</html>

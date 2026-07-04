@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InnoAds-Composer — 电商海报三条件高效合成 · 逻辑精读</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+  <style>
+    :root { --navy:#1a2744; --paper:#faf8f5; --thesis:#fff3cd; --concept:#f8d7da; --evidence:#cfe2ff; --counter:#d1e7dd; --method:#e2d9f3; --text:#2c2c2c; --muted:#6c757d; --border:#e8e4df; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'IBM Plex Sans',sans-serif; background:var(--paper); color:var(--text); line-height:1.6; }
+    .sticky-head { position:sticky; top:0; z-index:100; }
+    .top-nav { background:var(--navy); color:#fff; padding:1rem 2rem; }
+    .top-nav h1 { font-size:1.25rem; font-weight:600; }
+    .top-nav h1 a { color:#fff; text-decoration:none; border-bottom:1px dotted rgba(255,255,255,0.5); }
+    .top-nav .meta { font-size:0.85rem; opacity:0.85; margin-top:0.25rem; }
+    .legend { display:flex; flex-wrap:wrap; gap:0.75rem; margin-top:0.75rem; font-size:0.8rem; }
+    .legend span { padding:0.15rem 0.5rem; border-radius:3px; color:#2c2c2c; }
+    .chapter-nav { background:#fff; border-bottom:1px solid var(--border); padding:0.75rem 2rem; overflow-x:auto; white-space:nowrap; box-shadow:0 2px 6px rgba(0,0,0,0.06); }
+    .chapter-nav a { color:var(--navy); text-decoration:none; margin-right:1.25rem; font-size:0.9rem; font-weight:500; }
+    main { max-width:1680px; margin:0 auto; padding:2rem; }
+    .section-title { font-size:1.5rem; color:var(--navy); margin:2rem 0 1rem; padding-bottom:0.5rem; border-bottom:2px solid var(--navy); }
+    .col-labels { display:grid; grid-template-columns:1.1fr 1fr 1fr; gap:1.5rem; margin-bottom:0.5rem; font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); }
+    .row { display:grid; grid-template-columns:1.1fr 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem; align-items:start; }
+    .col-original { font-family:'Lora',serif; font-size:0.95rem; line-height:1.75; }
+    .col-original p { margin-bottom:0.75rem; }
+    .col-translation { font-size:0.92rem; line-height:1.75; color:#333; }
+    .col-translation p { margin-bottom:0.75rem; }
+    .analysis-card { background:#fff; border-left:4px solid var(--navy); padding:1rem 1.25rem; border-radius:0 6px 6px 0; box-shadow:0 1px 3px rgba(0,0,0,0.06); font-size:0.9rem; }
+    .analysis-card .tag { display:inline-block; font-size:0.75rem; font-weight:600; text-transform:uppercase; margin-bottom:0.5rem; color:var(--navy); }
+    .analysis-card h4 { font-size:0.85rem; color:var(--muted); margin:0.75rem 0 0.25rem; }
+    .analysis-card p { margin-bottom:0.5rem; }
+    .analysis-card.deep { border-left-width:5px; }
+    .exp-table { width:100%; border-collapse:collapse; margin:0.75rem 0; font-size:0.82rem; }
+    .exp-table th,.exp-table td { border:1px solid var(--border); padding:0.35rem 0.5rem; text-align:left; }
+    .exp-table th { background:var(--paper); color:var(--navy); font-weight:600; }
+    .exp-table tr.is-ours { background:var(--evidence); }
+    .notation { width:100%; border-collapse:collapse; margin:0.75rem 0; font-size:0.88rem; background:#fff; }
+    .notation th,.notation td { border:1px solid var(--border); padding:0.4rem 0.6rem; text-align:left; }
+    .notation th { background:var(--paper); color:var(--navy); }
+    .figure-row { margin:1.5rem 0; padding:1.25rem; background:#fff; border:1px solid var(--border); border-radius:8px; }
+    .figure-row figure { margin:0; text-align:center; }
+    .figure-row img { max-width:100%; height:auto; cursor:zoom-in; }
+    .figure-row figcaption { font-size:0.82rem; color:var(--muted); margin-top:0.5rem; }
+    .figure-row h3 { color:var(--navy); font-size:1rem; margin-bottom:0.75rem; }
+    .diagram { margin:0.75rem 0; }
+    .mermaid { background:#fff; border:1px solid var(--border); border-radius:4px; padding:0.5rem; }
+    .diagram img,.diagram svg,.figure-row img,.figure-row svg { cursor:zoom-in; }
+    #lightbox { position:fixed; inset:0; background:rgba(10,12,20,0.92); display:none; align-items:center; justify-content:center; z-index:1000; cursor:zoom-out; padding:3vh 3vw; }
+    #lightbox.open { display:flex; }
+    #lightbox .lb-content img,#lightbox .lb-content svg { display:block; background:#fff; border-radius:6px; box-shadow:0 8px 40px rgba(0,0,0,0.5); }
+    #lightbox .lb-cap { position:fixed; bottom:1.2rem; left:0; right:0; text-align:center; color:#e8e4df; font-size:0.8rem; }
+    .hl-thesis { background:var(--thesis); padding:0 2px; }
+    .hl-concept { background:var(--concept); padding:0 2px; }
+    .hl-evidence { background:var(--evidence); padding:0 2px; }
+    .hl-method { background:var(--method); padding:0 2px; }
+    .summary { background:#fff; border:1px solid var(--border); border-radius:8px; padding:2rem; margin-top:3rem; }
+    .summary h2 { color:var(--navy); margin-bottom:1rem; }
+    .summary .skeleton { font-family:monospace; background:var(--paper); padding:1rem; border-radius:4px; line-height:1.9; }
+    .summary .strength,.summary .weakness { padding:0.75rem 1rem; border-radius:4px; margin:0.5rem 0; }
+    .summary .strength { background:var(--counter); }
+    .summary .weakness { background:var(--concept); }
+    .feynman { background:#fff; border:1px solid var(--border); border-left:5px solid #0d9488; border-radius:0 8px 8px 0; padding:1.25rem 1.5rem; margin:1.5rem 0 2rem; }
+    .feynman h2 { color:#0d9488; font-size:1.15rem; margin-bottom:0.35rem; }
+    .feynman p { font-size:0.95rem; line-height:1.85; margin-bottom:0.6rem; }
+    .faq details { background:#fff; border:1px solid var(--border); border-radius:6px; margin:0.5rem 0; }
+    .faq summary { cursor:pointer; font-weight:600; color:var(--navy); padding:0.7rem 0.9rem; list-style:none; font-size:0.92rem; }
+    .faq summary::-webkit-details-marker { display:none; }
+    .faq .answer { padding:0 0.9rem 0.85rem 1.8rem; font-size:0.9rem; line-height:1.8; }
+    .deepdive .block { margin:0.9rem 0; padding:0.85rem 1.1rem; border-radius:4px; background:var(--paper); border-left:3px solid #6f42c1; }
+    .deepdive .block.crit { border-left-color:#dc3545; background:#fdf0f1; }
+    @media (max-width:1100px) { .col-labels{display:none;} .row{grid-template-columns:1fr;} }
+  </style>
+</head>
+<body>
+  <div class="sticky-head">
+    <header class="top-nav">
+      <h1><a href="https://arxiv.org/abs/2603.05898" target="_blank" rel="noopener">InnoAds-Composer — Efficient Condition Composition for E-Commerce Poster Generation</a></h1>
+      <div class="meta">DeepLearning-Paper-with-Code · Diffusion Model · arXiv(2026) / CVPR(2026) · JD.com · Yuxin Qin et al.</div>
+      <div class="legend">
+        <span class="hl-thesis">核心论点</span><span class="hl-concept">关键概念</span><span class="hl-evidence">实证证据</span><span class="hl-method">方法论</span>
+      </div>
+    </header>
+    <nav class="chapter-nav">
+      <a href="#feynman">速读</a><a href="#abstract">Abstract</a><a href="#intro">Introduction</a>
+      <a href="#data">InnoComposer-80K</a><a href="#method">Method</a><a href="#experiments">Experiments</a>
+      <a href="#conclusion">Conclusion</a><a href="#notation">符号表</a><a href="#overview">总览</a><a href="#faq">十问</a><a href="#deepdive">深挖</a>
+    </nav>
+  </div>
+
+  <main>
+    <section class="feynman" id="feynman">
+      <h2>🎮 费曼一分钟</h2>
+      <p><strong>任务</strong>：电商海报 = 一张图里同时摆对<strong>商品主体</strong>、<strong>促销文案</strong>、<strong>背景风格</strong>。多阶段 pipeline（先合成场景再贴字）常出现主体走样、文字错字、风格不统一。</p>
+      <p><strong>InnoAds-Composer</strong>：基于 <span class="hl-concept">MM-DiT（FLUX）</span> 的<strong>单阶段</strong>三条件生成——风格 $h^b$、主体 $h^s$、字形 $h^c$ 全部 token 化后注入同一注意力流。</p>
+      <p><strong>三板斧</strong>：① <span class="hl-method">TFEM</span> 双分支（整图 VAE + 单字 OCR crop + 位置编码）提升中文渲染；② <span class="hl-method">重要性热力图</span> 按层/步只注入「该管事」的条件 token（默认保留 40%/50%/20%）；③ <span class="hl-method">解耦注意力</span> 砍掉 $Q_c\!\to\!K_n$ 冗余路径，条件支路可跨步缓存。</p>
+      <p><strong>数据</strong>：自建 <strong>InnoComposer-80K</strong>（首个同时含 subject+glyph+style 标注的海报集）+ 300 条 <strong>InnoComposer-Bench</strong>。Stage I 质量全面 SOTA；Stage II 剪 token 后延迟再降 15%，指标几乎不掉。</p>
+    </section>
+
+    <h2 class="section-title" id="abstract">Abstract</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>E-commerce product poster generation aims to automatically synthesize a single image that effectively conveys product information by presenting a subject, text, and a designed style. Recent diffusion models with fine-grained and efficient controllability have advanced product poster synthesis, yet they typically rely on multi-stage pipelines, and simultaneous control over subject, text, and style remains underexplored. Such naive multi-stage pipelines also show three issues: poor subject fidelity, inaccurate text, and inconsistent style.</p>
+        <p>To address these issues, we propose InnoAds-Composer, a single-stage framework that enables efficient tri-conditional control tokens over subject, glyph, and style. To alleviate the quadratic overhead introduced by naive tri-conditional token concatenation, we perform importance analysis over layers and timesteps and route each condition only to the most responsive positions, thereby shortening the active token sequence. Besides, to improve the accuracy of Chinese text rendering, we design a Text Feature Enhancement Module (TFEM) that integrates features from both glyph images and glyph crops.</p>
+        <p>To support training and evaluation, we also construct a high-quality e-commerce product poster dataset and benchmark, which is the first dataset that jointly contains subject, text, and style conditions. Extensive experiments demonstrate that InnoAds-Composer significantly outperforms existing product poster methods without obviously increasing inference latency.</p>
+      </div>
+      <div class="col-translation">
+        <p>电商产品海报生成旨在自动合成一张图，通过呈现主体、文字与设计风格有效传达产品信息。可控扩散模型虽推动海报合成，但多依赖多阶段 pipeline，且主体、文字、风格的同时控制仍不足； naive 多阶段常出现主体保真差、文字不准、风格不一致。</p>
+        <p>为此提出 InnoAds-Composer：单阶段框架，对 subject、glyph、style 做高效三条件 token 控制。为缓解 naive 三条件 token 拼接的二次开销，在层与时间步上做重要性分析，将各条件仅路由至最响应位置以缩短有效序列。另设计 TFEM，融合整图字形与单字 crop 特征以提升中文渲染精度。</p>
+        <p>并构建高质量电商海报数据集与 benchmark——首个同时含 subject、text、style 条件的数据集。实验表明 InnoAds-Composer 显著优于现有方法，且推理延迟未明显增加。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card"><span class="tag">一句话</span>
+          <p>把 PosterMaker / Flux-Text 等多路能力<strong>收进一个 MM-DiT 前向</strong>，并用「条件重要性 + 解耦注意力」把三条件拼接的 $O(n^2)$ 开销压下去。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 Figure 1：三条件独立控制定性展示</h3>
+      <figure><img src="assets/innoads-composer/fig1.jpg" alt="三条件独立控制">
+      <figcaption>每行只变一种条件（风格 / 主体 / 字形），其余固定；右下 inset 为变化条件的输入。点击放大。</figcaption></figure>
+    </section>
+
+    <h2 class="section-title" id="intro">1. Introduction</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>E-commerce product poster generation has emerged as a crucial task that aims to automatically synthesize a single image effectively conveying product information through the integration of subject, text, and a designed style. Recently, diffusion models have demonstrated fine-grained and efficient control over image synthesis; however, e-commerce poster generation remains relatively underexplored. Unlike free-form artistic layouts, retail posters must follow strict layout and branding rules while maintaining subject fidelity, style consistency, and text accuracy.</p>
+        <p>Current e-commerce poster generation systems still fall short in three respects. First, most do not offer end-to-end joint control of background style, subject fidelity, and text accuracy within a single model; multi-stage pipelines that compose the scene and render the text tend to be inaccurate, resulting in style inconsistency and loss of subject fidelity. Second, emerging single-stage approaches incorporate text control but struggle to render complex scripts and small glyphs with high fidelity. Third, the designed background style is often prompt-driven and may deviate from global style or semantic constraints. These limitations are exacerbated by the scarcity of training data with fine-grained, multi-condition annotations.</p>
+        <p>To address these challenges, we introduce InnoAds-Composer, a single-stage, multi-condition framework built on an MM-DiT backbone. A unified tokenization maps style, subject, and glyph conditions into the same token space. We propose TFEM with entire-glyph VAE tokens and single-glyph OCR crops with positional cues; conduct layer and timestep importance analysis for importance-aware injection; and use decoupled attention to remove costly low-value interactions. We also create InnoComposer-80K and InnoComposer-Bench.</p>
+      </div>
+      <div class="col-translation">
+        <p>电商海报生成旨在合成一张图，整合主体、文字与设计风格以传达产品信息。扩散模型虽实现细粒度可控合成，但电商海报仍相对欠探索；与自由艺术布局不同，零售海报须遵守严格布局与品牌规则，同时保持主体保真、风格一致与文字准确。</p>
+        <p>现有系统在三方面不足：其一，多数无法在单模型内端到端联合控制背景风格、主体保真与文字准确，多阶段 pipeline 易致风格不一致与主体失真；其二，单阶段文字方法难以高保真渲染复杂文字与小字号；其三，背景风格常由 prompt 驱动，易偏离全局风格或语义约束。细粒度多条件标注数据稀缺进一步加剧上述问题。</p>
+        <p>为此提出基于 MM-DiT 的单阶段多条件框架 InnoAds-Composer：统一 token 化映射 style/subject/glyph；TFEM 融合整图 VAE token 与 OCR 单字 crop 及位置编码；层×步重要性分析做选择性注入；解耦注意力去除低价值交互。并发布 InnoComposer-80K 与 InnoComposer-Bench。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#0d9488;"><span class="tag">与 PosterMaker 差异</span>
+          <p>PosterMaker 用 <strong>prompt 控背景</strong>；本文用 <strong>风格参考图</strong> $h^i$（或纯 prompt 模式 $m{=}0$）。与 Lay2Story / FancyVideo 同 JD 系，但任务是<strong>静态海报三条件</strong>而非视频/故事。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="data">3. Datasets &amp; Benchmark</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>We construct a high-quality bilingual e-commerce poster dataset through a structured pipeline. Each sample comprises three customized inputs: a background-style image conveying global aesthetics, a subject image specifying the product and its approximate location, and a glyph image providing the textual content to be rendered.</p>
+        <p>Images are grouped by SKU; annotators select visually similar pairs within each group. For one image in each pair, Qwen-Edit removes product content to obtain a clean style reference. The reference and its paired image form a diptych to fine-tune Qwen-Image, yielding clean background references. We synthesize style images in batches; unlike pipelines enforcing tight pixel-level match, our backgrounds are semantically aligned yet intentionally differ in local details. Glyph images (Chinese and English) are extracted via OCR; subjects are segmented with Grounded-SAM. After de-duplication and resolution normalization, we construct <strong>InnoComposer-80K</strong> (80,000 samples: prompt, subject, style, glyph). For evaluation, <strong>InnoComposer-Bench</strong> contains 300 held-out items ranked by product emphasis, style consistency, and text accuracy.</p>
+      </div>
+      <div class="col-translation">
+        <p>通过结构化 pipeline 构建高质量双语电商海报数据集。每条样本含三输入：背景风格图（全局美学）、主体图（商品及大致位置）、字形图（待渲染文字内容）。</p>
+        <p>按 SKU 分组，组内选视觉相似对；Qwen-Edit 去除其中一张的商品得干净风格参考，与配对图组成 diptych 微调 Qwen-Image 得背景参考；批量合成风格图——语义对齐但局部细节刻意不同。OCR 提取中英字形图，Grounded-SAM 分割主体；去重与分辨率归一化后得 <strong>InnoComposer-80K</strong>（8 万条：prompt+subject+style+glyph）。<strong>InnoComposer-Bench</strong> 为 300 条严格留出样本，按商品强调、风格一致、文字准确排序。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep"><span class="tag">数据设计要点</span>
+          <p>风格图与内容图<strong>故意不做像素级对齐</strong>，只要求语义一致 → 训练时模型学「风格迁移」而非 copy-paste。中英双语 OCR 字形 → 对齐国内电商主战场。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 Figure 2：样例与数据构建流水线</h3>
+      <figure><img src="assets/innoads-composer/fig2.jpg" alt="InnoComposer 数据流水线">
+      <figcaption>左：三条件输入样例；右：SKU 配对 → 风格参考 → 合成 → OCR/分割 → 80K 语料。点击放大。</figcaption></figure>
+    </section>
+
+    <h2 class="section-title" id="method">4. Method</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>InnoAds-Composer adopts unified multi-condition tokenization on an MM-DiT backbone. A T5 encoder embeds the user prompt into text tokens $h^p$; the VAE encodes noise latents into patch tokens $h^z$.</p>
+        <p><strong>Background style</strong> (Eq.1): $h^b = \mathcal{C}(h^p)$ if no style image ($m{=}0$); else $h^b = \mathcal{C}(h^i, h^{p_0})$ where $h^{p_0}$ is a fixed anchor prompt.</p>
+        <p><strong>Subject:</strong> non-subject regions are filled with black; the masked image is VAE-encoded and patchified into $h^s$.</p>
+        <p><strong>Glyph + TFEM</strong> (Eq.2): branch 1 encodes the entire glyph image → $h^{c1}$; branch 2 processes single-glyph OCR crops with absolute position, font-size code, and local position → $h^{c2}$; $h^c = \mathrm{GlyphEnc}(h^{c1}, h^{c2})$.</p>
+      </div>
+      <div class="col-translation">
+        <p>InnoAds-Composer 在 MM-DiT 骨干上采用统一多条件 token 化：T5 将用户 prompt 嵌入为 $h^p$；VAE 将噪声 latent patch 化为 $h^z$。</p>
+        <p><strong>背景风格</strong>（Eq.1）：无风格图（$m{=}0$）时 $h^b = \mathcal{C}(h^p)$；有风格图时 $h^b = \mathcal{C}(h^i, h^{p_0})$，$h^{p_0}$ 为固定锚 prompt。</p>
+        <p><strong>主体</strong>：非主体区域填黑，mask 后 VAE 编码 patch 化为 $h^s$。</p>
+        <p><strong>字形 + TFEM</strong>（Eq.2）：支路 1 整图字形 VAE → $h^{c1}$；支路 2 单字 OCR crop 加绝对位置、字号码、局部位置 → $h^{c2}$；$h^c = \mathrm{GlyphEnc}(h^{c1}, h^{c2})$。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color:#6f42c1;"><span class="tag">TFEM 伪代码（附录）</span>
+          <p>Cross-Attention 融合：$h^c = \mathrm{softmax}(h^{c1}W_Q (h^{c2}W_K)^\top / \sqrt{d})(h^{c2}W_V) + h^{c1}$，再 LayerNorm+FFN。整图管布局/笔画连贯，单字管语义与字号。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 Figure 3：InnoAds-Composer 总览</h3>
+      <figure><img src="assets/innoads-composer/fig3.jpg" alt="架构总览">
+      <figcaption>三模块：Multi-Condition Tokenization → Importance-Aware Injection → Decoupled Attention。点击放大。</figcaption></figure>
+    </section>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Importance-Aware Injection:</strong> guided by importance curves, we retain by default 40% of style tokens, 50% of subject tokens, and 20% of glyph tokens. In selected layers, corresponding condition tokens are concatenated with noisy-latent tokens $h^z$; non-selected tokens are omitted at that layer.</p>
+        <p><strong>Decoupled Attention</strong> (Eq.3–5): $O_n = \mathrm{Attn}(Q_n, [K_n; K_{ci}], [V_n; V_{ci}])$; $O_{ci} = \mathrm{Attn}(Q_c, K_{ci}, V_{ci})$ — removing the $Q_c \!\to\! K_n$ pathway. Condition activations at each block can be computed once and cached across timesteps during inference.</p>
+        <p><strong>Two-Stage Training:</strong> Stage I retains all condition tokens to train a fully conditioned generator; Stage II removes selected tokens and fine-tunes, sampling timesteps in proportion to the global importance map.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>重要性感知注入：</strong>依重要性曲线，默认保留 40% 风格 token、50% 主体 token、20% 字形 token。在选定层将对应条件 token 与噪声 latent $h^z$ 拼接，未选层省略该条件 token。</p>
+        <p><strong>解耦注意力</strong>（Eq.3–5）：$O_n = \mathrm{Attn}(Q_n, [K_n; K_{ci}], [V_n; V_{ci}])$；$O_{ci} = \mathrm{Attn}(Q_c, K_{ci}, V_{ci})$——去除 $Q_c \!\to\! K_n$ 路径。推理时各 block 条件激活可一次计算并跨步缓存。</p>
+        <p><strong>两阶段训练：</strong>Stage I 保留全部条件 token 训练完整生成器；Stage II 移除选定 token 并微调，按全局重要性图比例采样 diffusion timestep。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card"><span class="tag">与 RelaCtrl / FullDiT2 对照</span>
+          <p>RelaCtrl 按<strong>条件类型</strong>做层选择；本文进一步做<strong>层×时间步</strong>二维热力图，且三类条件互补（风格早、主体中、字形晚）。解耦注意力类似 FullDiT2「条件演化慢」观察。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="diagram">
+      <pre class="mermaid">flowchart LR
+  subgraph tok [Tokenization]
+    S[Style h^b] --> MM
+    Sub[Subject h^s] --> MM
+    G[Glyph h^c via TFEM] --> MM
+    Z[Noise h^z] --> MM
+    P[Prompt h^p] --> MM
+  end
+  subgraph inj [Importance Injection]
+    MM[MM-DiT blocks] --> L{layer x timestep heatmap}
+    L -->|40% style early| MM
+    L -->|50% subject mid| MM
+    L -->|20% glyph late| MM
+  end
+  subgraph attn [Decoupled Attn]
+    MM --> On[O_n attends K_n + K_ci]
+    MM --> Oci[O_ci self-attn only]
+    Oci -.cache across t.-> On
+  end</pre>
+      <figcaption>自绘：三条件 token → 重要性路由 → 解耦注意力（点击放大）。</figcaption>
+    </div>
+
+    <h3 class="section-title" style="font-size:1.2rem;margin-top:2rem;">4.2 Conditions Importance Analysis</h3>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>We measure condition importance via attention preference weights. At layer $b$ and timestep $t$, $A^{(b,t)} = \mathrm{Softmax}(Q^{(b,t)} {K^{(b,t)}}^\top / \sqrt{d})$. For each condition $ci$, we extract its subgraph, apply the condition mask, and compute the mean to obtain $S_{ci}(b,t)$.</p>
+        <p>From the heatmaps (Fig.4): background style dominates in early layers and early timesteps but decays rapidly. The subject condition forms a persistent high-intensity band in mid-to-deep layers across most timesteps. The glyph condition gradually increases in intensity in middle layers and later timesteps, corresponding to stroke refinement. The conditions display a non-uniform and complementary relationship across timesteps and model depth.</p>
+      </div>
+      <div class="col-translation">
+        <p>通过注意力偏好权重度量条件重要性。在层 $b$、步 $t$，$A^{(b,t)} = \mathrm{Softmax}(Q^{(b,t)} {K^{(b,t)}}^\top / \sqrt{d})$。对各条件 $ci$ 提取子图、加 mask 取均值得 $S_{ci}(b,t)$。</p>
+        <p>热力图（Fig.4）显示：背景风格在早期层与早期步主导但快速衰减；主体在中深层形成贯穿多数步的高强度带；字形在中层与后期步强度渐升，对应笔画细化。三条件在时间步与深度上呈非均匀且互补关系。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card"><span class="tag">消融 Fig.6</span>
+          <p>Random / Uniform 剪枝指标陡降；Importance-aware 在 glyph 剪至 80%、subject 50%、style 60% 前仍平稳——故默认保留比例取保守侧。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 Figure 4：三条件重要性热力图</h3>
+      <figure><img src="assets/innoads-composer/fig4.jpg" alt="重要性热力图">
+      <figcaption>横轴扩散步、纵轴层深度；风格左上亮、主体中间带、字形中后段。点击放大。</figcaption></figure>
+    </section>
+
+    <h2 class="section-title" id="experiments">5. Experiments</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>Table presents quantitative comparison. In Stage I, our method achieves the best performance in nearly all aspects: Sen. Acc 0.857, NED 0.976, DINO 0.923, IoU 0.972, CSD 0.729, IR-Score 1.036, FID 54.39. After Stage II, performance remains competitive (Sen. Acc 0.847, DINO 0.914, FID 55.24) while improving efficiency via importance-aware token routing.</p>
+        <table class="exp-table">
+          <thead><tr><th>Model</th><th>Sen.Acc↑</th><th>NED↑</th><th>DINO↑</th><th>IoU↑</th><th>CSD↑</th><th>FID↓</th></tr></thead>
+          <tbody>
+            <tr><td>PosterMaker</td><td>0.765</td><td>0.848</td><td>0.916</td><td>0.954</td><td>—</td><td>60.55</td></tr>
+            <tr><td>Qwen-Image-Edit</td><td>0.831</td><td>0.960</td><td>0.922</td><td>0.903</td><td>0.722</td><td>69.86</td></tr>
+            <tr><td>Seedream 4.0*</td><td><strong>0.865</strong></td><td>0.972</td><td>0.864</td><td>0.837</td><td>0.700</td><td>64.21</td></tr>
+            <tr class="is-ours"><td>Ours Stage I</td><td>0.857</td><td><strong>0.976</strong></td><td><strong>0.923</strong></td><td><strong>0.972</strong></td><td><strong>0.729</strong></td><td><strong>54.39</strong></td></tr>
+            <tr class="is-ours"><td>Ours Stage II</td><td>0.847</td><td>0.969</td><td>0.914</td><td>0.960</td><td>0.727</td><td>55.24</td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:0.85rem;margin-top:0.5rem;">Leveraging decoupled attention, Stage I reduces latency by 26.5% and FLOPs by 24.2% vs Flux-Kontext. Stage II achieves further reductions of 37.8% in latency and 38.1% in FLOPs without compromising generation quality.</p>
+        <table class="exp-table" style="margin-top:0.5rem;">
+          <thead><tr><th>Method</th><th>Latency (s)</th><th>FLOPs (T)</th><th>Memory (G)</th></tr></thead>
+          <tbody>
+            <tr><td>Flux-Kontext</td><td>76.02</td><td>218.45</td><td>55.29</td></tr>
+            <tr class="is-ours"><td>Ours Stage I</td><td>55.87</td><td>165.56</td><td>39.71</td></tr>
+            <tr class="is-ours"><td>Ours Stage II</td><td><strong>47.32</strong></td><td><strong>135.25</strong></td><td><strong>39.41</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="col-translation">
+        <p>Stage I 在几乎所有维度最优：Sen.Acc 0.857、NED 0.976、DINO 0.923、IoU 0.972、CSD 0.729、IR-Score 1.036、FID 54.39。Stage II 经重要性路由剪 token 后指标略降（Sen.Acc 0.847、DINO 0.914、FID 55.24）仍具竞争力。</p>
+        <table class="exp-table">
+          <thead><tr><th>模型</th><th>Sen.Acc↑</th><th>NED↑</th><th>DINO↑</th><th>IoU↑</th><th>CSD↑</th><th>FID↓</th></tr></thead>
+          <tbody>
+            <tr><td>PosterMaker</td><td>0.765</td><td>0.848</td><td>0.916</td><td>0.954</td><td>—</td><td>60.55</td></tr>
+            <tr><td>Qwen-Image-Edit</td><td>0.831</td><td>0.960</td><td>0.922</td><td>0.903</td><td>0.722</td><td>69.86</td></tr>
+            <tr><td>Seedream 4.0*</td><td><strong>0.865</strong></td><td>0.972</td><td>0.864</td><td>0.837</td><td>0.700</td><td>64.21</td></tr>
+            <tr class="is-ours"><td>Ours Stage I</td><td>0.857</td><td><strong>0.976</strong></td><td><strong>0.923</strong></td><td><strong>0.972</strong></td><td><strong>0.729</strong></td><td><strong>54.39</strong></td></tr>
+            <tr class="is-ours"><td>Ours Stage II</td><td>0.847</td><td>0.969</td><td>0.914</td><td>0.960</td><td>0.727</td><td>55.24</td></tr>
+          </tbody>
+        </table>
+        <p style="font-size:0.85rem;margin-top:0.5rem;">解耦注意力使 Stage I 相对 Flux-Kontext 延迟降 26.5%、FLOPs 降 24.2%；Stage II 再降延迟 37.8%、FLOPs 38.1%，生成质量未明显受损。</p>
+        <table class="exp-table" style="margin-top:0.5rem;">
+          <thead><tr><th>方法</th><th>延迟 (s)</th><th>FLOPs (T)</th><th>显存 (G)</th></tr></thead>
+          <tbody>
+            <tr><td>Flux-Kontext</td><td>76.02</td><td>218.45</td><td>55.29</td></tr>
+            <tr class="is-ours"><td>Ours Stage I</td><td>55.87</td><td>165.56</td><td>39.71</td></tr>
+            <tr class="is-ours"><td>Ours Stage II</td><td><strong>47.32</strong></td><td><strong>135.25</strong></td><td><strong>39.41</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep"><span class="tag">训练细节（附录）</span>
+          <p>基于 <strong>FLUX + AutoPP1M</strong> 中文先验；InnoComposer-80K 两阶段 LoRA rank 256。Stage I：lr $2\times10^{-5}$，≈1.1k GPU·h；Stage II：lr $1\times10^{-6}$，≈100 GPU·h；800²，Ascend 910B 训练、A100 测速。Sen.Acc 闭源 Seedream 0.865 仍略高于 Stage I 0.857。</p>
+        </div>
+        <div class="analysis-card" style="margin-top:0.75rem;"><span class="tag">指标族</span>
+          <p>文字：Sen.Acc / NED；主体：DINO + IoU（Grounded-SAM 抠区域）；风格：CSD + CLIP-I；整体：IR-Score + FID。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 Figure 5：与基线定性对比</h3>
+      <figure><img src="assets/innoads-composer/fig5.jpg" alt="定性对比">
+      <figcaption>左：风格/字形/主体三输入；右：Flux-Fill、PosterMaker、Qwen-Edit、Seedream 等。点击放大。</figcaption></figure>
+    </section>
+
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>Flux-Fill and USO cannot generate visual text, making them unsuitable for poster scenarios requiring integrated textual elements. PosterMaker generates subject and text but struggles to maintain background style consistency. Qwen-Image-Edit and Seedream 4.0 show good subject consistency and text rendering, yet often produce redundant or mismatched text, and style transfer tends to exhibit a copy-and-paste effect. InnoAds-Composer achieves strong consistency across text, subject, and background style.</p>
+        <p>Ablation on TFEM: without it, generated images exhibit noticeable textual errors; incorporating it improves rendered text quality, with an approximate 5% improvement in Sen. Acc (Fig.7).</p>
+      </div>
+      <div class="col-translation">
+        <p>Flux-Fill 与 USO 无法生成视觉文字，不适于需整合文字的海报场景。PosterMaker 可生成主体与文字但难保持背景风格一致。Qwen-Image-Edit 与 Seedream 4.0 主体与文字较好，但常出现冗余或不匹配文字，风格迁移易呈 copy-paste 效果。InnoAds-Composer 在文字、主体、背景风格上均强一致。</p>
+        <p>TFEM 消融：无 TFEM 时文字错误明显；加入后渲染质量提升，Sen.Acc 约提高 5%（Fig.7）。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card"><span class="tag">剪枝 Fig.6</span>
+          <p>Random / Uniform 剪枝指标陡降；Importance-aware 在 glyph 剪至 80%、subject 50%、style 60% 前仍平稳——故默认保留 40/50/20%。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>📄 Figure 6–7：剪枝策略 &amp; TFEM 消融</h3>
+      <figure><img src="assets/innoads-composer/fig6.png" alt="剪枝策略曲线">
+      <figcaption>Random/Uniform 陡降；Importance-aware 可大幅剪 token 仍稳。点击放大。</figcaption></figure>
+      <figure style="margin-top:1rem"><img src="assets/innoads-composer/fig7.jpg" alt="TFEM 消融">
+      <figcaption>无 TFEM 文字糊/错；有 TFEM 笔画清晰。点击放大。</figcaption></figure>
+    </section>
+
+    <h2 class="section-title" id="conclusion">6. Conclusion</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>We presented InnoAds-Composer, a single-stage, multi-condition framework for e-commerce poster generation that delivers simultaneously subject, text, and designed style. By unifying subject, style, and glyph tokens in the same space and preserving the priors of an MM-DiT backbone, our approach enables joint inference without multi-stage pipelines. The proposed TFEM fuses single/entire glyphs with positional information, substantially improving text sharpness, boundary integrity, and readability. Complementing this, we perform importance-aware condition injection and decoupled attention to reduce redundant interactions and shorten the activated sequence, leading to improved inference efficiency. We constructed InnoComposer-80K and InnoComposer-Bench for learning and fair comparison.</p>
+      </div>
+      <div class="col-translation">
+        <p>我们提出 InnoAds-Composer：单阶段多条件电商海报框架，同时交付主体、文字与设计风格。在 MM-DiT 骨干上统一 subject/style/glyph token 并保留先验，实现无多阶段 pipeline 的联合推理。TFEM 融合单字/整图字形与位置信息，显著提升文字锐度、边界完整性与可读性。另通过重要性感知注入与解耦注意力减少冗余交互、缩短激活序列，提升推理效率。并构建 InnoComposer-80K 与 InnoComposer-Bench 以支持训练与公平对比。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#dc3545;"><span class="tag">局限</span>
+          <p>无公开代码/权重（截至 2026）；800² 固定分辨率；重要性图依赖 Stage I 全模型 profiling；闭源 Seedream 在 Sen.Acc 仍略高。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="summary" id="notation">
+      <h2>符号速查表</h2>
+      <table class="notation">
+        <thead><tr><th>符号</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td>$h^p, h^z$</td><td>T5 文本 token / 噪声 latent patch token</td></tr>
+          <tr><td>$h^b, h^s, h^c$</td><td>风格 / 主体 / 字形条件 token</td></tr>
+          <tr><td>$h^{c1}, h^{c2}$</td><td>TFEM 整图 VAE 支路 / 单字 OCR 支路</td></tr>
+          <tr><td>$S_{ci}(b,t)$</td><td>条件 $ci$ 在层 $b$、步 $t$ 的重要性分数</td></tr>
+          <tr><td>TFEM</td><td>Text Feature Enhancement Module</td></tr>
+          <tr><td>Stage I / II</td><td>全 token 训练 / 重要性剪枝微调</td></tr>
+          <tr><td>InnoComposer-80K</td><td>8 万海报四元组（prompt+subject+style+glyph）</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="summary" id="overview">
+      <h2>论证总览</h2>
+      <div class="skeleton">
+问题：电商海报需 subject+glyph+style 三条件，多阶段 pipeline 失真且慢<br>
+↓<br>
+单阶段 MM-DiT：异构条件统一 token 化（Eq.1–2）<br>
+↓<br>
+瓶颈：三条件拼接 → 序列变长 → 注意力 $O(n^2)$<br>
+↓<br>
+层×步重要性分析（Fig.4）→ 选择性注入（40/50/20%）<br>
+↓<br>
+解耦注意力：去 $Q_c\!\to\!K_n$ + 条件缓存（Eq.3–5）<br>
+↓<br>
+两阶段训练：Stage I 能力上限 → Stage II 剪枝不掉点<br>
+↓<br>
+InnoComposer-80K 监督 + Bench 评测 → Tab.1 SOTA + Tab.2 −38% 延迟
+      </div>
+      <div class="strength"><strong>强项</strong>：首个三条件联合电商海报单阶段方案；重要性热力图可解释；TFEM 对中文小字有效；效率与质量 Pareto 优于 Flux-Kontext。</div>
+      <div class="weakness"><strong>弱项</strong>：无开源；数据 pipeline 重（Qwen 系列 + 人工 SKU 配对）；重要性比例 hand-tuned；与通用 T2I 编辑任务泛化未验证。</div>
+    </section>
+
+    <section class="summary faq" id="faq">
+      <h2>🧩 结构化十问（AI 解构）</h2>
+      <details open><summary>Q1 · 这篇论文要解决什么问题？</summary><div class="answer">在<strong>一张电商海报</strong>里同时精确控制商品主体、促销文字、背景风格，且要<strong>单模型单阶段</strong>完成，避免多阶段 pipeline 的主体走样、文字错误和风格不一致，并控制多条件带来的算力膨胀。</div></details>
+      <details open><summary>Q2 · 核心创新点是什么？</summary><div class="answer">① 三条件统一 token 注入 MM-DiT；② TFEM 双分支字形增强；③ 层×步<strong>条件重要性热力图</strong>驱动的选择性注入；④ 解耦注意力 + 条件跨步缓存；⑤ InnoComposer-80K/Bench 数据体系。</div></details>
+      <details open><summary>Q3 · 与 PosterMaker / Qwen-Image-Edit 有何不同？</summary><div class="answer">PosterMaker 偏 prompt 控背景、易语义漂移；Qwen-Edit 强编辑但文字冗余、风格易 copy-paste。本文用<strong>风格参考图</strong> + 重要性剪枝，在 DINO/IoU/CSD/FID 上全面更优，且 Stage II 延迟更低。</div></details>
+      <details open><summary>Q4 · TFEM 为什么需要两路字形？</summary><div class="answer">整图 VAE 路保留<strong>全局排版与笔画连贯</strong>；单字 OCR crop 路加绝对位置/字号/局部位置编码，补足<strong>字符语义与尺度</strong>。Cross-Attention 融合后 Sen.Acc 约 +5%。</div></details>
+      <details open><summary>Q5 · 重要性分数怎么算？</summary><div class="answer">Stage I 全条件模型每层每步算注意力矩阵 $A^{(b,t)}$，对条件相关子图加 mask 后取均值得 $S_{ci}(b,t)$。据此决定哪些层注入哪类条件、以及 Stage II 剪多少 token。</div></details>
+      <details open><summary>Q6 · 解耦注意力省在哪里？</summary><div class="answer">去掉条件 query 对噪声 key 的注意力（$Q_c\!\to\!K_n$），条件支路只做自注意力；因条件随时间步变化慢，推理时可<strong>每 block 预计算并缓存</strong>条件激活，主循环只更新噪声支路。</div></details>
+      <details open><summary>Q7 · 两阶段训练各自做什么？</summary><div class="answer">Stage I：保留全部条件 token，LoRA 微调 MM-DiT，学满三条件生成能力。Stage II：按重要性图剪掉冗余 token 再微调，并按重要性分布重采样 timestep，弥补剪枝带来的分布偏移。</div></details>
+      <details open><summary>Q8 · 数据怎么来的？可信吗？</summary><div class="answer">真实电商 SKU 分组 + 人工选相似对；Qwen-Edit/Image 合成风格参考；OCR + Grounded-SAM 自动抽字形/主体。风格图刻意<strong>非像素对齐</strong>以增多样性。Bench 300 条严格留出，但全流水线依赖闭源生成器，存在合成偏差风险。</div></details>
+      <details open><summary>Q9 · 实验说明方法有效吗？</summary><div class="answer">Tab.1：Stage I 在 NED、DINO、IoU、CSD、FID 等<strong>8 项中多项第一</strong>；Fig.5 定性三条件同时成立；Fig.6 证明重要性剪枝优于 random/uniform；Tab.2 Stage II 延迟 47.32s vs Kontext 76.02s。闭环较完整。</div></details>
+      <details open><summary>Q10 · 复现/落地还要什么？</summary><div class="answer">需 FLUX+AutoPP1M 中文底座、≈1.2k GPU·h 两阶段 LoRA、InnoComposer-80K（未公开）。工程侧要实现 TFEM 的 OCR crop 管线、条件缓存、按层 token 路由表。无官方 repo 是最大障碍。</div></details>
+    </section>
+
+    <section class="summary deepdive" id="deepdive">
+      <h2>🔬 深挖</h2>
+      <div class="block">
+        <h4>条件互补的时间结构（读 Fig.4）</h4>
+        <p>可把它记成「先布景 → 摆商品 → 描字」：风格在<strong>浅层+早期噪声</strong>定调；主体在<strong>中层贯穿</strong>防商品走形；字形在<strong>中后期</strong>才需要精细注意力——这与人类设计师 workflow 同构，也解释了为何 uniform 注入浪费算力。</p>
+      </div>
+      <div class="block">
+        <h4>与 OminiControl2 / FullDiT2 的效率哲学</h4>
+        <p>OminiControl2：<strong>跨步复用</strong>条件特征；FullDiT2：<strong>动态 token 选择</strong>。本文二者兼有（缓存 + 重要性路由），且针对<strong>三种语义不同的条件</strong>分别建模，比单一 context 选择更贴海报任务。</p>
+      </div>
+      <div class="block crit">
+        <h4>批判性思维 · 尚未回答的问题</h4>
+        <ul>
+          <li><strong>Seedream gap：</strong>闭源 Sen.Acc 0.865 仍高于 Stage I 0.857——商业模型是否用了更大规模 RLHF/人工审美数据？</li>
+          <li><strong>重要性迁移性：</strong>热力图来自固定 FLUX 深度；换 SD3/Wan 是否需重 profiling？</li>
+          <li><strong>布局泛化：</strong>glyph image 是 OCR 提取的「目标排版」——真实应用若只给字符串无 layout 图怎么办？</li>
+          <li><strong>数据闭环：</strong>风格图由 Qwen-Image 合成，评测又比 Qwen-Edit——需更多<strong>纯真实海报</strong> held-out 验证。</li>
+          <li><strong>40/50/20 敏感性：</strong>ablation 给的是剪枝曲线，缺连续 Pareto（latency vs Sen.Acc）公开表。</li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="lightbox" role="dialog" aria-modal="true" aria-label="放大查看">
+    <div class="lb-content"></div>
+    <div class="lb-cap"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral', flowchart: { htmlLabels: true } });</script>
+  <script>
+    function syncScrollPad() {
+      var head = document.querySelector('.sticky-head');
+      if (head) document.documentElement.style.scrollPaddingTop = (head.offsetHeight + 8) + 'px';
+    }
+    window.addEventListener('load', syncScrollPad);
+    window.addEventListener('resize', syncScrollPad);
+    syncScrollPad();
+
+    (function () {
+      var lb = document.getElementById('lightbox');
+      var content = lb.querySelector('.lb-content');
+      var cap = lb.querySelector('.lb-cap');
+
+      function findZoomTarget(node) {
+        var el = node.closest ? node.closest('img, svg') : null;
+        if (!el) return null;
+        if (!el.closest('.diagram, .figure-row, .mermaid')) return null;
+        return el;
+      }
+      function nearestCaption(el) {
+        var fig = el.closest('figure') || el.closest('.diagram') || el.closest('.figure-row');
+        var c = fig && fig.querySelector('figcaption');
+        return c ? c.textContent.trim() : '';
+      }
+      function openLightbox(node, caption) {
+        content.innerHTML = '';
+        var clone = node.cloneNode(true);
+        clone.style.cursor = 'default';
+        var r = node.getBoundingClientRect();
+        var vw = window.innerWidth * 0.96, vh = window.innerHeight * 0.92;
+        var w = r.width || node.clientWidth || 600;
+        var h = r.height || node.clientHeight || 400;
+        var scale = Math.min(vw / w, vh / h);
+        if (!isFinite(scale) || scale <= 0) scale = 1;
+        clone.style.width = Math.round(w * scale) + 'px';
+        clone.style.height = Math.round(h * scale) + 'px';
+        clone.style.maxWidth = 'none';
+        clone.style.maxHeight = 'none';
+        content.appendChild(clone);
+        cap.textContent = caption || '';
+        lb.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+      function closeLightbox() {
+        lb.classList.remove('open');
+        content.innerHTML = '';
+        document.body.style.overflow = '';
+      }
+      document.addEventListener('click', function (e) {
+        if (lb.classList.contains('open')) { closeLightbox(); return; }
+        var el = findZoomTarget(e.target);
+        if (el) { e.preventDefault(); e.stopPropagation(); openLightbox(el, nearestCaption(el)); }
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && lb.classList.contains('open')) closeLightbox();
+      });
+    })();
+  </script>
+</body>
+</html>

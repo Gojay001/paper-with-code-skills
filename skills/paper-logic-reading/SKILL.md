@@ -28,6 +28,18 @@ After commit & push here → in blog repo **Gojay001.github.io** update submodul
 <div class="meta">DeepLearning-Paper-with-Code · Diffusion Model · arXiv(2021) / CVPR(2022)</div>
 ```
 
+**Page title (`<title>` + `<h1><a>`)** — English paper title only:
+
+| Element | Rule |
+|---------|------|
+| `<h1><a>` | `{ShortName} — {full English title as in arXiv/PDF}` — **canonical** for bridge post `title` |
+| `<title>` | Same English string as `h1`, plus ` · 逻辑精读` suffix |
+| Don't | Chinese subtitles, agent summaries, or abbreviated English in `h1`/`title` |
+
+Example: `MoFu — Scale-Aware Modulation and Fourier Fusion for Multi-Subject Video Generation`
+
+After deploy sync, verify `source/_posts/paper-reading/{slug}.md` **`title`** matches `h1` exactly (user may override `date` / `thumbnail` only).
+
 ## Workflow
 
 1. Resolve arXiv ID / PDF URL from `paper-with-code-list.md`
@@ -175,7 +187,7 @@ python3 -m venv .cache/.venv
 - [ ] Lightbox works for at least one SVG and one raster figure
 - [ ] `#feynman` section present (bridge post excerpt)
 - [ ] `#faq` 十问全部 `<details open>`（默认展开）
-- [ ] `<title>` and `.meta` aligned with `paper-with-code-list.md`
+- [ ] `<title>` and `<h1><a>` = English paper title (`ShortName — Full Title`); bridge md `title` matches `h1`
 - [ ] If official repo: `#code` with `code-map` + ≥2 伪代码/摘录小节；`chapter-nav` 含「代码」
 - [ ] Three-column rows: `.col-original` = paper English; `.col-translation` = **忠实翻译左栏**（禁压缩/速记/理解）；`.col-analysis` = 理解/压缩/解析
 - [ ] If Title ≠ slug: `slug-aliases.json` + Overview sync (blog repo)

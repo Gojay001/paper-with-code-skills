@@ -1,8 +1,8 @@
 # Paper-with-Code-List
 
-[![Awesome](https://awesome.re/badge.svg)](https://awesome.re) ![CV](https://img.shields.io/badge/CV-Computer%20Vision-blue) ![AIGC](https://img.shields.io/badge/AIGC-Generative%20AI-orange) ![VLM](https://img.shields.io/badge/VLM-Vision--Language-purple) ![LLM](https://img.shields.io/badge/LLM-Large%20Language%20Model-green)
+[![Awesome](https://awesome.re/badge.svg)](https://awesome.re) ![AIGC](https://img.shields.io/badge/AIGC-Generative%20AI-orange) ![Agent](https://img.shields.io/badge/Agent-Agentic%20AI-red) ![LLM](https://img.shields.io/badge/LLM-Large%20Language%20Model-green) ![VLM](https://img.shields.io/badge/VLM-Vision--Language-purple) ![CV](https://img.shields.io/badge/CV-Computer%20Vision-blue)
 
-There are paper with code for CV / AIGC / LLM / VLM.
+There are paper with code for AIGC / Agent / LLM / VLM / CV.
 
 [Updating...]
 
@@ -14,6 +14,8 @@ There are paper with code for CV / AIGC / LLM / VLM.
   - [Applications](#AIGC-Applications)
     - [Face Editing](#Face-Editing)
     - [Face Swapping](#Face-Swapping)
+- **Agent**
+  - [Agentic Image Generation](#Agentic-Image-Generation)
 - **LLM / VLM** (Large Language Model / Vision-Language Model)
   - [Transformer](#Attention-or-Transformer)
   - [ViT](#Vision-Transformer)
@@ -168,6 +170,14 @@ There are paper with code for CV / AIGC / LLM / VLM.
 | DiffSwap | [DiffSwap: High-Fidelity and Controllable Face Swapping via 3D-Aware Masked Diffusion](https://openaccess.thecvf.com/content/CVPR2023/papers/Zhao_DiffSwap_High-Fidelity_and_Controllable_Face_Swapping_via_3D-Aware_Masked_Diffusion_CVPR_2023_paper.pdf) | CVPR(2023) | [PyTorch](https://github.com/wl-zhao/DiffSwap) |
 | DreamID | [DreamID: High-Fidelity and Fast diffusion-based Face Swapping via Triplet ID Group Learning](https://arxiv.org/abs/2504.14509) | SIGGRAPH Asia(2025) | [GitHub](https://github.com/superhero-7/DreamID) |
 
+---
+
+## Agentic Image Generation
+
+
+| Title | Paper | Conf | Code |
+| ----- | ----- | ---- | ---- |
+| [Qwen-Image-Agent](https://gojay.top/paper-reading/qwen-image-agent.html) | [Qwen-Image-Agent: Bridging the Context Gap in Real-World Image Generation](https://arxiv.org/abs/2606.26907) | arXiv(2026) | [code] |
 
 ---
 

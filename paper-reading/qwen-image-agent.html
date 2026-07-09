@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Qwen-Image-Agent — Bridging the Context Gap in Real-World Image Generation · 逻辑精读</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+  <style>
+    :root { --navy:#1a2744; --paper:#faf8f5; --thesis:#fff3cd; --concept:#f8d7da; --evidence:#cfe2ff; --counter:#d1e7dd; --method:#e2d9f3; --text:#2c2c2c; --muted:#6c757d; --border:#e8e4df; }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'IBM Plex Sans',sans-serif; background:var(--paper); color:var(--text); line-height:1.6; }
+    .sticky-head { position:sticky; top:0; z-index:100; }
+    .top-nav { background:var(--navy); color:#fff; padding:1rem 2rem; }
+    .top-nav h1 { font-size:1.25rem; font-weight:600; }
+    .top-nav h1 a { color:#fff; text-decoration:none; border-bottom:1px dotted rgba(255,255,255,0.5); }
+    .top-nav .meta { font-size:0.85rem; opacity:0.85; margin-top:0.25rem; }
+    .legend { display:flex; flex-wrap:wrap; gap:0.75rem; margin-top:0.75rem; font-size:0.8rem; }
+    .legend span { padding:0.15rem 0.5rem; border-radius:3px; color:#2c2c2c; }
+    .chapter-nav { background:#fff; border-bottom:1px solid var(--border); padding:0.75rem 2rem; overflow-x:auto; white-space:nowrap; box-shadow:0 2px 6px rgba(0,0,0,0.06); }
+    .chapter-nav a { color:var(--navy); text-decoration:none; margin-right:1.25rem; font-size:0.9rem; font-weight:500; }
+    main { max-width:1680px; margin:0 auto; padding:2rem; }
+    .section-title { font-size:1.5rem; color:var(--navy); margin:2rem 0 1rem; padding-bottom:0.5rem; border-bottom:2px solid var(--navy); }
+    .col-labels { display:grid; grid-template-columns:1.1fr 1fr 1fr; gap:1.5rem; margin-bottom:0.5rem; font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); }
+    .row { display:grid; grid-template-columns:1.1fr 1fr 1fr; gap:1.5rem; margin-bottom:1.5rem; align-items:start; }
+    .col-original { font-family:'Lora',serif; font-size:0.95rem; line-height:1.75; }
+    .col-original p { margin-bottom:0.75rem; }
+    .col-translation { font-size:0.92rem; line-height:1.75; color:#333; }
+    .col-translation p { margin-bottom:0.75rem; }
+    .analysis-card { background:#fff; border-left:4px solid var(--navy); padding:1rem 1.25rem; border-radius:0 6px 6px 0; box-shadow:0 1px 3px rgba(0,0,0,0.06); font-size:0.9rem; }
+    .analysis-card .tag { display:inline-block; font-size:0.75rem; font-weight:600; text-transform:uppercase; margin-bottom:0.5rem; color:var(--navy); }
+    .analysis-card h4 { font-size:0.85rem; color:var(--muted); margin:0.75rem 0 0.25rem; }
+    .analysis-card p { margin-bottom:0.5rem; }
+    .analysis-card.deep { border-left-width:5px; }
+    .exp-table { width:100%; border-collapse:collapse; margin:0.75rem 0; font-size:0.82rem; }
+    .exp-table th,.exp-table td { border:1px solid var(--border); padding:0.35rem 0.5rem; text-align:left; }
+    .exp-table th { background:var(--paper); color:var(--navy); font-weight:600; }
+    .exp-table tr.is-ours { background:var(--evidence); }
+    .notation { width:100%; border-collapse:collapse; margin:0.75rem 0; font-size:0.88rem; background:#fff; }
+    .notation th,.notation td { border:1px solid var(--border); padding:0.4rem 0.6rem; text-align:left; }
+    .notation th { background:var(--paper); color:var(--navy); }
+    .figure-row { margin:1.5rem 0; padding:1.25rem; background:#fff; border:1px solid var(--border); border-radius:8px; }
+    .figure-row figure { margin:0; text-align:center; }
+    .figure-row img { max-width:100%; height:auto; cursor:zoom-in; }
+    .figure-row figcaption { font-size:0.82rem; color:var(--muted); margin-top:0.5rem; }
+    .figure-row h3 { color:var(--navy); font-size:1rem; margin-bottom:0.75rem; }
+    .diagram { margin:0.75rem 0; }
+    .mermaid { background:#fff; border:1px solid var(--border); border-radius:4px; padding:0.5rem; }
+    .diagram img,.diagram svg,.figure-row img,.figure-row svg { cursor:zoom-in; }
+    #lightbox { position:fixed; inset:0; background:rgba(10,12,20,0.92); display:none; align-items:center; justify-content:center; z-index:1000; cursor:zoom-out; padding:3vh 3vw; }
+    #lightbox.open { display:flex; }
+    #lightbox .lb-content img,#lightbox .lb-content svg { display:block; background:#fff; border-radius:6px; box-shadow:0 8px 40px rgba(0,0,0,0.5); }
+    #lightbox .lb-cap { position:fixed; bottom:1.2rem; left:0; right:0; text-align:center; color:#e8e4df; font-size:0.8rem; }
+    .hl-thesis { background:var(--thesis); padding:0 2px; }
+    .hl-concept { background:var(--concept); padding:0 2px; }
+    .hl-evidence { background:var(--evidence); padding:0 2px; }
+    .hl-method { background:var(--method); padding:0 2px; }
+    .summary { background:#fff; border:1px solid var(--border); border-radius:8px; padding:2rem; margin-top:3rem; }
+    .summary h2 { color:var(--navy); margin-bottom:1rem; }
+    .summary .skeleton { font-family:monospace; background:var(--paper); padding:1rem; border-radius:4px; line-height:1.9; }
+    .summary .strength,.summary .weakness { padding:0.75rem 1rem; border-radius:4px; margin:0.5rem 0; }
+    .summary .strength { background:var(--counter); }
+    .summary .weakness { background:var(--concept); }
+    .feynman { background:#fff; border:1px solid var(--border); border-left:5px solid #0d9488; border-radius:0 8px 8px 0; padding:1.25rem 1.5rem; margin:1.5rem 0 2rem; }
+    .feynman h2 { color:#0d9488; font-size:1.15rem; margin-bottom:0.35rem; }
+    .feynman p { font-size:0.95rem; line-height:1.85; margin-bottom:0.6rem; }
+    .faq details { background:#fff; border:1px solid var(--border); border-radius:6px; margin:0.5rem 0; }
+    .faq summary { cursor:pointer; font-weight:600; color:var(--navy); padding:0.7rem 0.9rem; list-style:none; font-size:0.92rem; }
+    .faq summary::-webkit-details-marker { display:none; }
+    .faq .answer { padding:0 0.9rem 0.85rem 1.8rem; font-size:0.9rem; line-height:1.8; }
+    .deepdive .block { margin:0.9rem 0; padding:0.85rem 1.1rem; border-radius:4px; background:var(--paper); border-left:3px solid #6f42c1; }
+    .deepdive .block.crit { border-left-color:#dc3545; background:#fdf0f1; }
+    @media (max-width:1100px) { .col-labels{display:none;} .row{grid-template-columns:1fr;} }
+  </style>
+</head>
+<body>
+  <div class="sticky-head">
+    <header class="top-nav">
+      <h1><a href="https://arxiv.org/abs/2606.26907" target="_blank" rel="noopener">Qwen-Image-Agent — Bridging the Context Gap in Real-World Image Generation</a></h1>
+      <div class="meta">DeepLearning-Paper-with-Code · Agentic Image Generation · arXiv(2026) · Alibaba Qwen · Zekai Zhang et al.</div>
+      <div class="legend">
+        <span class="hl-thesis">核心论点</span><span class="hl-concept">关键概念</span><span class="hl-evidence">实证证据</span><span class="hl-method">方法论</span>
+      </div>
+    </header>
+    <nav class="chapter-nav">
+      <a href="#feynman">速读</a><a href="#abstract">Abstract</a><a href="#intro">Introduction</a>
+      <a href="#method">Method</a><a href="#benchmark">IA-Bench</a><a href="#experiments">Experiments</a>
+      <a href="#conclusion">Conclusion</a><a href="#notation">符号表</a><a href="#overview">总览</a><a href="#faq">十问</a><a href="#deepdive">深挖</a>
+    </nav>
+  </div>
+
+  <main>
+    <section class="feynman" id="feynman">
+      <h2>🎮 费曼一分钟</h2>
+      <p><strong>痛点</strong>：用户说「做张海报」往往缺细节——隐含意图、实时知识、历史对话。T2I 模型训练时吃「完整 prompt」，部署时吃「残缺 context」→ 作者称 <span class="hl-concept">Context Gap</span>（用户 context ≠ 生成所需 context）。</p>
+      <p><strong>Qwen-Image-Agent</strong>：<span class="hl-method">training-free</span> 统一 agent 框架，把 $p_{\mathrm{gen}}$ 当渲染器，先用 plan / reason / search / memory / feedback 补全 <strong>generation context</strong>，再调用 Qwen-Image-2.0 出图。</p>
+      <p><strong>两模块</strong>：① <span class="hl-method">Context-Aware Planning</span>（信息级→内容级→生成级）；② <span class="hl-method">Context Grounding</span>（推理 / 网页+图像检索 / 记忆 / VLM 反馈闭环）。</p>
+      <p><strong>评测</strong>：新 benchmark <strong>IA-Bench</strong>（Plan·Reason·Search·Memory，730 例 / 1801 checklist）。IA-score <strong>45.4</strong> vs 直连 Qwen-Image-2.0 的 <strong>17.4</strong>；WISE-Verified / MindBench 亦 SOTA。</p>
+    </section>
+
+    <section class="figure-row">
+      <h3>Fig.1 · 无参考图的真实任务样例</h3>
+      <figure><img src="assets/qwen-image-agent/fig1.jpg" alt="Qwen-Image-Agent examples"><figcaption>论文 Fig.1：多类 real-world 请求下的生成样例（无额外视觉参考）。点击放大。</figcaption></figure>
+    </section>
+
+    <h2 class="section-title" id="abstract">Abstract</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>While text-to-image (T2I) models have achieved remarkable progress, they struggle with real-world requests that are often underspecified, implicit, or dependent on up-to-date knowledge. We identify this challenge as the Context Gap: the mismatch between the user context and the sufficient generation context for T2I models.</p>
+        <p>To bridge this gap, we propose Qwen-Image-Agent, a unified agentic framework that integrates plan, reason, search, memory and feedback in a context-centric manner. Qwen-Image-Agent treats user input as partial context and progressively constructs the generation context through Context-Aware Planning and Context Grounding.</p>
+        <p>To evaluate agentic image generation, we further introduce Image Agent Bench (IA-Bench), a benchmark covering four core image agent capabilities: Plan, Reason, Search, and Memory. Experiments on IA-Bench, Mindbench and WISE-Verified show that Qwen-Image-Agent outperforms strong baselines and achieves state-of-the-art performance.</p>
+      </div>
+      <div class="col-translation">
+        <p>尽管 T2I 模型进展显著，它们仍难以处理真实请求——这些请求常欠指定、含隐含信息或依赖最新知识。我们将此挑战定义为 Context Gap：用户 context 与 T2I 模型所需充分生成 context 之间的不匹配。</p>
+        <p>为弥合该差距，我们提出 Qwen-Image-Agent：以 context 为中心、整合 plan、reason、search、memory 与 feedback 的统一 agent 框架。它将用户输入视为部分 context，并通过 Context-Aware Planning 与 Context Grounding 逐步构建生成 context。</p>
+        <p>为评估 agentic 图像生成，我们进一步提出 IA-Bench，覆盖 Plan、Reason、Search、Memory 四类核心能力。在 IA-Bench、Mindbench 与 WISE-Verified 上的实验表明，Qwen-Image-Agent 优于强基线并达到 SOTA。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card"><span class="tag">定位</span>
+          <p>不是新 DiT，而是<strong>上下文工程 + 工具编排</strong>层；与 MindBrush / GenSearcher 等同赛道，但强调<strong>统一 context-centric 视角</strong>而非单点能力。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="intro">Introduction</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>As these systems move into real-world applications such as marketing, product design, and slide creation, they are increasingly expected to solve practical visual tasks rather than merely render prompts.</p>
+        <p>Despite their generative ability, current T2I models remain limited on real-world tasks. A key reason is a structural mismatch between training and deployment: models are optimized for fully specified prompts, while real-world requests are often underspecified. In practice, successful generation may require inferring implicit user intent, retrieving up-to-date knowledge or visual references from web, and incorporating interaction history.</p>
+        <p>We refer to this mismatch as the Context Gap: the gap between the provided user context and the generation context required for T2I models. This gap motivates a paradigm shift from traditional direct image generation to agentic image generation.</p>
+        <p>Recent work has explored components such as plan, reason, search and tool use, memory, and self feedback, but these efforts remain fragmented and do not provide a unified framework for context-centered generation.</p>
+      </div>
+      <div class="col-translation">
+        <p>当这些系统进入营销、产品设计、幻灯片制作等真实应用时，人们 increasingly 期望它们解决实际视觉任务，而非仅渲染 prompt。</p>
+        <p>尽管生成能力强，当前 T2I 在真实任务上仍受限。关键原因是训练与部署的结构错配：模型针对完整 prompt 优化，而真实请求常欠指定。实践中，成功生成可能需要推断隐含意图、从网络检索最新知识或视觉参考、并融入交互历史。</p>
+        <p>我们将此错配称为 Context Gap：所给用户 context 与 T2I 所需生成 context 之间的差距。该差距推动从直接图像生成向 agentic 图像生成的范式转变。</p>
+        <p>近期工作分别探索 plan、reason、search、memory、self feedback 等组件，但这些努力仍碎片化，未提供面向 context 的统一框架。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep"><span class="tag">训练 vs 部署</span>
+          <p>论文核心叙事：<strong>渲染能力 ≠ 任务完成能力</strong>。GenEval/DPG 测「画得像不像 prompt」；真实用户 prompt 本身就不完整——agent 价值在<strong>补 context</strong>，不在换更大 DiT。</p>
+        </div>
+        <div class="analysis-card"><span class="tag">与 Qwen-Image 关系</span>
+          <p>Qwen-Image-2.0 是<strong>渲染后端</strong>；Agent 是外层 orchestrator。直连 2.0 在 IA-Bench 仅 17.4 分，说明 gap 主要在 context 侧。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="method">Qwen-Image-Agent Framework</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+
+    <section class="figure-row">
+      <h3>Fig.2 · 框架总览</h3>
+      <figure><img src="assets/qwen-image-agent/fig2.jpg" alt="Pipeline overview"><figcaption>Context-Aware Planning + Context Grounding 闭环；支持 multi-turn / multi-image。点击放大。</figcaption></figure>
+    </section>
+
+    <div class="row">
+      <div class="col-original">
+        <p>We formalize image generation and edit as a conditional rendering problem. Given a user context $c_u=(P,I_{\mathrm{ref}})$ with prompt $P$ and optional reference images $I_{\mathrm{ref}}$, direct image generation renders output image $y$ in a single forward pass: $y \sim p_{\mathrm{gen}}(\cdot \mid c_u)$.</p>
+        <p>We distinguish user context $c_u$ from the generation context $c_g$, which denotes the complete context needed for successful rendering. Agentic image generation introduces a context-construction process: at each step $t$, the agent maintains state $s_t$, takes action $a_t$, and receives observation $o_t$, forming a trajectory $\tau=\{(s_t,a_t,o_t)\}_{t=1}^{T}$.</p>
+        <p>The action space consists of basic operations to gather context, including plan, reason, search, rewrite, and evaluate. The agentic generation process is: $p_{\mathrm{agent}}(y \mid c_u)=\sum_{\tau} p(\tau \mid c_u)\, p_{\mathrm{gen}}(y \mid c_g=c(\tau))$.</p>
+      </div>
+      <div class="col-translation">
+        <p>我们将图像生成与编辑形式化为条件渲染问题。给定用户 context $c_u=(P,I_{\mathrm{ref}})$（prompt $P$ 与可选参考图 $I_{\mathrm{ref}}$），直接生成在一次前向中渲染输出：$y \sim p_{\mathrm{gen}}(\cdot \mid c_u)$。</p>
+        <p>我们区分用户 context $c_u$ 与生成 context $c_g$（成功渲染所需的完整 context）。Agentic 生成引入 context 构建过程：每步 $t$ agent 维护状态 $s_t$、执行动作 $a_t$、获得观测 $o_t$，形成轨迹 $\tau=\{(s_t,a_t,o_t)\}_{t=1}^{T}$。</p>
+        <p>动作空间含 plan、reason、search、rewrite、evaluate 等 context 收集操作。Agentic 过程为：$p_{\mathrm{agent}}(y \mid c_u)=\sum_{\tau} p(\tau \mid c_u)\, p_{\mathrm{gen}}(y \mid c_g=c(\tau))$。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card"><span class="tag">公式读法</span>
+          <p>把生成器当<strong>条件渲染器</strong>：agent 负责采样轨迹 $\tau$ 以得到 $c_g$，再交给 $p_{\mathrm{gen}}$。training-free = 不微调 DiT，靠 MLLM + 工具链补 context。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="diagram">
+      <pre class="mermaid">
+flowchart TB
+  CU["User context c_u"] --> IL["Information-level Planning\n(gap → questions → route)"]
+  IL --> GR["Context Grounding"]
+  GR --> R["Reason"]
+  GR --> S["Search (web + image)"]
+  GR --> M["Memory"]
+  CL["Content-level Planning\n(rewrite detailed prompt)"] --> GEN["Qwen-Image-2.0 render"]
+  R --> CL
+  S --> CL
+  M --> CL
+  GEN --> FB["Feedback (VLM checklist)"]
+  FB --> CL
+  GL["Generation-level Planning\n(multi-turn / multi-image)"] --> IL
+      </pre>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Context-Aware Planning</strong> operates at three levels: information-level planning identifies the context gap and routes questions to grounding strategies; content-level planning assembles grounded context and rewrites the user prompt into a detailed specification (subject, attributes, layout, style, textual elements); generation-level planning allocates context in multi-image and multi-turn scenarios.</p>
+        <p><strong>Context Grounding</strong> collects context through reason, search, memory and feedback. Reasoning covers commonsense, logical, and visual reasoning via VLM. Search uses web search for factual knowledge and image search for visual references. Memory incorporates conversation history, user profiles, and external multimodal retrieval. Feedback plans a checklist, uses VLM to evaluate outputs, and refines prompts iteratively.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>Context-Aware Planning</strong> 分三级：信息级规划识别 context gap 并将问题路由至 grounding 策略；内容级规划整合已 ground 的 context 并将用户 prompt 改写为详细规格（主体、属性、布局、风格、文字元素等）；生成级规划在 multi-image / multi-turn 场景分配 context。</p>
+        <p><strong>Context Grounding</strong> 通过 reason、search、memory、feedback 收集 context。推理含常识、逻辑与视觉推理（VLM）。搜索用网页检索事实知识、图像检索视觉参考。记忆融合对话历史、用户画像与外部多模态检索。反馈先规划 checklist，VLM 评估生成结果，迭代 refine prompt。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep"><span class="tag">三级 Planning</span>
+          <h4>信息级</h4><p>「缺什么？去哪找？」— 显式 question + 路由到 reason/search。</p>
+          <h4>内容级</h4><p>「怎么写进最终 prompt？」— 把异构 context 合成可渲染规格。</p>
+          <h4>生成级</h4><p>多轮防 context 爆炸：相关性筛选历史；多图分配 parallel / sequential / hybrid 依赖。</p>
+        </div>
+        <div class="analysis-card"><span class="tag">Grounding 分工</span>
+          <p>Reason ↔ 隐含约束；Search ↔ 精确/动态事实 + IP 参考；Memory ↔ 跨轮一致；Feedback ↔ 计数/构图等可验证属性。消融 Tab.4 显示去掉任一路径对应维度崩盘。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="benchmark">IA-Bench</h2>
+    <section class="figure-row">
+      <h3>Fig.3 · IA-Bench 结构</h3>
+      <figure><img src="assets/qwen-image-agent/fig3.jpg" alt="IA-Bench overview"><figcaption>4 能力 × 17 子任务 × 730 实例 × 1801 checklist。点击放大。</figcaption></figure>
+    </section>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>IA-Bench covers four core capabilities: Plan, Reason, Search, and Memory. The benchmark consists of 4 tasks, 17 subtasks, 730 instances and 1801 evaluation checklist items.</p>
+        <p>Planning-driven tasks include Composition, Enumeration, and Multi-Panel. Reasoning-driven tasks include Math, Science, Commonsense, Maze, Map, and Geometry. Search-driven tasks cover IP-related entities (Game, Movie, Anime, Celebrity) and Information (Stock, Weather). Memory-driven tasks include User Profile and Conversation History.</p>
+        <p>We adopt checklist-based evaluation. Pass Rate (PR) requires all checklist items satisfied. Checklist Accuracy (CA) averages the proportion of satisfied items. IA-score = $0.3\times\mathrm{Plan}+0.3\times\mathrm{Reason}+0.3\times\mathrm{Search}+0.1\times\mathrm{Memory}$.</p>
+      </div>
+      <div class="col-translation">
+        <p>IA-Bench 覆盖 Plan、Reason、Search、Memory 四类核心能力，含 4 任务、17 子任务、730 实例与 1801 条 checklist。</p>
+        <p>Planning 类含 Composition、Enumeration、Multi-Panel；Reasoning 类含 Math、Science、Commonsense、Maze、Map、Geometry；Search 类含 IP（Game/Movie/Anime/Celebrity）与 Information（Stock/Weather）；Memory 类含 User Profile 与 Conversation History。</p>
+        <p>采用 checklist 评测。Pass Rate (PR) 要求全部 checklist 满足；Checklist Accuracy (CA) 为满足项比例均值。IA-score = $0.3\times\mathrm{Plan}+0.3\times\mathrm{Reason}+0.3\times\mathrm{Search}+0.1\times\mathrm{Memory}$。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card"><span class="tag">与 GenEval / WISE 差异</span>
+          <p>GenEval/DPG → 渲染对齐；WISE/MindBench → 知识/推理单维；IA-Bench → <strong>agent 四能力正交评测</strong>，且 Memory 权重低 (0.1) 但 multi-turn 场景仍关键。</p>
+        </div>
+        <div class="analysis-card"><span class="tag">构造细节</span>
+          <p>人工标注 + 过滤「靠预训练就能蒙对」的 IP；checklist 先 LLM 候选再人工审；Memory 任务用<strong>动态 checklist</strong>（依赖前几轮生成图）。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="experiments">Experiments</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>We employ Qwen-Image-2.0 as the image generation and edit backbone, and GPT-5.5-0424 as the MLLM backbone. We utilize Google Search API for web and image search (limit 5 each), and Jina API for visited web pages. All agentic baselines use the same MLLM and generation backbone for fair comparison. Feedback loop allows up to 3 attempts on IA-Bench; feedback is disabled on WISE-Verified and MindBench.</p>
+        <p>On IA-Bench (Table 1), Qwen-Image-Agent achieves IA-score 45.4 with PR 45.3/43.7/46.1/49.0 on Plan/Reason/Search/Memory, outperforming MindBrush (30.2), SCOPE (30.9), and Qwen-Image-2.0 direct (17.4).</p>
+        <p>On WISE-Verified, Qwen-Image-Agent reaches Overall 0.9020, surpassing Nano Banana Pro (0.8760). On MindBench Overall, Qwen-Image-Agent achieves 0.42 vs Qwen-Image-2.0 0.23 (+82.6%).</p>
+      </div>
+      <div class="col-translation">
+        <p>我们以 Qwen-Image-2.0 为生成/编辑骨干，GPT-5.5-0424 为 MLLM 骨干；网页与图像搜索均用 Google Search API（各限 5 条），Jina API 处理访问页面。所有 agent 基线共用同一 MLLM 与生成骨干以保证公平。IA-Bench 上 feedback 最多 3 轮；WISE-Verified 与 MindBench 关闭 feedback。</p>
+        <p>IA-Bench（表 1）上 Qwen-Image-Agent IA-score 45.4，Plan/Reason/Search/Memory 的 PR 为 45.3/43.7/46.1/49.0，优于 MindBrush (30.2)、SCOPE (30.9) 与直连 Qwen-Image-2.0 (17.4)。</p>
+        <p>WISE-Verified 上 Overall 0.9020，超过 Nano Banana Pro (0.8760)。MindBench Overall 0.42 vs Qwen-Image-2.0 0.23（+82.6%）。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep"><span class="tag">Tab.1 精读</span>
+          <table class="exp-table">
+            <tr><th>Model</th><th>IA-score</th><th>Memory PR</th></tr>
+            <tr class="is-ours"><td>Qwen-Image-Agent</td><td><strong>45.4</strong></td><td><strong>49.0</strong></td></tr>
+            <tr><td>Nano Banana Pro</td><td>42.6</td><td>52.0</td></tr>
+            <tr><td>MindBrush</td><td>30.2</td><td>13.0</td></tr>
+            <tr><td>Qwen-Image-2.0</td><td>17.4</td><td>11.0</td></tr>
+          </table>
+          <p>Memory 维度闭源仍略优，但 agent 方法普遍弱于闭源 Memory；本文在 agent 类中 Memory 提升最大（49 vs MindBrush 13）。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <h3>Fig.4 · IA-Bench 定性对比</h3>
+      <figure><img src="assets/qwen-image-agent/fig4.jpg" alt="Qualitative comparison"><figcaption>Plan / Reason / Search / Feedback 四类能力 vs 强基线。点击放大。</figcaption></figure>
+    </section>
+
+    <div class="row">
+      <div class="col-original">
+        <p>Ablation (Table 4): removing Reason drops Plan PR to 24.7 and Reason to 29.7; removing Search drops Search PR to 7.8; removing Memory drops Memory PR to 0.0; removing Feedback causes smaller drops (IA-score 42.1 vs 45.4). Replacing MLLM with Qwen-Plus/VL-Max drops IA-score to 27.8; replacing Gen backbone with Qwen-Image drops to 28.3.</p>
+      </div>
+      <div class="col-translation">
+        <p>消融（表 4）：去掉 Reason 使 Plan PR 降至 24.7、Reason 至 29.7；去掉 Search 使 Search PR 至 7.8；去掉 Memory 使 Memory PR 至 0.0；去掉 Feedback 降幅较小（IA-score 42.1 vs 45.4）。MLLM 换为 Qwen-Plus/VL-Max 则 IA-score 27.8；生成骨干换 Qwen-Image 则 28.3。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card"><span class="tag">消融结论</span>
+          <p>Search / Memory 对各自维度<strong>近乎必要</strong>；Reason 还拖累 Plan（枚举等隐含需求在推理阶段解出）。Feedback 增益有限 → 2.0 渲染已较强 + 通用 VLM checklist 信号弱。</p>
+        </div>
+        <div class="analysis-card"><span class="tag">Discussion 要点</span>
+          <p>⑤ 多轮 context 爆炸 → 相关性筛选；④ 过度 image search 伤质量；③ Reason/Search 边界靠「精确事实 vs 动态事实」规则；⑥ 全 pipeline 延迟/成本远高于单次生成（DAG 并行仅部分缓解）。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="conclusion">Conclusion</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>In this work, we identify the context gap as a central challenge in real-world image generation. To address it, we propose Qwen-Image-Agent, a unified agentic framework that integrates plan, reason, search, memory and feedback in a context-centric manner. We further introduce IA-Bench, a benchmark for systematically evaluating four core capabilities of agentic image generation: Plan, Reason, Search, and Memory.</p>
+      </div>
+      <div class="col-translation">
+        <p>本文将 context gap 认定为真实世界图像生成的核心挑战，提出以 context 为中心、整合 plan、reason、search、memory 与 feedback 的统一 agent 框架 Qwen-Image-Agent，并引入 IA-Bench 以系统评估 agentic 图像生成的 Plan、Reason、Search、Memory 四类核心能力。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card"><span class="tag">贡献清单</span>
+          <p>① Context Gap 问题 framing；② 统一 agent pipeline；③ IA-Bench + VLM checklist 协议；④ 跨 IA / WISE / MindBench SOTA。未开源代码与 IA-Bench 数据是落地主要缺口。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="summary" id="notation">
+      <h2>📐 符号与术语</h2>
+      <table class="notation">
+        <tr><th>符号/术语</th><th>含义</th></tr>
+        <tr><td>$c_u$</td><td>用户 context：prompt $P$ + 可选参考图 $I_{\mathrm{ref}}$</td></tr>
+        <tr><td>$c_g$</td><td>生成 context：成功渲染所需的完整条件</td></tr>
+        <tr><td>$p_{\mathrm{gen}}$</td><td>图像生成/编辑模型（默认 Qwen-Image-2.0）</td></tr>
+        <tr><td>$\tau$</td><td>Agent 轨迹：plan / reason / search / rewrite / evaluate 序列</td></tr>
+        <tr><td>PR / CA</td><td>Pass Rate / Checklist Accuracy（IA-Bench 指标）</td></tr>
+        <tr><td>IA-score</td><td>Plan·Reason·Search·Memory 加权综合（0.3/0.3/0.3/0.1）</td></tr>
+        <tr><td>Context Gap</td><td>用户所给 context 与渲染所需 context 之间的结构性缺口</td></tr>
+      </table>
+    </section>
+
+    <section class="summary" id="overview">
+      <h2>🗺️ 论证总览</h2>
+      <div class="skeleton">
+Context Gap（训练完整 prompt vs 部署欠指定请求）<br>
+↓<br>
+Agent = context 构建器 + DiT 渲染器（Eq.1→3）<br>
+↓<br>
+Planning 三级 × Grounding 四路（reason/search/memory/feedback）<br>
+↓<br>
+IA-Bench 四能力正交评测（730 / 1801 checklist）<br>
+↓<br>
+Tab.1 IA-score 45.4 · WISE 0.902 · MindBench +82.6% · 消融验证各 context 必要
+      </div>
+      <div class="strength"><strong>强项</strong>：统一 framing；Memory 在 agent 类领先；training-free 可插任意 T2I；IA-Bench 填补 plan+memory 评测空白；Discussion 诚实列出延迟/feedback 弱/检索过度等问题。</div>
+      <div class="weakness"><strong>弱项</strong>：无官方代码；强依赖 GPT-5.5 + Google Search 闭源栈；公平性（同 backbone）仍难完全复现；Feedback 增益有限；全 pipeline 成本未量化表。</div>
+    </section>
+
+    <section class="summary faq" id="faq">
+      <h2>🧩 结构化十问（AI 解构）</h2>
+      <details open><summary>Q1 · 这篇论文要解决什么问题？</summary><div class="answer">真实用户请求常<strong>欠指定、隐含、需最新知识或多轮历史</strong>，而 T2I 模型按「完整 prompt」训练。作者定义 <strong>Context Gap</strong>，主张从「直接渲染 prompt」转向「先补全 generation context 再渲染」。</div></details>
+      <details open><summary>Q2 · 核心创新点是什么？</summary><div class="answer">① Context Gap 统一视角；② Context-Aware Planning（信息/内容/生成三级）+ Context Grounding（reason/search/memory/feedback）；③ training-free 编排 Qwen-Image-2.0；④ IA-Bench 四能力 benchmark + VLM checklist 协议。</div></details>
+      <details open><summary>Q3 · 与 MindBrush / GenSearcher / GEMS 有何不同？</summary><div class="answer">同类均为 agentic T2I，但 prior work 多聚焦单点（仅 reasoning 或仅 search）。本文强调<strong>统一 context-centric pipeline</strong> 与 IA-Bench 全谱评测；Tab.1 上 IA-score 45.4 明显高于 MindBrush 30.2、GenSearcher 17.3。</div></details>
+      <details open><summary>Q4 · 「Planning 三级」各做什么？</summary><div class="answer"><strong>信息级</strong>：识别缺失 context、生成问题并路由到 reason/search。<strong>内容级</strong>：整合 grounded signals，改写为含主体/布局/风格/文字的详细 prompt。<strong>生成级</strong>：multi-turn 筛选相关历史防爆炸；multi-image 分配 parallel/sequential/hybrid 依赖。</div></details>
+      <details open><summary>Q5 · Reason 与 Search 如何分工？</summary><div class="answer">Reason：常识/逻辑/视觉推理，把隐含意图显式化。Search：<strong>Precise Facts</strong>（精确数字/日期/名）与 <strong>Dynamic Facts</strong>（随时间变）必须外检；另含 IP 相关图像检索。论文称该边界 + 消融支持设计有效。</div></details>
+      <details open><summary>Q6 · IA-Bench 怎么评？可靠吗？</summary><div class="answer">每例有 fine-grained checklist；VLM 判每条是否满足 → PR（全满足）与 CA（比例）。IA-score 加权四维。人工过滤 trivial IP；Memory 用动态 checklist。仍依赖 VLM 评判器，与 GenEval 同类局限。</div></details>
+      <details open><summary>Q7 · 实验设置公平吗？</summary><div class="answer">Agent 基线统一 GPT-5.5-0424 + Qwen-Image-2.0；IA-Bench 开 feedback（≤3 轮），WISE/MindBench 关 feedback 以便对比非 agent 模型。无 multiturn 能力的基线把历史拼进 prompt——合理但仍无法完全消除系统差异。</div></details>
+      <details open><summary>Q8 · 消融说明什么？</summary><div class="answer">去 Reason → Plan+Reason 双降；去 Search → Search PR 7.8%；去 Memory → Memory 归零；去 Feedback 小幅降。换弱 MLLM 或 Qwen-Image 骨干 → IA-score ≈28。说明<strong>编排 intelligence + 强渲染器</strong>缺一不可。</div></details>
+      <details open><summary>Q9 · 定性样例证明了什么？</summary><div class="answer">Fig.4：迷宫路径（Reason）、股票信息（Search）、螺旋布局（Plan）、计数构图（Feedback）等任务上，agent 管线显著优于直连 2.0 与 NanoBanana/GPT-Image-1.5——失败模式多为「缺 context 仍硬画」。</div></details>
+      <details open><summary>Q10 · 复现/落地还要什么？</summary><div class="answer">需 Qwen-Image-2.0 API、GPT-5.5 级 MLLM、Google Search + Jina、DAG 并行调度与多轮 memory 策略。<strong>无官方 repo</strong>；IA-Bench 数据未公开；延迟/成本显著高于单次 T2I——适合产品级 agent 而非本地轻量部署。</div></details>
+    </section>
+
+    <section class="summary deepdive" id="deepdive">
+      <h2>🔬 深挖</h2>
+      <div class="block">
+        <h4>Context Gap vs Prompt Engineering</h4>
+        <p>手工扩 prompt 只能覆盖静态模板；agent 管线动态决定「要不要搜、搜什么、记什么」——差别在<strong>决策边界可学习/可规则化</strong>，而非更长字符串。</p>
+      </div>
+      <div class="block">
+        <h4>Memory 49% 仍低于闭源 52% 的含义</h4>
+        <p>说明 multi-turn 一致仍是全行业瓶颈；本文 relevance-based 筛选缓解 token 爆炸，但未解决「长期 persona 漂移」——未来或需专用 memory 模块训练。</p>
+      </div>
+      <div class="block crit">
+        <h4>批判性思维 · 开放问题</h4>
+        <ul>
+          <li><strong>闭源栈：</strong>GPT-5.5 + Google Search 使社区难复现 SOTA 数字。</li>
+          <li><strong>Feedback 天花板：</strong>prompt 级 VLM checklist 难覆盖细粒度美学；论文亦承认 task-specific reward 更优。</li>
+          <li><strong>Image search 悖论：</strong>需要参考时检索有益，过度检索引入编辑模型脆弱性——与 Gen backbone IP 能力耦合。</li>
+          <li><strong>IA-Bench 泄漏：</strong>过滤 iconic IP 但仍可能靠 MLLM 参数知识「假 search」——需 tool-call 日志审计。</li>
+          <li><strong>商业路径：</strong>training-free 利于快速叠 Qwen 生态，但 latency 阻碍实时交互场景。</li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="lightbox" role="dialog" aria-modal="true" aria-label="放大查看">
+    <div class="lb-content"></div>
+    <div class="lb-cap"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'neutral', flowchart: { htmlLabels: true } });</script>
+  <script>
+    function syncScrollPad() {
+      var head = document.querySelector('.sticky-head');
+      if (head) document.documentElement.style.scrollPaddingTop = (head.offsetHeight + 8) + 'px';
+    }
+    window.addEventListener('load', syncScrollPad);
+    window.addEventListener('resize', syncScrollPad);
+    syncScrollPad();
+
+    (function () {
+      var lb = document.getElementById('lightbox');
+      var content = lb.querySelector('.lb-content');
+      var cap = lb.querySelector('.lb-cap');
+
+      function findZoomTarget(node) {
+        var el = node.closest ? node.closest('img, svg') : null;
+        if (!el) return null;
+        if (!el.closest('.diagram, .figure-row, .mermaid')) return null;
+        return el;
+      }
+      function nearestCaption(el) {
+        var fig = el.closest('figure') || el.closest('.diagram') || el.closest('.figure-row');
+        var c = fig && fig.querySelector('figcaption');
+        return c ? c.textContent.trim() : '';
+      }
+      function openLightbox(node, caption) {
+        content.innerHTML = '';
+        var clone = node.cloneNode(true);
+        clone.style.cursor = 'default';
+        var r = node.getBoundingClientRect();
+        var vw = window.innerWidth * 0.96, vh = window.innerHeight * 0.92;
+        var w = r.width || node.clientWidth || 600;
+        var h = r.height || node.clientHeight || 400;
+        var scale = Math.min(vw / w, vh / h);
+        if (!isFinite(scale) || scale <= 0) scale = 1;
+        clone.style.width = Math.round(w * scale) + 'px';
+        clone.style.height = Math.round(h * scale) + 'px';
+        clone.style.maxWidth = 'none';
+        clone.style.maxHeight = 'none';
+        content.appendChild(clone);
+        cap.textContent = caption || '';
+        lb.classList.add('open');
+        document.body.style.overflow = 'hidden';
+      }
+      function closeLightbox() {
+        lb.classList.remove('open');
+        content.innerHTML = '';
+        document.body.style.overflow = '';
+      }
+      document.addEventListener('click', function (e) {
+        if (lb.classList.contains('open')) { closeLightbox(); return; }
+        var el = findZoomTarget(e.target);
+        if (el) { e.preventDefault(); e.stopPropagation(); openLightbox(el, nearestCaption(el)); }
+      });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeLightbox(); });
+    })();
+  </script>
+</body>
+</html>

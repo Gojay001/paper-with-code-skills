@@ -46,7 +46,7 @@ After deploy sync, verify `source/_posts/paper-reading/{slug}.md` **`title`** ma
 2. **Extract figures** — follow [references/figure-extraction.md](references/figure-extraction.md) (tex source first, not PDF crop)
 3. Draft content: Feynman → sections (**三栏**：左=论文英文原文、中=翻译、右=解析) → **`#code` 代码对照（有官方 repo 时）** → deep cards → notation / FAQ / deepdive
 4. Embed **lightbox** — copy from [references/lightbox-snippet.md](references/lightbox-snippet.md)
-5. Put paper figures in `<section class="figure-row">`; self-drawn SVG/Mermaid in `.diagram`
+5. Put paper figures in `<section class="figure-row">`; **self-drawn diagrams** → follow [Self-drawn diagrams](#self-drawn-diagrams-fireworks-tech-graph) (`fireworks-tech-graph`), embed in `.diagram`
 6. **Code section** — if list has official repo: follow [references/code-section-snippet.md](references/code-section-snippet.md); place after Method, before Experiments
 7. Validate: KaTeX, div balance, asset paths, lightbox screenshot (see below)
 8. **List links:** if list `Title` ≠ `{slug}` (e.g. `SD 1.x` vs `sd.html`), add `paper-reading/slug-aliases.json` entry, then in blog repo run `skills/sync-overview-from-list/scripts/sync-overview-from-list.py`
@@ -130,7 +130,7 @@ Each `.row` under a section **must** have exactly three columns. Labels: `原文
 **Reference rows:** `paper-reading/lay2story.html` (Abstract), `paper-reading/controlnet.html` (Method).
 
 - Paper originals: `<section class="figure-row"><figure><img src="assets/{slug}/figN.jpg"><figcaption>…点击放大。</figcaption></figure></section>`
-- Self-drawn: `.diagram` with inline SVG or `<pre class="mermaid">`
+- Self-drawn: see [Self-drawn diagrams](#self-drawn-diagrams-fireworks-tech-graph) — prefer `fireworks-tech-graph` SVG in `.diagram` (Mermaid only for trivial one-step flows)
 - Cursor/hover: CSS on `.diagram img, .diagram svg, .figure-row img, .figure-row svg` (no per-element JS class)
 - **结构化十问**（`#faq`）：Q1–Q10 全部 `<details open>`，默认展开；读者仍可点击折叠。勿只给 Q1 加 `open`
 
@@ -180,11 +180,24 @@ python3 -m venv .cache/.venv
 
 **研究来源：** GitHub `raw`、论文附录训练表、官方 issue（如 Frame Pack 末帧 pad）。
 
+### 6. Self-drawn diagrams (`fireworks-tech-graph`)
+
+When **drawing** training/inference pipelines, architecture summaries, argument chains, or other agent-authored diagrams (not paper-extracted figures):
+
+1. **Read and follow** [`skills/fireworks-tech-graph/SKILL.md`](../fireworks-tech-graph/SKILL.md) (submodule: [yizhiyanhua-ai/fireworks-tech-graph](https://github.com/yizhiyanhua-ai/fireworks-tech-graph)).
+2. Set `SKILL_ROOT` to that skill directory; use its `scripts/` + `references/` as documented there.
+3. **Default style for paper-reading HTML:** Style **1** (Flat Icon) or **4** (Notion Clean) — light backgrounds match the triple-column page. Use dark styles only if the user asks.
+4. **Output paths:** write under `paper-reading/assets/{slug}/` (or `paper-reading-local/assets/{slug}/` while drafting), e.g. `diagram-train.svg` / `diagram-sample.svg` (+ PNG export optional).
+5. **Embed:** put SVG in `.diagram` via `<img src="assets/{slug}/….svg">` or inline `<svg>`; add a one-line `figcaption` stating which logic the diagram supports. Keep lightbox targets (`img, svg` in `.diagram`).
+6. **Fidelity:** nodes/edges/labels must match the paper (symbols, module names). No invented components — if unsure, omit or mark 「论文未说明」 in caption/analysis.
+7. **Mermaid fallback:** only for a single trivial LR flow (≤5 nodes). Prefer fireworks SVG for anything with layers, swimlanes, or multi-stage pipelines.
+
 ## Checklist before commit
 
 - [ ] All `assets/{slug}/fig*` paths match HTML `src`
 - [ ] Extension matches file (`.jpg` vs `.png`) after format choice
 - [ ] Lightbox works for at least one SVG and one raster figure
+- [ ] Self-drawn diagrams (if any) produced via `fireworks-tech-graph`; assets under `assets/{slug}/`
 - [ ] `#feynman` section present (bridge post excerpt)
 - [ ] `#faq` 十问全部 `<details open>`（默认展开）
 - [ ] `<title>` and `<h1><a>` = English paper title (`ShortName — Full Title`); bridge md `title` matches `h1`
@@ -199,3 +212,4 @@ python3 -m venv .cache/.venv
 - [references/lightbox-snippet.md](references/lightbox-snippet.md) — copy-paste CSS, HTML, JS
 - [references/code-section-snippet.md](references/code-section-snippet.md) — `#code` CSS, skeleton, ControlNet/CogVideoX patterns
 - [scripts/extract-figures.py](scripts/extract-figures.py) — `fetch | list | copy | render-pdf | stitch | crop-page | crop`
+- [`../fireworks-tech-graph/SKILL.md`](../fireworks-tech-graph/SKILL.md) — self-drawn technical SVG+PNG diagrams

@@ -125,3 +125,4 @@ Skill 本身**不绑定任何分类体系**。仓库内现有清单只是**作�
 
 1. [知乎回答](https://www.zhihu.com/question/619529118/answer/1982578041122202372)
 2. [知乎专栏文章](https://zhuanlan.zhihu.com/p/2022000601618288748)
+3. [fireworks-tech-graph](https://github.com/yizhiyanhua-ai/fireworks-tech-graph) — 精读自绘技术图 SVG+PNG

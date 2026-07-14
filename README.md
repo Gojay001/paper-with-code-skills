@@ -125,3 +125,4 @@ The default example list currently covers:
 
 1. [Zhihu answer](https://www.zhihu.com/question/619529118/answer/1982578041122202372)
 2. [Zhihu column article](https://zhuanlan.zhihu.com/p/2022000601618288748)
+3. [fireworks-tech-graph](https://github.com/yizhiyanhua-ai/fireworks-tech-graph) — SVG+PNG technical diagrams for self-drawn paper-reading figures

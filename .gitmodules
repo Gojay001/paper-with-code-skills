@@ -1,0 +1,3 @@
+[submodule "skills/fireworks-tech-graph"]
+	path = skills/fireworks-tech-graph
+	url = https://github.com/yizhiyanhua-ai/fireworks-tech-graph.git

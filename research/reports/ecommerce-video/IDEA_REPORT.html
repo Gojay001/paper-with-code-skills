@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>E-Commerce Video Idea Discovery Report</title>
+
+<meta name="generator" content="ARIS render-html (dashboard, v1)">
+<meta name="aris:source-path" content="research/reports/ecommerce-video/IDEA_REPORT.md">
+<meta name="aris:source-sha256" content="6a379f07d25a2278a955daf1e8fde786fb11ab8ceac602714b4fb10353586c73">
+<meta name="aris:generated-at" content="2026-07-15 09:28 UTC">
+
+<!-- MathJax 3 -->
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true },
+  options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+
+<!-- highlight.js -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-light.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+
+
+<style>
+:root {
+  --bg: #fdfcf7;
+  --bg-soft: #f4f1ea;
+  --bg-card: #ffffff;
+  --bg-code: #f8f5ec;
+  --ink: #1a1a1a;
+  --ink-soft: #4a4a4a;
+  --ink-muted: #6b6b6b;
+  --primary: #1a4a8c;
+  --primary-soft: #2d6cb8;
+  --accent: #b8390e;
+  --warn: #b45309;
+  --warn-bg: #fef3c7;
+  --info-bg: #dbeafe;
+  --good-bg: #d1fae5;
+  --good: #065f46;
+  --bad-bg: #fee2e2;
+  --bad: #991b1b;
+  --border: #d6d0c0;
+  --border-soft: #e8e3d5;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: "Source Serif Pro", "Source Serif 4", "Crimson Pro", "Georgia", "Songti SC", "STSong", serif;
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--bg);
+  margin: 0;
+  padding: 0;
+  font-size: 15px;
+}
+
+.shell {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 32px 32px 48px;
+}
+
+header.hero {
+  border-bottom: 3px double var(--primary);
+  padding-bottom: 20px;
+  margin-bottom: 28px;
+}
+header.hero .eyebrow {
+  color: var(--accent);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+header.hero h1 {
+  font-size: 28px;
+  line-height: 1.2;
+  margin: 0 0 10px;
+  color: var(--ink);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+header.hero .subtitle {
+  font-size: 15px;
+  color: var(--ink-soft);
+  margin: 0 0 6px;
+  font-style: italic;
+}
+header.hero .byline {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 0 0 16px;
+}
+header.hero .byline strong { color: var(--ink); font-weight: 600; }
+header.hero .meta {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--ink-muted);
+  border-top: 1px solid var(--border-soft);
+  padding-top: 12px;
+}
+header.hero .meta span strong { color: var(--ink-soft); }
+header.hero .meta code {
+  font-family: "JetBrains Mono", "SF Mono", "Menlo", "Consolas", monospace;
+  font-size: 11px;
+  background: var(--bg-soft);
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid var(--border-soft);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin: 16px 0 28px;
+}
+.grid.metrics { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  padding: 16px 18px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+.card .card-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.card .card-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1.1;
+  font-family: "JetBrains Mono", "SF Mono", "Menlo", monospace;
+  letter-spacing: -0.01em;
+}
+.card .card-sub {
+  font-size: 12px;
+  color: var(--ink-muted);
+  margin-top: 6px;
+}
+.card.accent .card-value { color: var(--accent); }
+.card.good .card-value { color: var(--good); }
+.card.warn .card-value { color: var(--warn); }
+.card.bad .card-value { color: var(--bad); }
+
+h2 {
+  font-size: 20px;
+  margin: 32px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  color: var(--ink);
+  font-weight: 700;
+}
+h3 { font-size: 16px; margin: 22px 0 8px; color: var(--primary); font-weight: 600; }
+h4 { font-size: 14px; margin: 16px 0 6px; color: var(--ink); font-weight: 600; }
+
+p { margin: 8px 0; }
+ul, ol { padding-left: 20px; margin: 8px 0; }
+ul li, ol li { margin: 3px 0; }
+ul li::marker { color: var(--primary); }
+
+strong { color: var(--accent); font-weight: 600; }
+em { color: var(--ink-soft); }
+
+a { color: var(--primary); }
+a:hover { color: var(--accent); }
+
+code:not(.hljs) {
+  font-family: "JetBrains Mono", "SF Mono", "Menlo", "Consolas", monospace;
+  font-size: 0.86em;
+  background: var(--bg-code);
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid var(--border-soft);
+  color: var(--accent);
+}
+
+pre {
+  background: #fafaf6;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  padding: 0;
+  overflow-x: auto;
+  border-radius: 4px;
+  margin: 12px 0;
+}
+pre code, pre code.hljs {
+  background: transparent !important;
+  display: block;
+  padding: 12px 16px !important;
+  font-size: 12.5px;
+  line-height: 1.5;
+  font-family: "JetBrains Mono", "SF Mono", "Menlo", monospace;
+  color: var(--ink);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+thead { background: var(--primary); color: white; }
+th, td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-soft);
+  vertical-align: top;
+}
+th { font-weight: 600; font-size: 12px; }
+tr:last-child td { border-bottom: none; }
+tbody tr:nth-child(even) { background: var(--bg-soft); }
+
+.badge {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: "JetBrains Mono", "SF Mono", monospace;
+  letter-spacing: 0.02em;
+}
+.badge-good { background: var(--good-bg); color: var(--good); }
+.badge-warn { background: var(--warn-bg); color: var(--warn); }
+.badge-bad { background: var(--bad-bg); color: var(--bad); }
+.badge-info { background: var(--info-bg); color: var(--primary); }
+
+.callout {
+  margin: 14px 0;
+  padding: 10px 14px;
+  border-radius: 4px;
+  border-left: 4px solid;
+  font-size: 14px;
+}
+.callout-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.callout-info { background: var(--info-bg); border-left-color: var(--primary); }
+.callout-info .callout-title { color: var(--primary); }
+.callout-warn { background: var(--warn-bg); border-left-color: var(--warn); }
+.callout-warn .callout-title { color: var(--warn); }
+.callout-good { background: var(--good-bg); border-left-color: var(--good); }
+.callout-good .callout-title { color: var(--good); }
+.callout-bad { background: var(--bad-bg); border-left-color: var(--bad); }
+.callout-bad .callout-title { color: var(--bad); }
+
+details {
+  background: white;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  margin: 10px 0;
+}
+details summary {
+  cursor: pointer;
+  padding: 9px 13px;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--primary);
+  list-style: none;
+  user-select: none;
+}
+details summary::-webkit-details-marker { display: none; }
+details summary::before {
+  content: "▸ ";
+  margin-right: 4px;
+  display: inline-block;
+  transition: transform 0.15s;
+}
+details[open] summary::before { transform: rotate(90deg); }
+details[open] summary { border-bottom: 1px solid var(--border-soft); }
+details > :not(summary) { padding: 8px 13px; }
+
+footer.aris-footer {
+  margin-top: 48px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+footer.aris-footer a { color: var(--ink-muted); border-bottom: 1px dotted var(--border); }
+
+@media (max-width: 600px) {
+  .shell { padding: 20px 16px; }
+  header.hero h1 { font-size: 22px; }
+  .card .card-value { font-size: 24px; }
+}
+@media print {
+  .shell { padding: 0; }
+  body { background: white; }
+  .card { box-shadow: none; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<header class="hero">
+  
+  <h1>E-Commerce Video Idea Discovery Report</h1>
+  
+  
+  <div class="meta">
+    <span><strong>Source:</strong> <code>research/reports/ecommerce-video/IDEA_REPORT.md</code></span>
+    <span><strong>SHA256:</strong> <code>6a379f07d25a</code></span>
+    <span><strong>Rendered:</strong> 2026-07-15 09:28 UTC</span>
+    
+  </div>
+</header>
+
+<h1 id="e-commerce-video-idea-discovery-report">E-Commerce Video Idea Discovery Report</h1>
+<p><strong>Direction:</strong> 电商视频生成：商品真实性、镜头控制与广告叙事 <strong>Date:</strong> 2026-07-15 <strong>Pipeline:</strong> research-lit → idea-creator → novelty-check → research-review → research-refine-pipeline <strong>Review mode:</strong> same-family provisional；独立只读 jury；未运行 GPU pilot</p>
+<h2 id="executive-summary">Executive Summary</h2>
+<p>本轮把电商视频专题扩展到 76 篇论文节点，其中包括商品图直生视频、人—商品演示、广告分镜/剪辑、品牌植入、商业意图理解、多视图身份和商品插入。结论是：领域已经解决了“让商品出现在视频里”的多个子问题，但尚未可靠解决“生成内容是否仍是正在售卖的那个 SKU”。</p>
+<p>推荐先推进 <strong>SKU-TraceBench</strong>，用相似 SKU hard negatives、逐属性时序轨迹和未观测视角压力测试建立商业级真实性评价；再以此支持方法型 Idea <strong>Evidence-Bounded Camera</strong>，让镜头运动受参考证据和可校准身份风险约束。当前没有运行实验，也没有报告正面结果。</p>
+<p>完整综述见 <code>research/wiki/ECOMMERCE_VIDEO.md</code>，稳定空白见 <code>research/wiki/gap_map.md</code> 的 G11–G20。</p>
+<h2 id="landscape">Landscape</h2>
+<ol><li><strong>商品图 → 展示视频：</strong> E-CommerceVideo 建立直接任务和数据；VideoBooth、ConsID-Gen、3DreamBooth 从主体、多视图与 3D 角度提高身份保持。</li><li><strong>人物—商品演示：</strong> AnchorCrafter 与 DreamActor-H1 已联合人物、商品、动作和遮挡；剩余难点是商品 affordance、精细接触、功能状态和包装事实。</li><li><strong>广告规划/剪辑：</strong> Narrative Weaver 生成长程分镜；VC-LLM、Tree-of-AdEditor、AutoCut 从真实素材生成成片。像素生成与素材编排仍未统一。</li><li><strong>卖点/品牌：</strong> KD-CVG 注入广告知识，BrandFusion 优化品牌植入，E-VAds/AD-MIR 提供商业意图理解；但理解分数尚未被证明是安全的生成奖励。</li><li><strong>生成—真实混合：</strong> PLACID、InsertAnywhere、SimInsert、Point2Insert 支持对象插入，但自然融合指标不等于 SKU 正确。</li></ol>
+<h2 id="ranked-ideas">Ranked Ideas</h2>
+<h3 id="1-sku-tracebench--recommended">1. SKU-TraceBench — RECOMMENDED</h3>
+<ul><li><strong>Hypothesis:</strong> 相比通用 CLIP/DINO/VBench，显式分解几何、颜色、材质、Logo、OCR、规格和 SKU 版本，并报告逐帧漂移与 hard-negative margin，会更准确预测“商业可发布”判断。</li><li><strong>Dominant contribution:</strong> SKU-version-level video fidelity benchmark；不是更多生成模块。</li><li><strong>Stress axes:</strong> 相似 SKU 交换、未观测视角、遮挡恢复、运动/相机幅度、分辨率/压缩、跨 shot 状态。</li><li><strong>Closest work:</strong> E-CommerceVideo 已定义任务；OpenS2V-Nexus/ConsIDVid-Bench 评主体或多视图一致性；ProductConsistency 评图像商品编辑。</li><li><strong>Required differentiation:</strong> 近邻 SKU 可判别、属性级时序失真、与盲人评可发布率的校准。</li><li><strong>Jury:</strong> 22/25, KEEP。</li><li><strong>Success gate:</strong> 组合指标在 held-out SKU 上对人工不可发布判断的 AUROC 至少比最强通用相似度基线高 0.10，并能稳定区分同品牌近邻 SKU。</li><li><strong>Kill gate:</strong> 简单 DINO/CLIP + OCR 已达到同等相关性；或指标只检测人工合成 corruption，不能解释真实模型失败。</li></ul>
+<h3 id="2-evidence-bounded-camera--top-method-idea">2. Evidence-Bounded Camera — TOP METHOD IDEA</h3>
+<ul><li><strong>Hypothesis:</strong> 目标视角相对参考视图覆盖越低，身份风险越高；经校准的风险模型可在固定 SKU 风险下，选择 orbit/pan/push-in 幅度、请求补充视图或 abstain，从而最大化安全动态性。</li><li><strong>Dominant contribution:</strong> risk-constrained camera generation with abstention；不是新的多视图 encoder。</li><li><strong>Closest work:</strong> ConsID-Gen、3DreamBooth 已做多视图身份，CameraCtrl/MotionCtrl 已做镜头控制，但两条线通常独立评测。</li><li><strong>Required differentiation:</strong> risk-coverage calibration、未观测表面错误率、同风险下最大镜头运动范围。</li><li><strong>Jury:</strong> 21/25, REVISE。</li><li><strong>Success gate:</strong> held-out SKU 上 calibration error 可接受，且相同人工 SKU 错误率下显著增加镜头运动，或相同运动下显著降低错误。</li><li><strong>Kill gate:</strong> 风险只由参考图数量或相机角度启发式决定；跨品类不校准；安全策略只是把视频冻结。</li></ul>
+<h3 id="3-risk-routed-product-lock--system-backup">3. Risk-Routed Product Lock — SYSTEM BACKUP</h3>
+<ul><li><strong>Hypothesis:</strong> 根据商品属性、目标视角、遮挡和文字区域预测事实风险，并在 retain/warp/insert/generate 之间做时空路由，可优于固定 mask、全生成和全插入。</li><li><strong>Closest work:</strong> PLACID、InsertAnywhere、SimInsert 与常规生成式合成。</li><li><strong>Jury:</strong> 19/25, REVISE。</li><li><strong>Boundary:</strong> 只有学习式风险分配器和跨 SKU 泛化可构成贡献；“OCR critic + 重生成”本身不够新。</li></ul>
+<h3 id="4-product-frequency-router--archived">4. Product-Frequency Router — ARCHIVED</h3>
+<p>把低频几何、中频材质、高频 Logo/OCR 路由到不同层和时间步。ConsisID 已做人脸身份分频，InnoAds-Composer 已做条件重要性路由。独立 jury 给 16/25；除非先通过干预证明商品属性有稳定、可泛化的路由规律，否则不推进。</p>
+<h2 id="novelty-boundary">Novelty Boundary</h2>
+<table><thead><tr><th>Idea</th><th>Already covered</th><th>Remaining defensible claim</th></tr></thead><tbody><tr><td>SKU-TraceBench</td><td>电商视频数据、通用主体/多视图指标、图像商品一致性</td><td>SKU 版本级 hard negatives + 属性时序轨迹 + 商业可用性校准</td></tr><tr><td>Evidence-Bounded Camera</td><td>多视图/3D 身份；相机轨迹控制</td><td>可校准身份风险约束、risk-coverage、abstention</td></tr><tr><td>Risk-Routed Product Lock</td><td>对象插入、mask 合成、背景保持</td><td>学习式事实风险路由，而非固定区域流水线</td></tr><tr><td>Product-Frequency Router</td><td>人脸频率分解、条件路由</td><td>当前无足够边界，已停止</td></tr></tbody></table>
+<h2 id="critical-review">Critical Review</h2>
+<p>最大的反对意见是 benchmark inflation：如果只是把 OCR、Logo、颜色分数相加，SKU-TraceBench 不构成研究贡献。修订后必须满足：</p>
+<ol><li>使用同品牌、同包装家族、仅容量/口味/颜色不同的 hard negatives。</li><li>把错误定位到可见轨迹，并报告平均分之外的最坏帧、漂移斜率和遮挡后恢复。</li><li>区分参考已覆盖表面与未覆盖表面，避免用不可验证的背面“看起来像”冒充正确。</li><li>以盲人评的属性错误和可发布判断校准，而非只与另一个自动指标相关。</li><li>在真实生成失败和可控 corruption 两类数据上都成立；只在合成错误上有效则终止。</li></ol>
+<h2 id="refined-proposal">Refined Proposal</h2>
+<ul><li>Proposal: <code>research/projects/sku-tracebench/FINAL_PROPOSAL.md</code></li><li>Review summary: <code>research/projects/sku-tracebench/REVIEW_SUMMARY.md</code></li><li>Experiment plan: <code>research/projects/sku-tracebench/EXPERIMENT_PLAN.md</code></li><li>Tracker: <code>research/projects/sku-tracebench/EXPERIMENT_TRACKER.md</code></li><li>Contract: <code>research/projects/sku-tracebench/research_contract.md</code></li></ul>
+<h2 id="next-steps">Next Steps</h2>
+<ul><li>[ ] 先收集 30–50 个许可清晰、含相似变体和多视图的 SKU，定义属性真值与可见区域。</li><li>[ ] 仅做 corruption sanity：字符替换、Logo warp、色偏、局部几何和跨帧漂移，验证每个子指标的单调性。</li><li>[ ] 再评估至少两个公开 I2V 基座的真实输出；当前本机无 CUDA，不宣称已运行。</li><li>[ ] 进行盲人评并验证对可发布判断的增量预测；失败即停止 benchmark claim。</li><li>[ ] 只有 SKU-TraceBench gate 通过后，启动 Evidence-Bounded Camera。</li></ul>
+
+<footer class="aris-footer">
+  Generated by <a href="https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/main/skills/render-html/SKILL.md">ARIS <code>/render-html</code></a> ·
+  source <code>research/reports/ecommerce-video/IDEA_REPORT.md</code> ·
+  SHA256 <code>6a379f07d25a</code> ·
+  generated at 2026-07-15 09:28 UTC.
+  Edit the source Markdown / JSON, then re-render.
+</footer>
+
+</div>
+</body>
+</html>

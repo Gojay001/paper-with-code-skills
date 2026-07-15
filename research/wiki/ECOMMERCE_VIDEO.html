@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>电商视频生成：任务版图、技术路线与研究空白</title>
+
+<meta name="generator" content="ARIS render-html (dashboard, v1)">
+<meta name="aris:source-path" content="research/wiki/ECOMMERCE_VIDEO.md">
+<meta name="aris:source-sha256" content="3f74f482a04175f9a404ac77311fcf9bb3da3e7b4e825e4297611e5aab04bb71">
+<meta name="aris:generated-at" content="2026-07-15 09:28 UTC">
+
+<!-- MathJax 3 -->
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true },
+  options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+
+<!-- highlight.js -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-light.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+
+
+<style>
+:root {
+  --bg: #fdfcf7;
+  --bg-soft: #f4f1ea;
+  --bg-card: #ffffff;
+  --bg-code: #f8f5ec;
+  --ink: #1a1a1a;
+  --ink-soft: #4a4a4a;
+  --ink-muted: #6b6b6b;
+  --primary: #1a4a8c;
+  --primary-soft: #2d6cb8;
+  --accent: #b8390e;
+  --warn: #b45309;
+  --warn-bg: #fef3c7;
+  --info-bg: #dbeafe;
+  --good-bg: #d1fae5;
+  --good: #065f46;
+  --bad-bg: #fee2e2;
+  --bad: #991b1b;
+  --border: #d6d0c0;
+  --border-soft: #e8e3d5;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: "Source Serif Pro", "Source Serif 4", "Crimson Pro", "Georgia", "Songti SC", "STSong", serif;
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--bg);
+  margin: 0;
+  padding: 0;
+  font-size: 15px;
+}
+
+.shell {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 32px 32px 48px;
+}
+
+header.hero {
+  border-bottom: 3px double var(--primary);
+  padding-bottom: 20px;
+  margin-bottom: 28px;
+}
+header.hero .eyebrow {
+  color: var(--accent);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+header.hero h1 {
+  font-size: 28px;
+  line-height: 1.2;
+  margin: 0 0 10px;
+  color: var(--ink);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+header.hero .subtitle {
+  font-size: 15px;
+  color: var(--ink-soft);
+  margin: 0 0 6px;
+  font-style: italic;
+}
+header.hero .byline {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 0 0 16px;
+}
+header.hero .byline strong { color: var(--ink); font-weight: 600; }
+header.hero .meta {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--ink-muted);
+  border-top: 1px solid var(--border-soft);
+  padding-top: 12px;
+}
+header.hero .meta span strong { color: var(--ink-soft); }
+header.hero .meta code {
+  font-family: "JetBrains Mono", "SF Mono", "Menlo", "Consolas", monospace;
+  font-size: 11px;
+  background: var(--bg-soft);
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid var(--border-soft);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin: 16px 0 28px;
+}
+.grid.metrics { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  padding: 16px 18px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+.card .card-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.card .card-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1.1;
+  font-family: "JetBrains Mono", "SF Mono", "Menlo", monospace;
+  letter-spacing: -0.01em;
+}
+.card .card-sub {
+  font-size: 12px;
+  color: var(--ink-muted);
+  margin-top: 6px;
+}
+.card.accent .card-value { color: var(--accent); }
+.card.good .card-value { color: var(--good); }
+.card.warn .card-value { color: var(--warn); }
+.card.bad .card-value { color: var(--bad); }
+
+h2 {
+  font-size: 20px;
+  margin: 32px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  color: var(--ink);
+  font-weight: 700;
+}
+h3 { font-size: 16px; margin: 22px 0 8px; color: var(--primary); font-weight: 600; }
+h4 { font-size: 14px; margin: 16px 0 6px; color: var(--ink); font-weight: 600; }
+
+p { margin: 8px 0; }
+ul, ol { padding-left: 20px; margin: 8px 0; }
+ul li, ol li { margin: 3px 0; }
+ul li::marker { color: var(--primary); }
+
+strong { color: var(--accent); font-weight: 600; }
+em { color: var(--ink-soft); }
+
+a { color: var(--primary); }
+a:hover { color: var(--accent); }
+
+code:not(.hljs) {
+  font-family: "JetBrains Mono", "SF Mono", "Menlo", "Consolas", monospace;
+  font-size: 0.86em;
+  background: var(--bg-code);
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid var(--border-soft);
+  color: var(--accent);
+}
+
+pre {
+  background: #fafaf6;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  padding: 0;
+  overflow-x: auto;
+  border-radius: 4px;
+  margin: 12px 0;
+}
+pre code, pre code.hljs {
+  background: transparent !important;
+  display: block;
+  padding: 12px 16px !important;
+  font-size: 12.5px;
+  line-height: 1.5;
+  font-family: "JetBrains Mono", "SF Mono", "Menlo", monospace;
+  color: var(--ink);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+thead { background: var(--primary); color: white; }
+th, td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-soft);
+  vertical-align: top;
+}
+th { font-weight: 600; font-size: 12px; }
+tr:last-child td { border-bottom: none; }
+tbody tr:nth-child(even) { background: var(--bg-soft); }
+
+.badge {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: "JetBrains Mono", "SF Mono", monospace;
+  letter-spacing: 0.02em;
+}
+.badge-good { background: var(--good-bg); color: var(--good); }
+.badge-warn { background: var(--warn-bg); color: var(--warn); }
+.badge-bad { background: var(--bad-bg); color: var(--bad); }
+.badge-info { background: var(--info-bg); color: var(--primary); }
+
+.callout {
+  margin: 14px 0;
+  padding: 10px 14px;
+  border-radius: 4px;
+  border-left: 4px solid;
+  font-size: 14px;
+}
+.callout-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.callout-info { background: var(--info-bg); border-left-color: var(--primary); }
+.callout-info .callout-title { color: var(--primary); }
+.callout-warn { background: var(--warn-bg); border-left-color: var(--warn); }
+.callout-warn .callout-title { color: var(--warn); }
+.callout-good { background: var(--good-bg); border-left-color: var(--good); }
+.callout-good .callout-title { color: var(--good); }
+.callout-bad { background: var(--bad-bg); border-left-color: var(--bad); }
+.callout-bad .callout-title { color: var(--bad); }
+
+details {
+  background: white;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  margin: 10px 0;
+}
+details summary {
+  cursor: pointer;
+  padding: 9px 13px;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--primary);
+  list-style: none;
+  user-select: none;
+}
+details summary::-webkit-details-marker { display: none; }
+details summary::before {
+  content: "▸ ";
+  margin-right: 4px;
+  display: inline-block;
+  transition: transform 0.15s;
+}
+details[open] summary::before { transform: rotate(90deg); }
+details[open] summary { border-bottom: 1px solid var(--border-soft); }
+details > :not(summary) { padding: 8px 13px; }
+
+footer.aris-footer {
+  margin-top: 48px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+footer.aris-footer a { color: var(--ink-muted); border-bottom: 1px dotted var(--border); }
+
+@media (max-width: 600px) {
+  .shell { padding: 20px 16px; }
+  header.hero h1 { font-size: 22px; }
+  .card .card-value { font-size: 24px; }
+}
+@media print {
+  .shell { padding: 0; }
+  body { background: white; }
+  .card { box-shadow: none; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<header class="hero">
+  
+  <h1>电商视频生成：任务版图、技术路线与研究空白</h1>
+  
+  
+  <div class="meta">
+    <span><strong>Source:</strong> <code>research/wiki/ECOMMERCE_VIDEO.md</code></span>
+    <span><strong>SHA256:</strong> <code>3f74f482a041</code></span>
+    <span><strong>Rendered:</strong> 2026-07-15 09:28 UTC</span>
+    
+  </div>
+</header>
+
+<h1 id="电商视频生成任务版图技术路线与研究空白">电商视频生成：任务版图、技术路线与研究空白</h1>
+<blockquote><p>更新：2026-07-15。范围包括商品图直生展示视频、人物—商品演示、广告分镜与剪辑、品牌植入、商业意图理解，以及商品身份保持的相邻技术。本页区分“生成新像素”“编排已有素材”“生成后理解/评价”，避免把三类任务混为一谈。</p></blockquote>
+<h2 id="1-任务到底特殊在哪里">1. 任务到底特殊在哪里</h2>
+<p>通用视频生成追求“看起来合理”；电商视频还要求“与正在售卖的那个 SKU 一致”。这把身份保持从语义级主体相似，提高到可核验的商品事实：</p>
+<ul><li><strong>外观事实</strong>：轮廓、比例、颜色、材质、纹理、透明度与反射特性。</li><li><strong>品牌事实</strong>：Logo、包装文字、商标安全区、型号、容量、口味与规格。</li><li><strong>状态事实</strong>：开/关、完整/拆封、前后朝向、数量，以及跨镜头已经发生的动作。</li><li><strong>交互事实</strong>：人物如何握持、穿戴、打开或使用商品，接触与遮挡是否自然。</li><li><strong>营销事实</strong>：卖点、目标人群、场景、促销信息、字幕/旁白和合规边界。</li></ul>
+<p><a href="https://arxiv.org/abs/2602.08355">E-VAds</a> 进一步说明，电商短视频通常快节奏且视觉、语音、屏幕文字同时高密度；因此只测首帧相似度、CLIP 或通用 VBench，无法判断成片能否真正上线。</p>
+<h2 id="2-当前技术版图">2. 当前技术版图</h2>
+<h3 id="21-商品图--单镜头展示视频">2.1 商品图 → 单镜头展示视频</h3>
+<p><a href="https://openreview.net/forum?id=GraP6A5SUO">E-CommerceVideo</a> 直接定义“多视图商品图 + 文本 → 动态展示视频”，并以淘宝商品图—描述—视频三元组和 VAE 空间注入基线建立任务入口。它揭示了核心矛盾：强参考约束提高商品保真，却容易压低运动自由度；放松约束又会幻觉颜色、纹理和 Logo。</p>
+<p>相邻的主体定制路线提供了不同答案：</p>
+<ul><li><a href="https://arxiv.org/abs/2312.00777">VideoBooth</a> 用粗粒度全局与细粒度多尺度参考特征生成主体视频，但大视角仍受训练参考覆盖限制。</li><li><a href="https://arxiv.org/abs/2411.17440">ConsisID</a> 把人脸身份分为低频全局结构与高频局部细节，提示商品也可分解为几何、材质、Logo/OCR；但人脸分频不能直接等价迁移到反光、透明或带文字商品。</li><li><a href="https://arxiv.org/abs/2602.10113">ConsID-Gen</a> 通过无位姿多视图和视觉—几何双路编码改善对象在视角变化下的身份保持。</li><li><a href="https://arxiv.org/abs/2603.18524">3DreamBooth</a> 与多视图 S2V 工作进一步引入 3D 先验，收紧“单图看不到背面却被模型自由补全”的问题。</li></ul>
+<p><strong>现状判断</strong>：多视图和 3D-aware conditioning 正在解决几何漂移，但“生成的背面是否有商品证据”“包装小字是否真实”“相似 SKU 是否串号”仍缺少硬约束和专用评价。</p>
+<h3 id="22-人物商品演示与带货主播">2.2 人物—商品演示与带货主播</h3>
+<p><a href="https://arxiv.org/abs/2411.17383">AnchorCrafter</a> 把人—物交互引入 pose-guided 视频，通过多视图商品感知、轨迹和遮挡管理保持商品外观；<a href="https://arxiv.org/abs/2506.10568">DreamActor-H1</a> 用人物/商品参考、对象区域注意力、3D 人体网格和商品框生成演示视频，并明确关注 Logo、纹理和手势对齐。<a href="https://arxiv.org/abs/2503.07602">DreamRelation</a> 则把关系本身作为可定制对象。</p>
+<p>这条路线已经覆盖“把商品放进手里并让人物动起来”，但尚未统一：商品 affordance、尺寸/重量、精细手指接触、遮挡后重现、功能状态变化和包装文字保持。DreamActor-H1 自身也指出预定义动作可能与具体商品不匹配，且对非标准商品仍可能判断错误。</p>
+<h3 id="23-多镜头广告先规划再生成或剪辑">2.3 多镜头广告：先规划，再生成或剪辑</h3>
+<p>现有工作分成两支：</p>
+<ul><li><strong>规划与故事板生成</strong>：<a href="https://arxiv.org/abs/2603.06688">Narrative Weaver</a> 用 MLLM 规划、动态 Memory Bank 和细粒度控制生成长程一致的视觉故事，并构建约 33 万图像的 EAVSD 电商广告分镜数据集；但主评测对象更接近多关键帧故事板，而非完整连续视频。</li><li><strong>已有素材编排</strong>：<a href="https://arxiv.org/abs/2504.05673">VC-LLM</a>、<a href="https://www.ijcai.org/proceedings/2025/968">Tree-of-AdEditor</a> 和 <a href="https://arxiv.org/abs/2603.28366">AutoCut</a> 分别使用多分辨率视频理解、启发式树搜索或多模态离散 token，从原始素材中选镜头、排序、写脚本并配音/配乐。这类方法事实风险低、生产可控，却不能生成素材库中不存在的镜头。</li></ul>
+<p><strong>现状判断</strong>：故事板、像素生成、真实素材剪辑、口播字幕与配乐仍被分开验证。跨镜头的同一 SKU、方向、开合状态和动作因果也没有统一检查。</p>
+<h3 id="24-卖点品牌与商业意图">2.4 卖点、品牌与商业意图</h3>
+<p><a href="https://arxiv.org/abs/2604.21362">KD-CVG</a> 已把卖点知识和动作先验注入创意视频生成；<a href="https://arxiv.org/abs/2603.02816">BrandFusion</a> 通过品牌知识库和多 Agent 迭代改善品牌可识别性与自然植入。<a href="https://arxiv.org/abs/2602.08355">E-VAds</a> 和 <a href="https://arxiv.org/abs/2602.07625">AD-MIR</a> 则从理解侧建模商业意图、说服策略与多模态证据。</p>
+<p>这些工作说明“只对齐 prompt”已经不够，但把理解模型直接当生成奖励仍有明显风险：它可能奖励卖点关键词、品牌露出时长或固定话术，而不是真实、可信且不夸大的商品表达。</p>
+<h3 id="25-商品插入与生成真实混合">2.5 商品插入与生成—真实混合</h3>
+<p><a href="https://arxiv.org/abs/2602.00267">PLACID</a>、<a href="https://arxiv.org/abs/2512.17504">InsertAnywhere</a>、<a href="https://arxiv.org/abs/2605.23245">SimInsert</a> 与 <a href="https://arxiv.org/abs/2602.04167">Point2Insert</a> 研究把指定对象插入已有视频并保持几何、遮挡、背景与局部融合。这给电商提供了另一条路线：高风险商品区域尽量保留真实像素或可验证几何，只生成背景、光影和过渡。</p>
+<p>但“插得自然”不等于“商品就是正确 SKU”；现有插入指标通常偏重 PSNR/SSIM/LPIPS、边界融合和背景保持，尚未覆盖包装事实与品牌合规。</p>
+<h2 id="3-可复用机制">3. 可复用机制</h2>
+<table><thead><tr><th>机制</th><th>来源</th><th>面向电商的迁移方式</th><th>主要风险</th></tr></thead><tbody><tr><td>身份分频</td><td>ConsisID、InnoAds-Composer、ProductConsistency</td><td>低频几何，中频材质，高频 Logo/OCR 分路编码、注入与评价</td><td>频率与语义属性并非天然一一对应</td></tr><tr><td>多视图参考银行</td><td>ConsID-Gen、3DreamBooth</td><td>大视角时查询最接近的真实参考，减少虚构背面</td><td>真实详情图无标定且光照不一致</td></tr><tr><td>身份—动作—相机解耦</td><td>MotionCtrl、CameraCtrl、DreamActor-H1</td><td>分开控制商品真实性、物体/手运动和广告镜头</td><td>三路条件仍会在 DiT 中竞争</td></tr><tr><td>时空区域路由</td><td>DreamActor-H1、HunyuanCustom、PLACID</td><td>把商品、人物、Logo 与背景绑定到独立时空 tube</td><td>遮挡、形变和镜头切换使 mask 不稳定</td></tr><tr><td>Cross-pair 数据</td><td>OpenS2V、Phantom-Data、Saber</td><td>同 SKU 跨背景/视角配对，打破白底图与场景纠缠</td><td>相似 SKU 可能被错误合并</td></tr><tr><td>生成后商业 critic</td><td>E-VAds、AD-MIR、ProductConsistency</td><td>检查卖点、OCR、SKU 属性、品牌与自然度</td><td>reward hacking 与自动评价偏差</td></tr><tr><td>真实—生成混合</td><td>AutoCut、InsertAnywhere、SimInsert</td><td>商品高风险区保真，背景与转场生成</td><td>容易退化成复杂但贡献不清的工程系统</td></tr></tbody></table>
+<h2 id="4-核心-gap-map">4. 核心 Gap Map</h2>
+<p>稳定编号同时写入 <code>gap_map.md</code>：</p>
+<ol><li><strong>G11：视频级 SKU 真实性评价。</strong> 缺少逐帧并跨帧分解几何、颜色、材质、Logo、OCR、规格和版本的公开协议；E-CommerceVideo 仍主要使用通用指标，OpenS2V-Nexus 仍是主体级指标，ProductConsistency 只覆盖图像编辑。</li><li><strong>G12：证据边界外的大视角生成。</strong> 多视图方法提高一致性，但没有显式回答：参考图未覆盖的表面，模型应生成、限制镜头还是拒绝。</li><li><strong>G13：相机运动与商品真实性的风险预算。</strong> CameraCtrl/MotionCtrl 与商品身份方法通常分开评测，缺少按 SKU 证据和细节风险自动调节 orbit、push-in、macro 等镜头幅度。</li><li><strong>G14：人物—商品接触、功能与身份联合。</strong> 预定义动作、bbox 和关系 LoRA 尚不足以保证手指接触、遮挡恢复、功能状态和商品不形变。</li><li><strong>G15：跨镜头 SKU 状态连续性。</strong> 故事板方法保证视觉/语义相似，却很少验证商品方向、开合、数量和已发生动作在最终视频中的连续性。</li><li><strong>G16：品牌与包装硬约束。</strong> Logo、法定文案、型号和包装文字多被视作软相似度，没有不可违反的约束、失败拒绝与审计轨迹。</li><li><strong>G17：生成—真实混合的决策原则。</strong> 尚无模型能按区域风险决定何处保留真实素材、何处允许生成，并证明优于全生成或全剪辑。</li><li><strong>G18：商业 critic 的因果有效性。</strong> 卖点/说服策略 evaluator 是否提升人类信任与真实业务，而非奖励露出或关键词捷径，仍需严格干预验证。</li><li><strong>G19：长尾商品与材质。</strong> 透明、镜面、珠宝、柔性包装、家具、多商品组合与高度相似 SKU 覆盖不足。</li><li><strong>G20：低成本可复现路径。</strong> 现有强方法常依赖百亿模型、专有广告数据、多 GPU 或多 Agent API；需要在公开模型上可验证的诊断和轻量适配。</li></ol>
+<h2 id="5-研究优先级判断">5. 研究优先级判断</h2>
+<h3 id="第一优先先定义商业上正确">第一优先：先定义“商业上正确”</h3>
+<p>推荐先做 <strong>SKU-TraceBench</strong>：以商品目录元数据、多视图资产、Logo/OCR 区域和相似 SKU hard negatives，构建视频级商品真实性压力测试。它不是再造一个通用美学 benchmark，而是回答现有模型究竟在哪些镜头、表面和属性上失真，并为后续方法提供可靠的 success/kill gate。</p>
+<h3 id="第二优先让镜头运动服从证据">第二优先：让镜头运动服从证据</h3>
+<p>推荐方法方向是 <strong>Evidence-Bounded Camera</strong>：估计目标镜头轨迹在参考视图中的覆盖和不确定性；当目标视角越过证据边界时，自动缩小 orbit、改为 push-in/pan、调用额外参考，或显式 abstain。核心不是“再加一个多视图模块”，而是让生成器对不可证明的商品表面不再自信幻觉。</p>
+<h3 id="第三优先商品属性的分路保持">第三优先：商品属性的分路保持</h3>
+<p><strong>Product-Frequency Router</strong> 可探索几何、材质、Logo/OCR 在层、去噪步和空间区域上的不同注入策略，但必须先证明这种分解优于统一对象特征；否则它只是把 ConsisID 的人脸分频和 InnoAds 的条件路由机械组合。</p>
+<h3 id="暂缓">暂缓</h3>
+<ul><li>直接以 CTR/收入训练生成器：数据私有、混杂严重、伦理和合规风险高。</li><li>全链路 Agent 自动成片：产品价值明确，但若没有可证伪的模型或评价贡献，学术新意弱。</li><li>从零训练大型电商视频基础模型：资源门槛过高，当前更适合领域后训练、奖励或受控推理。</li></ul>
+<h2 id="6-建议统一评价轴">6. 建议统一评价轴</h2>
+<table><thead><tr><th>轴</th><th>最低可操作指标</th><th>必须配套的人工检查</th></tr></thead><tbody><tr><td>SKU 几何</td><td>轮廓/关键点/多视图重投影一致性</td><td>是否虚构接口、背面和部件</td></tr><tr><td>颜色/材质</td><td>校色后区域色差、材质分类、时序波动</td><td>合法反射变化 vs 身份漂移</td></tr><tr><td>Logo/OCR</td><td>Logo 检测、字符准确率、轨迹稳定性</td><td>可读但错误的“伪品牌文字”</td></tr><tr><td>状态连续性</td><td>状态图事件一致率、跨 shot 属性保持</td><td>开合、数量、方向是否自洽</td></tr><tr><td>运动与镜头</td><td>轨迹误差、相机姿态、dynamic degree</td><td>是否为了保真而冻结画面</td></tr><tr><td>人—物交互</td><td>接触/穿透/遮挡恢复、affordance 分类</td><td>使用方式是否真实且自然</td></tr><tr><td>营销事实</td><td>卖点覆盖、目录事实一致、禁词命中</td><td>是否夸大、误导或遗漏条件</td></tr><tr><td>可用性</td><td>盲人评可发布率、失败拒绝准确率</td><td>商家是否愿意直接采用</td></tr></tbody></table>
+<h2 id="7-结论">7. 结论</h2>
+<p>电商视频生成正在从“商品图动起来”走向“商品、人物、镜头、叙事和商业意图共同可控”。截至当前，最有价值的研究切口并不是再提升一项通用视频分数，而是建立 SKU 级可核验真实性，并让生成自由度受商品证据约束。只有先解决“生成的是不是这个商品”，再讨论“广告是否更好看、更会卖”，研究结论才稳固。</p>
+
+<footer class="aris-footer">
+  Generated by <a href="https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/main/skills/render-html/SKILL.md">ARIS <code>/render-html</code></a> ·
+  source <code>research/wiki/ECOMMERCE_VIDEO.md</code> ·
+  SHA256 <code>3f74f482a041</code> ·
+  generated at 2026-07-15 09:28 UTC.
+  Edit the source Markdown / JSON, then re-render.
+</footer>
+
+</div>
+</body>
+</html>

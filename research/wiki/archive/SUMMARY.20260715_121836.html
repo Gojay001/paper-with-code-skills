@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diffusion 与 Video Generation 研究综述</title>
+
+<meta name="generator" content="ARIS render-html (dashboard, v1)">
+<meta name="aris:source-path" content="research-wiki/SUMMARY.md">
+<meta name="aris:source-sha256" content="c1e9e399a8b1c8ab2915c9654fc377f59afa6f0870d55b7951dcb28f1fd6ad3f">
+<meta name="aris:generated-at" content="2026-07-15 04:21 UTC">
+
+<!-- MathJax 3 -->
+<script>
+window.MathJax = {
+  tex: { inlineMath: [['$', '$'], ['\\(', '\\)']], displayMath: [['$$', '$$'], ['\\[', '\\]']], processEscapes: true },
+  options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+
+<!-- highlight.js -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-light.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
+<script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+
+
+<style>
+:root {
+  --bg: #fdfcf7;
+  --bg-soft: #f4f1ea;
+  --bg-card: #ffffff;
+  --bg-code: #f8f5ec;
+  --ink: #1a1a1a;
+  --ink-soft: #4a4a4a;
+  --ink-muted: #6b6b6b;
+  --primary: #1a4a8c;
+  --primary-soft: #2d6cb8;
+  --accent: #b8390e;
+  --warn: #b45309;
+  --warn-bg: #fef3c7;
+  --info-bg: #dbeafe;
+  --good-bg: #d1fae5;
+  --good: #065f46;
+  --bad-bg: #fee2e2;
+  --bad: #991b1b;
+  --border: #d6d0c0;
+  --border-soft: #e8e3d5;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: "Source Serif Pro", "Source Serif 4", "Crimson Pro", "Georgia", "Songti SC", "STSong", serif;
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--bg);
+  margin: 0;
+  padding: 0;
+  font-size: 15px;
+}
+
+.shell {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 32px 32px 48px;
+}
+
+header.hero {
+  border-bottom: 3px double var(--primary);
+  padding-bottom: 20px;
+  margin-bottom: 28px;
+}
+header.hero .eyebrow {
+  color: var(--accent);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+header.hero h1 {
+  font-size: 28px;
+  line-height: 1.2;
+  margin: 0 0 10px;
+  color: var(--ink);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+header.hero .subtitle {
+  font-size: 15px;
+  color: var(--ink-soft);
+  margin: 0 0 6px;
+  font-style: italic;
+}
+header.hero .byline {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 0 0 16px;
+}
+header.hero .byline strong { color: var(--ink); font-weight: 600; }
+header.hero .meta {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--ink-muted);
+  border-top: 1px solid var(--border-soft);
+  padding-top: 12px;
+}
+header.hero .meta span strong { color: var(--ink-soft); }
+header.hero .meta code {
+  font-family: "JetBrains Mono", "SF Mono", "Menlo", "Consolas", monospace;
+  font-size: 11px;
+  background: var(--bg-soft);
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid var(--border-soft);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin: 16px 0 28px;
+}
+.grid.metrics { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  padding: 16px 18px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+.card .card-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.card .card-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1.1;
+  font-family: "JetBrains Mono", "SF Mono", "Menlo", monospace;
+  letter-spacing: -0.01em;
+}
+.card .card-sub {
+  font-size: 12px;
+  color: var(--ink-muted);
+  margin-top: 6px;
+}
+.card.accent .card-value { color: var(--accent); }
+.card.good .card-value { color: var(--good); }
+.card.warn .card-value { color: var(--warn); }
+.card.bad .card-value { color: var(--bad); }
+
+h2 {
+  font-size: 20px;
+  margin: 32px 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  color: var(--ink);
+  font-weight: 700;
+}
+h3 { font-size: 16px; margin: 22px 0 8px; color: var(--primary); font-weight: 600; }
+h4 { font-size: 14px; margin: 16px 0 6px; color: var(--ink); font-weight: 600; }
+
+p { margin: 8px 0; }
+ul, ol { padding-left: 20px; margin: 8px 0; }
+ul li, ol li { margin: 3px 0; }
+ul li::marker { color: var(--primary); }
+
+strong { color: var(--accent); font-weight: 600; }
+em { color: var(--ink-soft); }
+
+a { color: var(--primary); }
+a:hover { color: var(--accent); }
+
+code:not(.hljs) {
+  font-family: "JetBrains Mono", "SF Mono", "Menlo", "Consolas", monospace;
+  font-size: 0.86em;
+  background: var(--bg-code);
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid var(--border-soft);
+  color: var(--accent);
+}
+
+pre {
+  background: #fafaf6;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
+  padding: 0;
+  overflow-x: auto;
+  border-radius: 4px;
+  margin: 12px 0;
+}
+pre code, pre code.hljs {
+  background: transparent !important;
+  display: block;
+  padding: 12px 16px !important;
+  font-size: 12.5px;
+  line-height: 1.5;
+  font-family: "JetBrains Mono", "SF Mono", "Menlo", monospace;
+  color: var(--ink);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+thead { background: var(--primary); color: white; }
+th, td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-soft);
+  vertical-align: top;
+}
+th { font-weight: 600; font-size: 12px; }
+tr:last-child td { border-bottom: none; }
+tbody tr:nth-child(even) { background: var(--bg-soft); }
+
+.badge {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: "JetBrains Mono", "SF Mono", monospace;
+  letter-spacing: 0.02em;
+}
+.badge-good { background: var(--good-bg); color: var(--good); }
+.badge-warn { background: var(--warn-bg); color: var(--warn); }
+.badge-bad { background: var(--bad-bg); color: var(--bad); }
+.badge-info { background: var(--info-bg); color: var(--primary); }
+
+.callout {
+  margin: 14px 0;
+  padding: 10px 14px;
+  border-radius: 4px;
+  border-left: 4px solid;
+  font-size: 14px;
+}
+.callout-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.callout-info { background: var(--info-bg); border-left-color: var(--primary); }
+.callout-info .callout-title { color: var(--primary); }
+.callout-warn { background: var(--warn-bg); border-left-color: var(--warn); }
+.callout-warn .callout-title { color: var(--warn); }
+.callout-good { background: var(--good-bg); border-left-color: var(--good); }
+.callout-good .callout-title { color: var(--good); }
+.callout-bad { background: var(--bad-bg); border-left-color: var(--bad); }
+.callout-bad .callout-title { color: var(--bad); }
+
+details {
+  background: white;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  margin: 10px 0;
+}
+details summary {
+  cursor: pointer;
+  padding: 9px 13px;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--primary);
+  list-style: none;
+  user-select: none;
+}
+details summary::-webkit-details-marker { display: none; }
+details summary::before {
+  content: "▸ ";
+  margin-right: 4px;
+  display: inline-block;
+  transition: transform 0.15s;
+}
+details[open] summary::before { transform: rotate(90deg); }
+details[open] summary { border-bottom: 1px solid var(--border-soft); }
+details > :not(summary) { padding: 8px 13px; }
+
+footer.aris-footer {
+  margin-top: 48px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+footer.aris-footer a { color: var(--ink-muted); border-bottom: 1px dotted var(--border); }
+
+@media (max-width: 600px) {
+  .shell { padding: 20px 16px; }
+  header.hero h1 { font-size: 22px; }
+  .card .card-value { font-size: 24px; }
+}
+@media print {
+  .shell { padding: 0; }
+  body { background: white; }
+  .card { box-shadow: none; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<header class="hero">
+  <div class="eyebrow">RESEARCH WIKI</div>
+  <h1>Diffusion 与 Video Generation 研究综述</h1>
+  <p class="subtitle">从生成主干、控制机制到可执行研究空白</p>
+  
+  <div class="meta">
+    <span><strong>Source:</strong> <code>research-wiki/SUMMARY.md</code></span>
+    <span><strong>SHA256:</strong> <code>c1e9e399a8b1</code></span>
+    <span><strong>Rendered:</strong> 2026-07-15 04:21 UTC</span>
+    
+  </div>
+</header>
+
+<h1 id="diffusion-与-video-generation-研究综述">Diffusion 与 Video Generation 研究综述</h1>
+<blockquote><p>范围：以 <code>paper-with-code-list.md</code> 的 Diffusion Model、Video Generation 两节为主，结合 <code>paper-reading/</code> 中 15 篇精读文档，并补充截至 2026-07-15 的相邻工作检索。论文节点和原始摘要见 <code>papers/</code>，这里提供面向研究选题的综合视图。</p></blockquote>
+<h2 id="1-主干范式从离散去噪到视频-flow-dit">1. 主干范式：从离散去噪到视频 Flow DiT</h2>
+<ol><li><strong>DDPM / DDIM：生成过程可训练、但采样昂贵。</strong> DDPM 用固定高斯前向链和噪声预测目标建立现代扩散模型基线；DDIM 说明同一训练目标可对应非马尔可夫、少步采样路径。核心遗留问题是步数、似然与感知质量不一致。</li><li><strong>Latent Diffusion：把“感知压缩”和“语义生成”解耦。</strong> Stable Diffusion/LDM 将生成搬到连续 latent，显著降低高分辨率成本，同时让 cross-attention 成为文本、边缘、深度、布局等条件的统一接口。代价是 VAE 重建上限和细节损失。</li><li><strong>Flow Matching / Rectified Flow：直接学习连续速度场。</strong> Flow Matching 用无需 ODE 仿真的向量场回归训练 CNF；SD3 将更直的路径、logit-normal 时间采样和 MM-DiT 组合到大规模图像生成。直线路径降低数值求解难度，但实际轨迹仍可能局部弯曲，且多项架构/数据变化常被一起报告。</li><li><strong>DiT：扩散骨干转向 Transformer。</strong> DiT 让扩散模型获得更清晰的 scaling 路径；PixArt-α证明课程训练和 dense caption 能显著降低训练成本，PixArt-δ再用一致性蒸馏和 DiT-ControlNet 缩短采样、增加结构控制。</li><li><strong>Video DiT / Flow：时空压缩、长序列建模与数据工程共同决定结果。</strong> CogVideoX 以 3D causal VAE、Expert Transformer、3D full attention 和 dense caption 构成系统；Wan2.1 使用更高压缩 causal VAE、14B DiT 和 Rectified Flow，并提供 1.3B 低门槛版本。两者都说明：视频质量不能归因于单一模块。</li></ol>
+<h2 id="2-控制范式从结构残差到多路条件组合">2. 控制范式：从结构残差到多路条件组合</h2>
+<h3 id="21-结构控制与安全接入">2.1 结构控制与安全接入</h3>
+<p>ControlNet 的关键不是某一种条件，而是“冻结主干 + 可训练副本 + zero-init 残差”的安全接入协议。PixArt-δ把该协议迁移到 DiT，但复制多个完整 block 带来接近 50% 的额外参数与计算；RelaCtrl 用 ControlNet Relevance Score 找到前中层的非均匀重要性，并以稀疏层放置和轻量 mixer 把控制开销降到原方案约 15%。当前证据仍主要绑定 PixArt-α，尚不能直接外推到 Flux、SD3 或视频 DiT。</p>
+<h3 id="22-文本与运动">2.2 文本与运动</h3>
+<p>FancyVideo 的诊断是：逐帧重复同一个文本 embedding 会让动词的空间注意区域近乎不动。CTGM 通过帧特异文本条件、跨帧 affinity refinement 和输出时序增强改善动作与一致性。但其证据主要是注意力可视化、消融和结果相关性，尚未用“冻结、置乱、交换”等干预证明 verb attention 是动作的因果中介。</p>
+<h3 id="23-物理布局与多主体">2.3 物理、布局与多主体</h3>
+<ul><li><strong>WISA</strong> 把物理条件拆为文本、定性类别和定量参数，并只在 CogVideoX 末层加入物理模块，体现低开销专用适配；绝对物理一致性仍低，且 29 维 prior 的来源和机制使用方式未充分校准。</li><li><strong>Lay2Story</strong> 通过布局分支和 layout dropout 支持有/无布局故事生成，但对部分、噪声和错误布局的连续可靠性缺乏系统验证。</li><li><strong>MoFu</strong> 用尺度调制和 Fourier Fusion 处理多主体比例与参考顺序，贡献同时包含方法和压力测试 benchmark；其“高维特征近似正交”解释仍属启发式。</li><li><strong>Wan-S2V、LTX-2、MOVA</strong> 把条件扩展到音频或联合音视频；<strong>Wan2.6</strong>进一步走向原生多模态、多镜头叙事。控制问题因此从“能否注入条件”转为“多条件何时冲突、怎样分配容量”。</li></ul>
+<h2 id="3-效率地图四个彼此正交的杠杆">3. 效率地图：四个彼此正交的杠杆</h2>
+<table><thead><tr><th>层次</th><th>代表工作</th><th>主要收益</th><th>尚未解决</th></tr></thead><tbody><tr><td>表示压缩</td><td>LDM、CogVideoX VAE、Wan-VAE</td><td>降低 token 数与显存</td><td>压缩率与运动边界、闪烁、文字细节的内容依赖关系</td></tr><tr><td>路径/步数</td><td>DDIM、FM/RF、PixArt-δ、ChordEdit</td><td>降 NFE、改善数值路径</td><td>图像少步方法如何保持视频时间一致性</td></tr><tr><td>主干注意力</td><td>Qihoo-T2X、Sparse VideoGen、Sparse-vDiT</td><td>稀疏长序列计算</td><td>结构稀疏与样本/时间步动态稀疏如何统一</td></tr><tr><td>条件分支</td><td>RelaCtrl、WISA</td><td>减少控制参数和 FLOPs</td><td>控制预算是否应随样本、层、时间步和频带变化</td></tr></tbody></table>
+<p>近期相邻工作收紧了部分空白：Sparse VideoGen 和 Sparse-vDiT 已系统利用视频 attention 的时空/层头稀疏；USV 进一步联合 token、attention 与去噪步的动态稀疏；DSA 已按帧置信度动态分配自回归视频扩散步数。因此，“泛化的动态加速”不再足够新，研究应聚焦<strong>控制分支的机制与条件遵循误差</strong>，或聚焦<strong>空间外观与时间变化子空间的可证伪差异</strong>。</p>
+<h2 id="4-跨论文共识与矛盾">4. 跨论文共识与矛盾</h2>
+<h3 id="共识">共识</h3>
+<ul><li>dense caption、过滤和专用数据常与架构收益同等重要；PixArt、SD3、CogVideoX、WISA 都支持这一点。</li><li>新条件路径需要安全初始化和冻结主干，zero-init 残差是最稳定的通用接口。</li><li>稀疏全局表示不能独自保留局部细节；Qihoo-T2X 去掉局部 TCM 后显著退化，过度 latent 压缩也有同类问题。</li><li>FID/CLIP/VBench 等单指标无法同时衡量动作、身份、物理、控制遵循与视觉质量，专用失败模式需要专用压力测试。</li></ul>
+<h3 id="尚未解决的矛盾">尚未解决的矛盾</h3>
+<ul><li><strong>动作幅度 vs 主体/纹理稳定：</strong> 更强文本或运动引导可能带来更大动作，也可能破坏身份和局部细节。</li><li><strong>压缩/稀疏 vs 时间边界：</strong> 静态背景冗余很大，但运动边界恰好是最容易闪烁、又最不能被压缩的位置。</li><li><strong>物理一致 vs 创作自由：</strong> 强物理 prior 可能压制幻想、隐喻和故意违背常识的 prompt。</li><li><strong>多条件可组合 vs 条件碰撞：</strong> 残差求和、token 拼接或 Fourier 求和都提供了组合接口，却很少直接测量条件间的梯度、频谱或注意力冲突。</li></ul>
+<h2 id="5-适合继续研究的空白">5. 适合继续研究的空白</h2>
+<p>对应稳定编号见 <code>gap_map.md</code>。优先级最高的是：</p>
+<ol><li><strong>G1：视频控制的层—去噪步—时间频率相关性。</strong> RelaCtrl 只验证图像 DiT 的层相关性；视频条件可能在不同帧、步和频带承担不同功能。</li><li><strong>G2：帧特异文本引导的因果机制。</strong> FancyVideo 证明“有用”，但没有证明 verb attention 的时间变化“导致”运动。</li><li><strong>G3：Flow 视频轨迹的子空间几何。</strong> 现有曲率/自适应采样主要把 latent 视为整体，尚未比较空间外观子空间与时间差分子空间的曲率是否预测不同伪影。</li><li><strong>G4：按样本分配控制分支预算。</strong> 动态主干/采样已有较强先例，但条件遵循误差驱动的控制容量调度仍缺少直接证据。</li><li><strong>G5：多条件碰撞的可测量诊断。</strong> 多条件组合方法很多，统一、可干预的冲突量化仍少。</li></ol>
+<h2 id="6-来源边界">6. 来源边界</h2>
+<ul><li>本地清单同时包含正式论文、技术报告和厂商博客；综述没有把列表归类直接等同于算法家族。</li><li>SD 1.x/SD 2、Wan2.1/Wan2.2、LTX-2/LTX-2.3 等共享同一论文，知识库按 arXiv ID 去重。</li><li>截止日期后的工作未覆盖；2026 年条目的版本、代码和同行评审状态可能继续变化。</li></ul>
+<h2 id="7-近期相邻工作用于新颖性边界">7. 近期相邻工作（用于新颖性边界）</h2>
+<ul><li><a href="https://arxiv.org/abs/2502.01776">Sparse VideoGen</a>：训练免费、在线识别时空稀疏 attention head。</li><li><a href="https://arxiv.org/abs/2506.03065">Sparse-vDiT</a>：按层/头搜索稀疏 pattern 并做硬件感知加速。</li><li><a href="https://arxiv.org/abs/2512.05754">USV</a>：联合 attention、token merge 与去噪步的动态稀疏。</li><li><a href="https://arxiv.org/abs/2410.03456">Dynamic Diffusion Transformer</a>：图像 DiT 的时间步动态宽度和空间动态 token。</li><li><a href="https://arxiv.org/abs/2606.04432">DSA</a>：按帧置信度动态分配自回归视频扩散步数。</li><li><a href="https://arxiv.org/abs/2602.10095">Causality in Video Diffusers is Separable from Denoising</a>：探测层/步冗余并分离因果时序推理与逐帧渲染。</li><li><a href="https://arxiv.org/abs/2606.22394">Curvature-Adaptive Consistency Flow Matching</a>：用曲率自适应优化图像一致性蒸馏轨迹，构成视频曲率方向的重要近邻。</li><li><a href="https://arxiv.org/abs/2504.12027">Understanding Attention Mechanism in Video Diffusion Models</a>：对视频扩散的空间/时间 attention 做信息论扰动分析，并用于视频增强和编辑。</li><li><a href="https://arxiv.org/abs/2604.20936">AttentionBender</a>：大规模操纵 Video DiT cross-attention，显示其表征高度纠缠。</li><li><a href="https://arxiv.org/abs/2603.17671">Few-Step Diffusion Sampling Through Instance-Aware Discretizations</a>：学习按实例分配时间离散，并已在 video flow matching model 上验证。</li><li><a href="https://arxiv.org/abs/2601.03665">PhysVideoGenerator</a>：从噪声 latent 预测 V-JEPA 物理 token 并注入 temporal attention，验证联合训练可行性。</li></ul>
+
+<footer class="aris-footer">
+  Generated by <a href="https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep/blob/main/skills/render-html/SKILL.md">ARIS <code>/render-html</code></a> ·
+  source <code>research-wiki/SUMMARY.md</code> ·
+  SHA256 <code>c1e9e399a8b1</code> ·
+  generated at 2026-07-15 04:21 UTC.
+  Edit the source Markdown / JSON, then re-render.
+</footer>
+
+</div>
+</body>
+</html>

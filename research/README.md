@@ -4,9 +4,8 @@
 
 ## 快速入口
 
-- [Diffusion 与 Video Generation 综述](wiki/SUMMARY.md)
-- [电商视频生成专题](wiki/ECOMMERCE_VIDEO.md)
-- [电商视频生成专题 HTML](wiki/ECOMMERCE_VIDEO.html)
+- [Diffusion 与 Video Generation 综述](wiki/DIFFUSION_VIDEO.md) · [HTML](wiki/DIFFUSION_VIDEO.html)
+- [电商视频生成专题](wiki/ECOMMERCE_VIDEO.md) · [HTML](wiki/ECOMMERCE_VIDEO.html)
 - [通用 Video Generation Idea 报告](reports/diffusion-video/IDEA_REPORT.md)
 - [电商视频 Idea 报告](reports/ecommerce-video/IDEA_REPORT.md)
 - [Verb-Causal 项目](projects/verb-causal/FINAL_PROPOSAL.md)
@@ -20,7 +19,7 @@ research/
 ├── README.md                     # 本导航
 ├── MANIFEST.md                   # 全部研究产物索引
 ├── wiki/                         # 持久知识库
-│   ├── SUMMARY.md                # 总综述
+│   ├── DIFFUSION_VIDEO.md        # Diffusion / Video Generation 综述
 │   ├── ECOMMERCE_VIDEO.md        # 电商视频专题
 │   ├── gap_map.md                # 稳定 Gap 编号
 │   ├── papers/                   # 论文节点

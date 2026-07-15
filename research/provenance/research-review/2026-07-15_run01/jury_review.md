@@ -1,7 +1,7 @@
 # Provisional Jury Trace
 
 **Reviewer type**: same-family subagent, independent of idea-generation shard  
-**Input**: `idea-stage/CANDIDATES.md`, `research-wiki/SUMMARY.md`, `research-wiki/gap_map.md`  
+**Input**: `idea-stage/CANDIDATES.md`, `research/wiki/DIFFUSION_VIDEO.md`, `research/wiki/gap_map.md`  
 **Output status**: advisory; main agent retained decision authority.
 
 ## Ranking

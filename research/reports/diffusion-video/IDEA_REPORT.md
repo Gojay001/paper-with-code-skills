@@ -25,7 +25,7 @@
 - FancyVideo：帧特异文本条件改善运动；WISA：结构化物理条件；MoFu：多主体尺度和参考顺序；Lay2Story：布局可切换故事生成。
 - 效率有四个正交杠杆：latent 压缩、路径/步数、主干 attention、条件分支。Sparse VideoGen、Sparse-vDiT、USV、DSA 与 instance-aware discretization 已使“泛化动态加速”高度拥挤。
 
-完整综述见 `research/wiki/SUMMARY.md`；稳定研究空白见 `research/wiki/gap_map.md`。
+完整综述见 `research/wiki/DIFFUSION_VIDEO.md`；稳定研究空白见 `research/wiki/gap_map.md`。
 
 ## Ranked Ideas
 

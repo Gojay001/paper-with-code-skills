@@ -4,7 +4,9 @@
 
 [![Awesome](https://awesome.re/badge.svg)](https://awesome.re) ![Skills](https://img.shields.io/badge/Cursor-Skills-blue) ![Papers](https://img.shields.io/badge/Deep%20Learning-Papers-green) ![Reading](https://img.shields.io/badge/Paper-Reading-orange)
 
-A repository that turns **paper curation** and **deep paper reading** into reusable Agent Skills for **Cursor**, **Claude Code**, and **Codex**. It maintains a categorized paper-with-code list and can turn any paper into a triple-column annotated reading HTML — closing the loop from collect → organize → read deeply.
+A repository that turns **paper curation**, **deep paper reading**, and **automated academic research** into reusable Agent Skills for **Cursor**, **Claude Code**, and **Codex**.
+
+Beyond the local paper-list / reading skills, this repo vendors the full [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) skill collection (`skills/aris/`) so an agent can run the research lifecycle end-to-end: literature survey → research wiki → idea discovery → refine / experiment plan → review loops → paper writing. Artifacts from those runs land under [`research/`](research/).
 
 The skills are **domain-agnostic**: they work for any research field. The categories shipped in [`paper-with-code-list.md`](paper-with-code-list.md) merely reflect the author's own directions and are only a starting point — **you define your own taxonomy** (see [Paper List & Custom Categories](#paper-list--custom-categories)).
 
@@ -14,6 +16,7 @@ The skills are **domain-agnostic**: they work for any research field. The catego
 |------------|-------------|--------|
 | **Paper curation** | Given a paper alias or hints, search for full title, arXiv link, venue/year, official code, and framework; write into the list by category and sort by arXiv ID | Table rows in [`paper-with-code-list.md`](paper-with-code-list.md) |
 | **Deep reading** | Given a paper (link or list row), produce triple-column HTML (original · Chinese translation · analysis) with Feynman summary, structured Q&A, deep-dive, and logic diagrams | `paper-reading/{slug}.html` |
+| **Automated research (ARIS)** | Drive literature ingest, research wiki, idea discovery, proposal refine, experiment planning, review, and paper pipelines via ARIS skills | Wiki / reports / projects under [`research/`](research/) |
 
 The repository's own capabilities are implemented as [Agent Skills](https://agentskills.io/specification) under `skills/`. It also vendors the full [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) skill collection as the single `skills/aris/` submodule. Flat, per-skill symlinks let each tool discover both the local and ARIS skills:
 
@@ -44,6 +47,7 @@ paper-with-code-skills/
 │   │   ├── template.html           # HTML skeleton (KaTeX, highlights, sticky nav)
 │   │   └── examples.md             # DDPM example metadata and commands
 │   └── aris/                       # Git submodule; upstream ARIS repository
+├── research/                       # ARIS automated-research artifacts (wiki / reports / projects)
 ├── scripts/sync-skill-links.sh     # Rebuild flat discovery links after ARIS updates
 ├── .cursor/skills/                 # Generated per-skill links (Cursor)
 ├── .claude/skills/                 # Generated per-skill links (Claude Code)

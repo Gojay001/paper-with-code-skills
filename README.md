@@ -15,13 +15,13 @@ The skills are **domain-agnostic**: they work for any research field. The catego
 | **Paper curation** | Given a paper alias or hints, search for full title, arXiv link, venue/year, official code, and framework; write into the list by category and sort by arXiv ID | Table rows in [`paper-with-code-list.md`](paper-with-code-list.md) |
 | **Deep reading** | Given a paper (link or list row), produce triple-column HTML (original · Chinese translation · analysis) with Feynman summary, structured Q&A, deep-dive, and logic diagrams | `paper-reading/{slug}.html` |
 
-Both capabilities are implemented as [Agent Skills](https://agentskills.io/specification) under `skills/` (canonical source). Symlinks let each tool discover them from its own path:
+The repository's own capabilities are implemented as [Agent Skills](https://agentskills.io/specification) under `skills/`. It also vendors the full [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) skill collection as the single `skills/aris/` submodule. Flat, per-skill symlinks let each tool discover both the local and ARIS skills:
 
 | Tool | Discovery path |
 |------|----------------|
-| **Cursor** | `.cursor/skills/` → `skills/` |
-| **Claude Code** | `.claude/skills/` → `skills/` |
-| **Codex** | `.agents/skills/` → `skills/` |
+| **Cursor** | `.cursor/skills/<name>` → local skill or `skills/aris/skills/<name>` |
+| **Claude Code** | `.claude/skills/<name>` → local skill or `skills/aris/skills/<name>` |
+| **Codex** | `.agents/skills/<name>` → local skill or ARIS's `skills-codex/<name>` mirror |
 
 Describe what you want in natural language; the matching skill is loaded automatically.
 
@@ -35,24 +35,41 @@ paper-with-code-skills/
 ├── paper-reading/                  # Deep-reading HTML output
 │   ├── ddpm.html                   # DDPM triple-column example
 │   └── assets/{slug}/              # Images per reading
-├── skills/                         # Canonical skill source (edit here)
+├── skills/                         # Local skills + one external collection
 │   ├── add-paper-to-list/          # Skill 1: add papers to the list
 │   │   ├── SKILL.md                # Workflow, sources, table format, sorting rules
 │   │   └── categories.md           # User phrases ↔ list sections ↔ anchors
-│   └── paper-logic-reading/        # Skill 2: triple-column deep reading
-│       ├── SKILL.md                # Workflow, fidelity rules, deep analysis
-│       ├── template.html           # HTML skeleton (KaTeX, highlights, sticky nav)
-│       └── examples.md             # DDPM example metadata and commands
-├── .cursor/skills/                 # → skills/ (Cursor)
-├── .claude/skills/                 # → skills/ (Claude Code)
-└── .agents/skills/                 # → skills/ (Codex)
+│   ├── paper-logic-reading/        # Skill 2: triple-column deep reading
+│   │   ├── SKILL.md                # Workflow, fidelity rules, deep analysis
+│   │   ├── template.html           # HTML skeleton (KaTeX, highlights, sticky nav)
+│   │   └── examples.md             # DDPM example metadata and commands
+│   └── aris/                       # Git submodule; upstream ARIS repository
+├── scripts/sync-skill-links.sh     # Rebuild flat discovery links after ARIS updates
+├── .cursor/skills/                 # Generated per-skill links (Cursor)
+├── .claude/skills/                 # Generated per-skill links (Claude Code)
+└── .agents/skills/                 # Generated per-skill links (Codex mirror)
 ```
 
 ## Usage
 
-No scripts to run manually — open this repo in Cursor, Claude Code, or Codex and describe what you want; the matching skill loads and runs.
+Clone recursively, or initialize the submodule after a normal clone:
 
-> **Note:** After cloning, symlinks should work on macOS/Linux. If a tool does not see skills, restart the agent session. On Windows without symlink support, copy or link `skills/` manually to the tool’s discovery path above.
+```bash
+git clone --recurse-submodules <repo-url>
+# Existing clone:
+git submodule update --init --recursive
+```
+
+Then open this repo in Cursor, Claude Code, or Codex and describe what you want; the matching local or ARIS skill loads automatically.
+
+The discovery links are committed as relative symlinks. After updating ARIS to a revision that adds or removes skills, rebuild them with:
+
+```bash
+git submodule update --remote skills/aris
+scripts/sync-skill-links.sh
+```
+
+> **Note:** After submodule initialization, symlinks work directly on macOS/Linux. If a tool does not see skills, restart the agent session. Windows checkouts need Git symlink support or equivalent junctions.
 
 ### 1. Add papers to the list (`add-paper-to-list`)
 

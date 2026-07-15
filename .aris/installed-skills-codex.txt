@@ -1,0 +1,4 @@
+version	1
+repo_root	skills/aris
+project_root	.
+packages	skills-codex

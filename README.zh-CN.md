@@ -15,13 +15,13 @@
 | **论文整理** | 给定论文简称/线索，自动检索全称、arXiv 链接、会议年份、官方代码与框架，按分类写入清单并按 arXiv 编号排序 | [`paper-with-code-list.md`](paper-with-code-list.md) 中的表格行 |
 | **论文精读** | 给定论文（链接或清单中的行），生成「原文 · 中文翻译 · 解析」三栏批注 HTML，含费曼速读、结构化十问、深挖追问与逻辑图 | `paper-reading/{slug}.html` |
 
-两个能力以 [Agent Skill](https://agentskills.io/specification) 形式实现，源码放在 `skills/`（唯一维护位置）。各工具通过符号链接自动发现：
+仓库自身能力以 [Agent Skill](https://agentskills.io/specification) 形式放在 `skills/` 中；同时将完整的 [ARIS](https://github.com/wanshuiyin/Auto-claude-code-research-in-sleep) skill 集合作为唯一的 `skills/aris/` submodule 引入。各工具通过逐 skill 的扁平符号链接，同时发现本地与 ARIS skills：
 
 | 工具 | 发现路径 |
 |------|----------|
-| **Cursor** | `.cursor/skills/` → `skills/` |
-| **Claude Code** | `.claude/skills/` → `skills/` |
-| **Codex** | `.agents/skills/` → `skills/` |
+| **Cursor** | `.cursor/skills/<name>` → 本地 skill 或 `skills/aris/skills/<name>` |
+| **Claude Code** | `.claude/skills/<name>` → 本地 skill 或 `skills/aris/skills/<name>` |
+| **Codex** | `.agents/skills/<name>` → 本地 skill 或 ARIS 的 `skills-codex/<name>` 镜像 |
 
 用自然语言描述需求即可，对应 Skill 会被自动加载。
 
@@ -35,24 +35,41 @@ paper-with-code-skills/
 ├── paper-reading/                  # 精读 HTML 输出目录
 │   ├── ddpm.html                   # DDPM 三栏精读示例
 │   └── assets/{slug}/              # 各篇精读用到的图片资源
-├── skills/                         # Skill 源码（在此编辑）
+├── skills/                         # 本地 skills + 一个外部集合
 │   ├── add-paper-to-list/          # Skill 1：整理论文进清单
 │   │   ├── SKILL.md                # 工作流、检索来源、表格格式、排序规则
 │   │   └── categories.md           # 用户措辞 ↔ 清单章节 ↔ 锚点 映射表
-│   └── paper-logic-reading/        # Skill 2：论文三栏精读
-│       ├── SKILL.md                # 工作流、保真性铁律、深度解析要求
-│       ├── template.html           # 三栏 HTML 骨架（KaTeX / 五色高亮 / sticky 导航）
-│       └── examples.md             # DDPM 精读示例的元数据与命令
-├── .cursor/skills/                 # → skills/（Cursor）
-├── .claude/skills/                 # → skills/（Claude Code）
-└── .agents/skills/                 # → skills/（Codex）
+│   ├── paper-logic-reading/        # Skill 2：论文三栏精读
+│   │   ├── SKILL.md                # 工作流、保真性铁律、深度解析要求
+│   │   ├── template.html           # 三栏 HTML 骨架（KaTeX / 五色高亮 / sticky 导航）
+│   │   └── examples.md             # DDPM 精读示例的元数据与命令
+│   └── aris/                       # Git submodule；完整 ARIS 上游仓库
+├── scripts/sync-skill-links.sh     # ARIS 更新后重建扁平发现链接
+├── .cursor/skills/                 # 逐 skill 链接（Cursor）
+├── .claude/skills/                 # 逐 skill 链接（Claude Code）
+└── .agents/skills/                 # 逐 skill 链接（Codex 镜像）
 ```
 
 ## 用法
 
-无需手动调用脚本——在 Cursor、Claude Code 或 Codex 中打开本仓库，用自然语言描述需求，对应 Skill 会被自动加载并执行。
+推荐递归克隆；普通 clone 后则初始化 submodule：
 
-> **说明：** macOS/Linux 下 clone 后符号链接可直接使用；若工具未识别 Skill，请重启 agent 会话。Windows 若不支持符号链接，需手动将 `skills/` 复制或链接到上表中的发现路径。
+```bash
+git clone --recurse-submodules <repo-url>
+# 已有 clone：
+git submodule update --init --recursive
+```
+
+随后在 Cursor、Claude Code 或 Codex 中打开本仓库，用自然语言描述需求，对应的本地或 ARIS Skill 会被自动加载。
+
+发现入口使用已提交的相对软链接。ARIS 更新后如果新增或删除了 skill，执行：
+
+```bash
+git submodule update --remote skills/aris
+scripts/sync-skill-links.sh
+```
+
+> **说明：** submodule 初始化后，macOS/Linux 下符号链接可直接使用；若工具未识别 Skill，请重启 agent 会话。Windows checkout 需要启用 Git 符号链接或建立等价 junction。
 
 ### 1. 整理论文进清单（`add-paper-to-list`）
 

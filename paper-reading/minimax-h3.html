@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MiniMax-H3 — A General-Purpose Omni-Modal Video Generation Model · 逻辑精读</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+  <style>
+    :root {
+      --navy: #1a2744; --paper: #faf8f5; --thesis: #fff3cd; --concept: #f8d7da;
+      --evidence: #cfe2ff; --counter: #d1e7dd; --method: #e2d9f3;
+      --text: #2c2c2c; --muted: #6c757d; --border: #e8e4df;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'IBM Plex Sans', sans-serif; background: var(--paper); color: var(--text); line-height: 1.6; }
+    .sticky-head { position: sticky; top: 0; z-index: 100; }
+    .top-nav { background: var(--navy); color: #fff; padding: 1rem 2rem; }
+    .top-nav h1 { font-size: 1.25rem; font-weight: 600; }
+    .top-nav h1 a { color: #fff; text-decoration: none; border-bottom: 1px dotted rgba(255,255,255,0.5); }
+    .top-nav h1 a:hover { border-bottom-style: solid; }
+    .top-nav .meta { font-size: 0.85rem; opacity: 0.85; margin-top: 0.25rem; }
+    .legend { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.75rem; font-size: 0.8rem; }
+    .legend span { padding: 0.15rem 0.5rem; border-radius: 3px; }
+    .chapter-nav { background: #fff; border-bottom: 1px solid var(--border); padding: 0.75rem 2rem; overflow-x: auto; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+    .chapter-nav a { color: var(--navy); text-decoration: none; margin-right: 1.25rem; font-size: 0.9rem; font-weight: 500; }
+    .chapter-nav a:hover { text-decoration: underline; }
+    main { max-width: 1680px; margin: 0 auto; padding: 2rem; }
+    .section-title { font-size: 1.5rem; color: var(--navy); margin: 2rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--navy); }
+    .col-labels { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 0.5rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+    .row { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; align-items: start; }
+    .col-original { font-family: 'Lora', serif; font-size: 0.95rem; line-height: 1.75; }
+    .col-original p { margin-bottom: 0.75rem; }
+    .col-translation { font-size: 0.92rem; line-height: 1.75; color: #333; }
+    .col-translation p { margin-bottom: 0.75rem; }
+    .analysis-card { background: #fff; border-left: 4px solid var(--navy); padding: 1rem 1.25rem; border-radius: 0 6px 6px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.06); font-size: 0.9rem; }
+    .analysis-card .tag { display: inline-block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0.5rem; color: var(--navy); }
+    .analysis-card h4 { font-size: 0.85rem; color: var(--muted); margin: 0.75rem 0 0.25rem; }
+    .analysis-card p { margin-bottom: 0.5rem; }
+    .analysis-card.deep { border-left-width: 5px; }
+    .analysis-detail { margin: 0.75rem 0; padding-top: 0.5rem; border-top: 1px dashed var(--border); }
+    .analysis-detail:first-of-type { border-top: none; }
+    .exp-detail { list-style: none; margin: 0.5rem 0; }
+    .exp-detail li { margin-bottom: 0.4rem; }
+    .exp-detail li strong { color: var(--navy); }
+    .exp-table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.82rem; }
+    .exp-table th, .exp-table td { border: 1px solid var(--border); padding: 0.35rem 0.5rem; text-align: left; }
+    .exp-table th { background: var(--paper); color: var(--navy); font-weight: 600; }
+    .exp-table tr.is-ours { background: var(--evidence); }
+    .exp-table tr.is-ours td { font-weight: 600; }
+    .notation { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.85rem; background: #fff; }
+    .notation th, .notation td { border: 1px solid var(--border); padding: 0.4rem 0.6rem; text-align: left; }
+    .notation th { background: var(--paper); color: var(--navy); font-weight: 600; }
+    .notation td:first-child { width: 22%; white-space: nowrap; }
+    .diagram { margin: 0.75rem 0; }
+    .diagram img, .diagram svg { max-width: 100%; height: auto; display: block; border: 1px solid var(--border); border-radius: 4px; background: #fff; }
+    .diagram figcaption, .figure-row figcaption { font-size: 0.78rem; color: var(--muted); margin-top: 0.35rem; }
+    .figure-row { margin: 1.5rem 0; padding: 1rem; background: #fff; border: 1px solid var(--border); border-radius: 8px; }
+    .figure-row figure { margin: 0; text-align: center; }
+    .figure-row img, .figure-row svg { max-width: 100%; height: auto; }
+    .mermaid { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem; margin: 0.75rem 0; }
+    .hl-thesis { background: var(--thesis); padding: 0 2px; }
+    .hl-concept { background: var(--concept); padding: 0 2px; }
+    .hl-evidence { background: var(--evidence); padding: 0 2px; }
+    .hl-counter { background: var(--counter); padding: 0 2px; }
+    .hl-method { background: var(--method); padding: 0 2px; }
+    .summary { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 2rem; margin-top: 3rem; }
+    .summary h2 { color: var(--navy); margin-bottom: 1rem; }
+    .summary .skeleton { font-family: 'IBM Plex Sans', monospace; background: var(--paper); padding: 1rem; border-radius: 4px; margin: 1rem 0; }
+    .summary .strength, .summary .weakness { padding: 0.75rem 1rem; border-radius: 4px; margin: 0.5rem 0; }
+    .summary .strength { background: var(--counter); }
+    .summary .weakness { background: var(--concept); }
+    .feynman { background: #fff; border: 1px solid var(--border); border-left: 5px solid #0d9488; border-radius: 0 8px 8px 0; padding: 1.25rem 1.5rem; margin: 1.5rem 0 2rem; }
+    .feynman h2 { color: #0d9488; font-size: 1.15rem; margin-bottom: 0.35rem; }
+    .feynman .tldr-meta { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.6rem; }
+    .feynman p { font-size: 0.95rem; line-height: 1.85; margin-bottom: 0.6rem; }
+    .faq details { background: #fff; border: 1px solid var(--border); border-radius: 6px; margin: 0.5rem 0; }
+    .faq details[open] { box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .faq summary { cursor: pointer; font-weight: 600; color: var(--navy); padding: 0.7rem 0.9rem; list-style: none; font-size: 0.92rem; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::before { content: '▸'; color: #0d9488; margin-right: 0.5rem; }
+    .faq details[open] summary::before { content: '▾'; }
+    .faq .answer { padding: 0 0.9rem 0.85rem 1.8rem; font-size: 0.9rem; line-height: 1.8; color: #333; }
+    .deepdive .block { margin: 0.9rem 0; padding: 0.85rem 1.1rem; border-radius: 4px; background: var(--paper); border-left: 3px solid #6f42c1; }
+    .deepdive .block.crit { border-left-color: #dc3545; background: #fdf0f1; }
+    .deepdive .block h4 { color: var(--navy); margin-bottom: 0.3rem; }
+    .deepdive .block ul { margin: 0.3rem 0 0 1.1rem; }
+    .deepdive .block li { margin-bottom: 0.3rem; font-size: 0.9rem; }
+    .code-section { background:#fff; border:1px solid var(--border); border-radius:8px; padding:1.5rem 1.75rem; margin:2rem 0; }
+    .code-section h3 { color:var(--navy); font-size:1.05rem; margin:1.5rem 0 0.75rem; }
+    .code-section h3:first-of-type { margin-top:0; }
+    .code-section p, .code-section li { font-size:0.9rem; line-height:1.75; margin-bottom:0.5rem; }
+    .code-section ul { margin:0.5rem 0 0.75rem 1.25rem; }
+    .code-block { font-family:'IBM Plex Mono','IBM Plex Sans',monospace; font-size:0.78rem; line-height:1.65; background:#1e293b; color:#e2e8f0; padding:1rem 1.15rem; border-radius:6px; overflow-x:auto; margin:0.75rem 0; white-space:pre; tab-size:2; }
+    .code-block .cm { color:#94a3b8; font-style:italic; }
+    .code-block .kw { color:#7dd3fc; }
+    .code-block .fn { color:#fde68a; }
+    .code-block .str { color:#86efac; }
+    .code-note { font-size:0.82rem; color:var(--muted); margin:0.35rem 0 1rem; padding-left:0.75rem; border-left:3px solid #0d9488; }
+    .code-map { width:100%; border-collapse:collapse; margin:0.75rem 0; font-size:0.82rem; }
+    .code-map th, .code-map td { border:1px solid var(--border); padding:0.4rem 0.55rem; text-align:left; vertical-align:top; }
+    .code-map th { background:var(--paper); color:var(--navy); font-weight:600; }
+    .code-map code { font-size:0.78rem; background:var(--paper); padding:0.1rem 0.3rem; border-radius:3px; }
+    /* 可点击放大 */
+    .diagram img, .diagram svg, .figure-row img, .figure-row svg { cursor: zoom-in; transition: box-shadow .15s; }
+    .diagram img:hover, .diagram svg:hover, .figure-row img:hover, .figure-row svg:hover { box-shadow: 0 0 0 2px #0d9488; }
+    #lightbox { position: fixed; inset: 0; background: rgba(10,12,20,0.92); display: none; align-items: center; justify-content: center; z-index: 1000; cursor: zoom-out; padding: 3vh 3vw; }
+    #lightbox.open { display: flex; }
+    #lightbox .lb-content { display: flex; align-items: center; justify-content: center; }
+    #lightbox .lb-content img, #lightbox .lb-content svg { display: block; background: #fff; border-radius: 6px; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
+    #lightbox .lb-close { position: fixed; top: 1rem; right: 1.5rem; color: #fff; font-size: 2rem; line-height: 1; opacity: 0.8; }
+    #lightbox .lb-cap { position: fixed; bottom: 1.2rem; left: 0; right: 0; text-align: center; color: #e8e4df; font-size: 0.8rem; padding: 0 2rem; }
+    @media (max-width: 1100px) {
+      .col-labels { display: none; }
+      .row { grid-template-columns: 1fr; }
+      .row > div { position: relative; }
+      .col-original::before { content: '原文'; display:block; font-size:0.7rem; font-weight:600; text-transform:uppercase; color:var(--muted); margin-bottom:0.35rem; }
+      .col-translation::before { content: '翻译'; display:block; font-size:0.7rem; font-weight:600; text-transform:uppercase; color:var(--muted); margin-bottom:0.35rem; }
+      .col-analysis::before { content: '解析'; display:block; font-size:0.7rem; font-weight:600; text-transform:uppercase; color:var(--muted); margin-bottom:0.35rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="sticky-head">
+    <header class="top-nav">
+      <h1><a href="https://github.com/MiniMax-AI/MiniMax-H3" target="_blank" rel="noopener">MiniMax-H3 — A General-Purpose Omni-Modal Video Generation Model</a></h1>
+      <div class="meta">DeepLearning-Paper-with-Code · Video Generation · MiniMax(2026)</div>
+      <div class="legend">
+        <span class="hl-thesis">核心论点</span>
+        <span class="hl-concept">关键概念</span>
+        <span class="hl-evidence">实证证据</span>
+        <span class="hl-counter">让步/反驳</span>
+        <span class="hl-method">方法论</span>
+      </div>
+    </header>
+    <nav class="chapter-nav">
+      <a href="#feynman">速读</a>
+      <a href="#overview-sys">系统总览</a>
+      <a href="#context-ir">Context-IR</a>
+      <a href="#h3-base">H3-Base</a>
+      <a href="#vae">VAE</a>
+      <a href="#omni-transformer">Omni-Transformer</a>
+      <a href="#regenerate-2k">Regenerate-2K</a>
+      <a href="#code">代码</a>
+      <a href="#deploy">部署</a>
+      <a href="#notation">符号</a>
+      <a href="#overview">总览</a>
+      <a href="#faq">十问</a>
+      <a href="#deepdive">深挖</a>
+    </nav>
+  </div>
+
+  <main>
+
+    <section class="feynman" id="feynman">
+      <h2>🎮 费曼一分钟（通俗速读）</h2>
+      <div class="tldr-meta">通俗速读 · 先建立模糊认知，再读正文</div>
+      <p>把 MiniMax-H3 想象成一个「全能导演」：你随手丢给它文字、几张图、几段参考视频和几段音频，它先派一个「编剧助理」（H3-Context-IR）把这堆杂乱素材读懂、理顺时序与关系，写成一份结构化的分镜脚本（Context 中间表示）；然后「导演本体」（H3-Base，330 亿参数的单流 Transformer）照着脚本一次性把画面和立体声一起拍出来——注意是画面和声音<b>联合生成</b>，而不是先出画面再配音；最后如果你要更高清，它不另请「放大专家」，而是把 768p 成片连同原始素材塞回自己脑子里<b>重画一遍</b>成 2K（H3-Regenerate-2K）。</p>
+      <p>技术上的三个关键词：① <b>Omni-Modal 全模态</b>——文本/图像/视频/音频统一打包成一条序列喂进同一个 Transformer；② <b>联合视音频 latent</b>——视觉走 H3-VisualVAE（空间压 16×、时间压 4×、24 通道 f16t4d24），音频走 H3-AudioVAE（32kHz→40Hz、左右声道独立），用三维 MM-RoPE $(t,h,w)$ 标好时空位置；③ <b>in-context 再生成</b>——2K 不是超分模块，而是让模型「重新生成」以复原小字、细节。输出可达 4–15 秒、24fps、32kHz 立体声、支持 21:9~9:16 多比例与 11 种语言配音。</p>
+    </section>
+
+    <h2 class="section-title" id="overview-sys">1. System Overview（系统总览）</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>MiniMax H3 is a <span class="hl-thesis">general-purpose, omni-modal generative system</span>. It supports unified understanding of multimodal contexts composed of text, images, video, and audio, and can generate video with <span class="hl-concept">native stereo audio</span> at resolutions up to 2K and durations of up to 15 seconds.</p>
+        <p>Thanks to its <span class="hl-method">task-generalization-oriented system design</span>, H3 already possesses broad multimodal context understanding and generation capabilities at the pre-training stage, enabling outstanding performance in following complex multimodal instructions.</p>
+      </div>
+      <div class="col-translation">
+        <p>MiniMax H3 是一个通用的全模态生成系统。它支持对由文本、图像、视频与音频组成的多模态上下文进行统一理解，并能生成带原生立体声音频的视频，分辨率最高 2K、时长最长 15 秒。</p>
+        <p>得益于面向任务泛化的系统设计，H3 在预训练阶段就已具备广泛的多模态上下文理解与生成能力，因而在遵循复杂多模态指令上表现出色。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#1a2744;">
+          <span class="tag">定位</span>
+          <h4>一句话主张</h4>
+          <p>H3 不是「文生视频」的单一任务模型，而是把 t2v / i2v / 首尾帧 / 参考生成 / 视频编辑 / 配音统一到<b>一个全模态生成系统</b>——「任务泛化」是它区别于 Wan/CogVideoX 等专用管线的核心卖点。</p>
+          <h4>「原生立体声」的分量</h4>
+          <p>native stereo audio 意味着音画在同一模型里<b>联合生成</b>（而非先出视频再 TTS 配音），这是 H3 在架构上把 AudioVAE 与 VisualVAE 并入同一 Transformer 序列的直接后果（见 §4）。</p>
+          <h4>「预训练即具备」的含义</h4>
+          <p>强调能力来自 pre-training 而非逐任务微调 → 泛化性来自统一序列建模与大规模多模态预训练，而非任务专用头。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <p>H3 supports the following I/O: output duration <span class="hl-evidence">4–15 seconds</span>; aspect ratios including 21:9, 16:9, 4:3, 1:1, 3:4, 9:16; resolution with shorter side 768px by default (<span class="hl-concept">2K via H3-Regenerate-2K</span>); frame rate 24 FPS; audio 32 kHz stereo; stable dialogue support for 11 languages (Arabic, Chinese, English, French, German, Italian, Japanese, Korean, Portuguese, Russian, Spanish).</p>
+        <p>Two model variants: <span class="hl-method">H3-Base-FL2VA</span> (first-and-last-frame mode; zero/one/two input images → t2v / first- or last-frame-to-video / first-and-last-frame-to-video) and <span class="hl-method">H3-Base-Ref2VA</span> (omni-reference mode; ≤9 images, ≤3 video clips, ≤3 audio clips, each clip 2–15s, total ≤15s, ≤12 files across all types).</p>
+      </div>
+      <div class="col-translation">
+        <p>H3 的输入输出规格：输出时长 4–15 秒；宽高比支持 21:9、16:9、4:3、1:1、3:4、9:16 等；分辨率默认短边 768px（借助 H3-Regenerate-2K 可达 2K）；帧率 24 FPS；音频 32 kHz 立体声；稳定支持 11 种对白语言（阿拉伯语、中文、英语、法语、德语、意大利语、日语、韩语、葡萄牙语、俄语、西班牙语）。</p>
+        <p>两个模型变体：H3-Base-FL2VA（首尾帧模式；输入 0/1/2 张图 → 文生视频 / 首帧或尾帧生视频 / 首尾帧生视频）与 H3-Base-Ref2VA（全参考模式；≤9 张图、≤3 段视频、≤3 段音频，每段 2–15 秒，总计 ≤15 秒，所有类型合计 ≤12 个文件）。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#0d6efd;">
+          <span class="tag">规格解读</span>
+          <h4>两个 checkpoint 的分工</h4>
+          <p>FL2VA 用「首帧/尾帧」作为强空间约束，覆盖最常见的 t2v 与图生视频；Ref2VA 走「多模态参考」路线，支持把已有主体/音色/视频作为参照做编辑与再创作——这解释了官方示例里「换脸说话 + 复用背景音乐」这类视频编辑能力。</p>
+          <h4>约束的工程含义</h4>
+          <p>「总时长 ≤15s、文件 ≤12」是序列长度上限的外化：参考素材越多，打包进 Transformer 的 token 越长，故用文件数与时长双重封顶来控制显存与算力。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="figure-row">
+      <figure>
+        <img src="assets/minimax-h3/fig1.png" alt="H3 系统总览">
+        <figcaption>图 1：H3 系统总览（原文 assets/overview.png）——三模块 H3-Context-IR → H3-Base → H3-Regenerate-2K 的端到端流程。点击放大。</figcaption>
+      </figure>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <p>The complete H3 system consists of three modules: <span class="hl-method">H3-Context-IR</span> deeply understands and refines the input multimodal instructions and converts them into a Context Intermediate Representation for generation (critical to output quality; strongly recommended to include). <span class="hl-method">H3-Base</span> generates audio and video from the H3-Context-IR output at 768p. <span class="hl-method">H3-Regenerate-2K</span> feeds the 768p result together with the original context back into H3 to regenerate the output at 2K, leveraging both H3's generative capabilities and the rich information in the original context.</p>
+      </div>
+      <div class="col-translation">
+        <p>完整 H3 系统由三个模块组成：H3-Context-IR 深度理解并精炼输入的多模态指令，将其转换为供生成使用的「上下文中间表示」（对最终输出质量至关重要，强烈建议纳入流程）。H3-Base 依据 H3-Context-IR 的输出生成音视频，分辨率 768p。H3-Regenerate-2K 把 768p 结果连同原始上下文再喂回 H3，以 2K 重新生成，同时利用 H3 的生成能力与原始上下文中的丰富信息。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color:#6f42c1;">
+          <span class="tag">核心架构</span>
+          <div class="analysis-detail"><h4>三模块流水线（自绘）</h4>
+            <div class="diagram">
+              <pre class="mermaid">flowchart LR
+  U["多模态输入<br/>文本/图/视频/音频"] --> IR["H3-Context-IR<br/>理解·编排·补全<br/>(闭源, 提供 API)"]
+  IR --> CIR["Context 中间表示"]
+  CIR --> B["H3-Base 33B<br/>联合生成 视频+音频"]
+  B --> V["768p 音视频"]
+  V --> R["H3-Regenerate-2K<br/>in-context 再生成<br/>(闭源, 提供 API)"]
+  CIR -.原始上下文.-> R
+  R --> O["2K 音视频"]</pre>
+              <figcaption>H3 三模块端到端流程（自绘，依据官方 System Overview）。虚线：原始上下文被再次利用于 2K 再生成。</figcaption>
+            </div>
+          </div>
+          <div class="analysis-detail"><h4>开源边界</h4>
+            <p>仅 <b>H3-Base 开源</b>（两个 checkpoint 权重）；Context-IR 与 Regenerate-2K 依赖多阶段工作流与托管服务，<b>未开源</b>，官方以 API 复现其行为。这意味着本地部署只能验证 768p；完整 2K 质量需 API 组合（见 §部署）。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="context-ir">2. H3-Context-IR（上下文中间表示）</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>H3-Context-IR is responsible for <span class="hl-method">deeply understanding and refining</span> the multimodal instructions provided by the user, and <span class="hl-concept">serializing</span> them into a Context Intermediate Representation that H3-Base consumes for generation.</p>
+        <p>This module is <span class="hl-evidence">critical to the final output quality</span> and is strongly recommended in the pipeline. It is not open-sourced; instead, an API and prompting guidance are provided to reproduce its behavior.</p>
+      </div>
+      <div class="col-translation">
+        <p>H3-Context-IR 负责深度理解并精炼用户提供的多模态指令，并将其序列化为一个「上下文中间表示」，供 H3-Base 消费用于生成。</p>
+        <p>该模块对最终输出质量至关重要，强烈建议纳入流程。它未开源；官方转而提供 API 与 prompting 指导来复现其行为。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#fd7e14;">
+          <span class="tag">中间表示</span>
+          <h4>为什么要「IR」这一层？</h4>
+          <p>类比编译器：用户的自然语言 + 杂乱素材是「源代码」，直接喂给生成模型效果不稳。Context-IR 相当于<b>前端 + 优化器</b>，把意图解析、素材编排、缺失信息补全后，产出结构化「字节码」（Context 中间表示），让 H3-Base 这个「后端」专心做生成。</p>
+          <h4>为何闭源却给 API</h4>
+          <p>Context-IR 往往是<b>多阶段编排 + 规则/模型混合</b>的工程系统，难以打包成单一权重；官方以 API + prompting guidance 让社区在本地 H3-Base 前接入等效前处理。</p>
+          <h4>省略它的代价</h4>
+          <p>可以跳过（直接给 H3-Base 原始 prompt），但官方明确「critical to quality」——省略后指令遵循与画质会明显下降。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="h3-base">3. H3-Base 架构（联合视音频生成）</h2>
+    <div class="figure-row">
+      <figure>
+        <img src="assets/minimax-h3/fig2.png" alt="H3-Base 架构">
+        <figcaption>图 2：H3-Base 架构（原文 assets/full-arch.png）——各模态经专属 encoder/VAE 编码 → packed 多模态序列 → MM-RoPE → H3-Omni-Transformer 联合预测视频+音频 latent → 各自解码。点击放大。</figcaption>
+      </figure>
+    </div>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>In H3-Base, each modality is encoded by its corresponding encoder or VAE into latents, which are then <span class="hl-concept">packed into a single multimodal sequence</span>. Positional information is injected via <span class="hl-method">RoPE</span>, and the H3-Omni-Transformer <span class="hl-thesis">jointly predicts the video and audio latents</span>. The predicted latents are decoded back into video and audio by the respective decoders.</p>
+        <p>The video latents are produced by <span class="hl-method">H3-VisualVAE</span>, audio latents by <span class="hl-method">H3-AudioVAE</span>, and text/reference conditions by <span class="hl-method">H3-Encoder</span> (a vision-language model). All are concatenated as one sequence so that attention operates across modalities uniformly.</p>
+      </div>
+      <div class="col-translation">
+        <p>在 H3-Base 中，每个模态先经其对应的 encoder 或 VAE 编码为 latent，随后被打包成一条统一的多模态序列。位置信息通过 RoPE 注入，H3-Omni-Transformer 联合预测视频与音频 latent。预测出的 latent 再由各自的 decoder 解码回视频与音频。</p>
+        <p>视频 latent 由 H3-VisualVAE 产生，音频 latent 由 H3-AudioVAE 产生，文本/参考条件由 H3-Encoder（一个视觉-语言模型）产生。三者拼接为一条序列，使注意力得以在模态间统一运算。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color:#1a2744;">
+          <span class="tag">单流架构</span>
+          <div class="analysis-detail"><h4>「packed 单序列」是关键设计</h4>
+            <p>不同于「双流」（视觉分支 + 文本分支各走各的再交叉），H3 把所有模态 latent <b>拼成一条序列</b>喂给同一个 Transformer——这是 attention 能跨模态自由交互的前提，也是「原生音画同步」的架构根源。</p>
+          </div>
+          <div class="analysis-detail"><h4>三种编码器的分工</h4>
+            <p>H3-Encoder（VLM）负责<b>条件</b>（文本 prompt、参考图语义）；VisualVAE / AudioVAE 负责<b>生成目标</b>（要被去噪/预测的视频、音频 latent）。前者是「读」，后两者是「写」。</p>
+          </div>
+          <div class="analysis-detail"><h4>与 CogVideoX 等的对比</h4>
+            <p>CogVideoX 是「文本 + 视频」双模态、纯视频输出；H3 把音频也拉进同一序列联合预测，故需三维 MM-RoPE 同时给视觉的 $(t,h,w)$ 与音频的时间轴编码位置（见 §5）。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="vae">4. H3-VisualVAE &amp; H3-AudioVAE（双 VAE）</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>H3-VisualVAE is a <span class="hl-method">temporally-causal VAE</span> with configuration <span class="hl-concept">f16t4d24</span>: it downsamples space by 16×, time by 4×, with a 24-channel latent. After a patchify of size 1×2×2 over $(t,h,w)$, the effective spatial downsampling reaches 32× and temporal 4×. A <span class="hl-method">ViT-based decoder</span> is adopted to reduce decoding cost.</p>
+      </div>
+      <div class="col-translation">
+        <p>H3-VisualVAE 是一个时序因果 VAE，配置为 f16t4d24：空间下采样 16×、时间下采样 4×、latent 通道数 24。在 $(t,h,w)$ 上做 1×2×2 的 patchify 之后，有效空间下采样达 32×、时间 4×。解码端采用 ViT 结构以降低解码成本。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color:#198754;">
+          <span class="tag">视觉压缩</span>
+          <div class="analysis-detail"><h4>f16t4d24 逐位拆解</h4>
+            <p><b>f16</b>=空间压缩 16×（H、W 各除 16）；<b>t4</b>=时间压缩 4×（每 4 帧压成 1 个 latent 帧）；<b>d24</b>=latent 通道 24。</p>
+            <div class="math-block">$$\text{视频} (T, H, W, 3)\;\xrightarrow{\text{VAE}}\;\text{latent}\left(\tfrac{T}{4}, \tfrac{H}{16}, \tfrac{W}{16}, 24\right)$$</div>
+          </div>
+          <div class="analysis-detail"><h4>patchify 再压一半</h4>
+            <p>Transformer 入口再做 1×2×2 patch（时间不压、空间再 2×），故<b>进入 attention 的有效空间下采样 = 16×2 = 32×</b>。这一步把序列长度再降 4 倍，是控制 33B 模型显存的关键。</p>
+          </div>
+          <div class="analysis-detail"><h4>「时序因果」的意义</h4>
+            <p>causal 指编码 t 帧时只看 ≤t 的帧，保证可流式/分块编码长视频，避免未来帧泄漏。ViT decoder 则用于摊薄高分辨率解码开销。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-original">
+        <p>H3-AudioVAE encodes 32 kHz stereo audio. The <span class="hl-concept">left and right channels share the same encoder and decoder</span> but are processed independently and then recombined to preserve stereo. It compresses 32 kHz waveforms into a <span class="hl-method">40 Hz latent</span>. Inspired by VA-VAE, its latent space is optimized to align better with the generative transformer.</p>
+      </div>
+      <div class="col-translation">
+        <p>H3-AudioVAE 编码 32 kHz 立体声音频。左右声道共享同一 encoder 与 decoder，但各自独立处理后再重组以保留立体声。它把 32 kHz 波形压缩为 40 Hz 的 latent。受 VA-VAE 启发，其 latent 空间经过优化以更好地对齐生成式 transformer。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#0dcaf0;">
+          <span class="tag">音频压缩</span>
+          <h4>800× 时间压缩</h4>
+          <div class="math-block">$$32000\,\text{Hz}\;\xrightarrow{\text{AudioVAE}}\;40\,\text{Hz latent}\quad(\text{压缩} \approx 800\times)$$</div>
+          <h4>「共享权重、独立处理」的巧思</h4>
+          <p>左右声道用<b>同一套参数</b>（省参数、保证音色一致性），但<b>分别 forward</b>（保留左右差异 → 立体声定位）。既非「合并成单声道」也非「两套独立网络」，是折中方案。</p>
+          <h4>VA-VAE 的作用</h4>
+          <p>借鉴 VA-VAE 让 latent 分布更适合被 Transformer 生成（而非只追求重建 PSNR），降低音频与视觉在同一序列里的建模难度失配。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="omni-transformer">5. H3-Omni-Transformer（联合骨干）</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>The H3-Omni-Transformer is a <span class="hl-thesis">33B dense, single-stream Transformer</span>. Around <span class="hl-evidence">13B parameters reside in the AdaLN branch</span>; because the modulation outputs of AdaLN can be precomputed and cached, they need not be loaded for inference-only deployment.</p>
+        <p>Its attention and FFN blocks have <span class="hl-concept">no modality-specific structure</span>; modality-specific parameters are confined to the I/O layers and the AdaLN branch. Positions are encoded by a <span class="hl-method">3-D MM-RoPE</span> over $(t,h,w)$. Native sparse attention is introduced late in training; the first open-source release ships with full attention only.</p>
+      </div>
+      <div class="col-translation">
+        <p>H3-Omni-Transformer 是一个 33B 的密集、单流 Transformer。约 13B 参数位于 AdaLN 分支；由于 AdaLN 的 modulation 输出可预计算并缓存，纯推理部署时无需加载它们。</p>
+        <p>其 attention 与 FFN 模块没有模态专属结构；模态专属参数仅限于 I/O 层与 AdaLN 分支。位置由三维 MM-RoPE 在 $(t,h,w)$ 上编码。训练末期引入原生稀疏注意力；首个开源版本仅提供 full attention。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color:#dc3545;">
+          <span class="tag">骨干设计</span>
+          <div class="analysis-detail"><h4>33B 里 13B 是「可省」的</h4>
+            <p>AdaLN（自适应 LayerNorm）分支产出的是随时间步/条件变化的 scale &amp; shift。关键洞察：这些 modulation 输出<b>只依赖条件与时间步、与序列内容无关</b>，因此可<b>预计算并缓存</b>。推理时直接查表 → 无需加载这 13B → 实际部署显存约按 20B 算。</p>
+          </div>
+          <div class="analysis-detail"><h4>「单流 + 无模态专属结构」</h4>
+            <p>attention/FFN 对所有模态一视同仁，模态差异只体现在<b>入口 embedding、出口 head、AdaLN</b>。好处：主干可规模化、跨模态知识共享；代价：模态平衡靠数据与 AdaLN 调节。</p>
+          </div>
+          <div class="analysis-detail"><h4>MM-RoPE 三维分解</h4>
+            <div class="math-block">$$\text{RoPE}_{\text{MM}}(p) = \text{RoPE}_t(t)\oplus\text{RoPE}_h(h)\oplus\text{RoPE}_w(w)$$</div>
+            <p>把旋转位置编码沿 $t,h,w$ 三轴分频拼接，使视频 token 的时空坐标、音频 token 的时间坐标都能在同一序列里被一致寻址——这是「音画对齐」在位置编码层的保障。</p>
+          </div>
+          <div class="analysis-detail"><h4>sparse attention 的取舍</h4>
+            <p>训练末期才加 native sparse attention（省长序列算力），但首版开源只给 full attention → 复现更简单、结果更稳，代价是长视频推理更贵。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="regenerate-2k">6. H3-Regenerate-2K（in-context 再生成）</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>H3-Regenerate-2K is <span class="hl-thesis">not a dedicated super-resolution module</span>. Instead, it feeds the 768p output together with the original context back into H3 and <span class="hl-method">regenerates the result in an in-context manner</span> at 2K, leveraging both H3's generative prior and the rich information contained in the original context.</p>
+      </div>
+      <div class="col-translation">
+        <p>H3-Regenerate-2K 并非专用的超分辨率模块。相反，它把 768p 输出连同原始上下文一起再喂回 H3，以 in-context 方式在 2K 分辨率重新生成结果，同时利用 H3 的生成先验与原始上下文所包含的丰富信息。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#6f42c1;">
+          <span class="tag">再生成</span>
+          <h4>「再生成」vs「超分」</h4>
+          <p>传统超分（如 ESRGAN）只从低清像素推高清，无法凭空「造」出正确的小字、纹理。H3-Regenerate-2K 把 768p 结果 + 原始 prompt/参考<b>一起当条件</b>，让模型「重画」一遍——所以它能修复小字、补全细节，而非单纯插值放大。</p>
+          <h4>复用 base model 的价值</h4>
+          <p>无需训练专用超分网络：直接复用 H3-Base 的生成能力（in-context），省参数、保风格一致。代价是需要跑两遍生成 → 2K 更慢更贵。</p>
+          <h4>闭源现状</h4>
+          <p>该模块未开源，官方以 API 提供。本地 SGLang 只能出 768p，2K 需接官方 Regenerate-2K API（见 §部署）。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="code">7. Code — 部署与关键模块对照</h2>
+    <p style="color:#555;margin:-.5rem 0 1rem;">下列伪代码对照官方仓库 <a href="https://github.com/MiniMax-AI/MiniMax-H3">MiniMax-AI/MiniMax-H3</a>，帮助把论文概念落到可运行的调用。</p>
+
+    <div class="code-section">
+      <h3>7.1 diffusers 一键推理（H3-Base 768p）</h3>
+      <p class="code-desc">最简路径：用 <code>ModularPipeline</code> 从 HF 仓库加载自包含权重，传入文本/图像/音频参考即可生成音视频。</p>
+      <pre><code>from diffusers import ModularPipeline
+
+# 仓库自带 model_index.json + processor/tokenizer/text_encoder
+#   + transformer(33B) + visual_vae(f16t4d24) + audio_vae
+pipe = ModularPipeline.from_pretrained("MiniMaxAI/MiniMax-H3")
+
+# FL2VA: 0/1/2 张图 -> t2v / 首帧或尾帧 / 首尾帧
+out = pipe(
+    prompt="a cat DJ scratching vinyl, upbeat music",
+    num_frames=10 * 24,      # 10s @ 24fps
+    aspect_ratio="16:9",
+    height=768,              # 短边默认 768，2K 需 Regenerate-2K
+)
+save_video_with_audio(out.video, out.audio, fps=24, sr=32000)</code></pre>
+      <p class="code-note">要点：视频与音频<b>同一次前向联合输出</b>（out.video + out.audio），对应 §3「packed 单序列联合预测」。</p>
+    </div>
+
+    <div class="code-section">
+      <h3>7.2 SGLang 多卡部署（推理服务）</h3>
+      <p class="code-desc">生产推理用 SGLang，Ulysses 序列并行切长序列；<code>--model-variant</code> 选择 fl2va / ref2va。</p>
+      <pre><code># 4 卡，Ulysses 并行度 4，加载 FL2VA 变体
+python -m sglang.launch_h3 \
+    --model-path MiniMaxAI/MiniMax-H3 \
+    --model-variant fl2va \
+    --num-gpus 4 \
+    --ulysses-degree 4
+# Ref2VA（全参考模式）：--model-variant ref2va
+# 输入约束：<=9 图 / <=3 视频 / <=3 音频，各段 2-15s，总 <=15s，<=12 文件</code></pre>
+      <p class="code-note">推理-only 部署<b>无需加载 ~13B AdaLN 分支</b>（modulation 可缓存），对应 §5 显存优化。</p>
+    </div>
+
+    <div class="code-section">
+      <h3>7.3 H3-VisualVAE 形状对照（f16t4d24 + patch）</h3>
+      <p class="code-desc">把 §4 的压缩率写成张量形状，验证进入 Transformer 的序列长度。</p>
+      <pre><code># 原始视频: (T, H, W, 3)  例如 (240, 768, 1360, 3) = 10s@24fps, 16:9
+# VAE 编码: 空间/16, 时间/4, 通道=24
+lat = visual_vae.encode(video)          # (T/4, H/16, W/16, 24) = (60, 48, 85, 24)
+# Transformer 入口 patchify 1x2x2 (t,h,w): 空间再/2
+tokens = patchify(lat, patch=(1, 2, 2)) # (60, 24, 42, C) -> 有效空间下采样 32x
+seq = tokens.flatten(0, 2)              # 展平为一维视觉 token 序列</code></pre>
+      <p class="code-note">有效空间下采样 = VAE 16× × patch 2× = <b>32×</b>；序列长度直接决定 attention 算力与显存。</p>
+    </div>
+
+    <div class="code-section">
+      <h3>7.4 3-D MM-RoPE（位置编码）</h3>
+      <p class="code-desc">§5 的三维位置编码：沿 t/h/w 三轴分频，拼接成每个 token 的旋转编码。</p>
+      <pre><code>def mm_rope(t, h, w, dim):
+    # dim 按三轴切分，各自做标准 RoPE 后拼接
+    d_t, d_h, d_w = split_dim(dim)               # 例如 dim//2, dim//4, dim//4
+    rope_t = rope_1d(t, d_t)                      # 时间轴（视频帧 / 音频时刻）
+    rope_h = rope_1d(h, d_h)                      # 高度轴
+    rope_w = rope_1d(w, d_w)                      # 宽度轴
+    return concat([rope_t, rope_h, rope_w], dim=-1)
+# 音频 token: 仅 t 轴有效，h=w=0 -> 与视频在同一时间轴上对齐（音画同步）</code></pre>
+      <p class="code-note">关键：视频用 $(t,h,w)$、音频只用 $t$，二者共享同一时间轴 → 位置编码层面保证音画同步。</p>
+    </div>
+
+    <div class="code-section">
+      <h3>7.5 完整 2K 工作流（Base 本地 + IR/2K 走 API）</h3>
+      <p class="code-desc">开源边界的落地：本地只出 768p，Context-IR 与 Regenerate-2K 调官方 API。</p>
+      <pre><code># 1) 前处理：多模态指令 -> Context 中间表示（官方 API，闭源）
+context_ir = h3_context_ir_api(user_prompt, images, videos, audios)
+
+# 2) 本地生成 768p（开源 H3-Base，SGLang/diffusers）
+video_768p, audio = local_h3_base.generate(context_ir)
+
+# 3) 再生成 2K：768p + 原始上下文 一起回喂（官方 API，闭源）
+video_2k = h3_regenerate_2k_api(video_768p, audio, context_ir)</code></pre>
+      <p class="code-note">对应 §1 三模块流水线：中间 H3-Base 可离线复现，两端 IR/2K 依赖托管服务。</p>
+    </div>
+
+    <h2 class="section-title" id="deploy">8. Deployment（部署框架与可复现用例）</h2>
+    <p style="color:#555;margin:-.5rem 0 1rem;">H3-Base 权重为 BF16、CFG-distilled，支持四类框架部署；官方给出三个可直接复现的生成用例。</p>
+    <table class="exp-table">
+      <thead><tr><th>框架</th><th>用途</th><th>关键参数 / 入口</th></tr></thead>
+      <tbody>
+        <tr><td><b>SGLang</b></td><td>生产多卡推理（cookbook）</td><td><code>--num-gpus 4 --ulysses-degree 4 --model-variant fl2va/ref2va</code></td></tr>
+        <tr><td><b>vLLM</b></td><td>高吞吐推理</td><td>加载 HF 式自包含仓库</td></tr>
+        <tr><td><b>diffusers</b></td><td>快速上手 / 单卡</td><td><code>ModularPipeline.from_pretrained("MiniMaxAI/MiniMax-H3")</code></td></tr>
+        <tr><td><b>ComfyUI</b></td><td>可视化工作流</td><td>R2V / T2V template</td></tr>
+      </tbody>
+    </table>
+    <table class="exp-table">
+      <thead><tr><th>可复现用例</th><th>配置</th><th>说明</th></tr></thead>
+      <tbody>
+        <tr><td>T2VA</td><td>10s, 16:9</td><td>纯文本 → 音视频（FL2VA 零图输入）</td></tr>
+        <tr><td>I2VA</td><td>8s, 首帧</td><td>单图作首帧 → 音视频（FL2VA 一图输入）</td></tr>
+        <tr><td>Ref2VA</td><td>5s, 视频+音频参考</td><td>omni-reference：复用参考视频与音色（Ref2VA）</td></tr>
+        <tr><td>Full 2K Workflow</td><td>Base 本地 + API</td><td>本地 SGLang 出 768p + 官方 Context-IR / Regenerate-2K API</td></tr>
+      </tbody>
+    </table>
+
+    <h2 class="section-title" id="notation">9. Notation（符号与术语表）</h2>
+    <table class="notation-table exp-table">
+      <thead><tr><th>符号 / 术语</th><th>含义</th></tr></thead>
+      <tbody>
+        <tr><td><code>f16t4d24</code></td><td>VisualVAE 配置：空间下采样 16×、时间 4×、latent 通道 24</td></tr>
+        <tr><td>patchify 1×2×2</td><td>Transformer 入口在 $(t,h,w)$ 上分块：时间不压、空间再 2× → 有效空间 32×</td></tr>
+        <tr><td>MM-RoPE $(t,h,w)$</td><td>三维多模态旋转位置编码，沿时/高/宽三轴分频拼接</td></tr>
+        <tr><td>AdaLN</td><td>自适应 LayerNorm；H3 中约 13B 参数，modulation 输出可预计算缓存</td></tr>
+        <tr><td>CFG-distilled</td><td>无分类器引导蒸馏：把 CFG 采样蒸进单次前向，推理免跑两遍</td></tr>
+        <tr><td>FL2VA</td><td>First-and-Last-frame to Video+Audio，0/1/2 图输入</td></tr>
+        <tr><td>Ref2VA</td><td>omni-Reference to Video+Audio，多模态参考（≤9图/≤3视频/≤3音频）</td></tr>
+        <tr><td>H3-Context-IR</td><td>上下文中间表示模块（闭源，API）</td></tr>
+        <tr><td>H3-Regenerate-2K</td><td>in-context 再生成到 2K（闭源，API，非超分）</td></tr>
+        <tr><td>Omni-Transformer</td><td>33B 密集单流骨干，联合预测视频+音频 latent</td></tr>
+        <tr><td>native stereo</td><td>音视频在同一模型联合生成的原生立体声</td></tr>
+        <tr><td>Ulysses degree</td><td>SGLang 序列并行度，切分长多模态序列到多卡</td></tr>
+      </tbody>
+    </table>
+
+    <h2 class="section-title" id="overview">10. 全景总览（一张表看懂 H3）</h2>
+    <table class="exp-table">
+      <thead><tr><th>维度</th><th>内容</th></tr></thead>
+      <tbody>
+        <tr><td>系统定位</td><td>通用全模态视频生成系统（t2v/i2v/首尾帧/参考/编辑/配音统一）</td></tr>
+        <tr><td>三模块</td><td>Context-IR（理解编排，闭源）→ H3-Base（768p 生成，开源）→ Regenerate-2K（2K 再生成，闭源）</td></tr>
+        <tr><td>骨干</td><td>H3-Omni-Transformer 33B 密集单流，~13B AdaLN 可缓存，3-D MM-RoPE</td></tr>
+        <tr><td>视觉压缩</td><td>H3-VisualVAE f16t4d24 + patch 1×2×2 → 有效空间 32×、时间 4×</td></tr>
+        <tr><td>音频压缩</td><td>H3-AudioVAE 32kHz→40Hz，左右声道共享权重独立处理（立体声）</td></tr>
+        <tr><td>输出</td><td>4–15s、24fps、32kHz 立体声、21:9~9:16 多比例、11 语言、短边 768（2K 需 Regenerate）</td></tr>
+        <tr><td>权重</td><td>FL2VA / Ref2VA 两个 checkpoint，BF16、CFG-distilled，HF 式自包含仓库</td></tr>
+        <tr><td>部署</td><td>SGLang / vLLM / diffusers / ComfyUI</td></tr>
+        <tr><td>核心创新</td><td>全模态 packed 单序列 + 音画联合 latent 预测 + in-context 再生成 2K</td></tr>
+      </tbody>
+    </table>
+
+    <h2 class="section-title" id="faq">11. 十问十答（FAQ）</h2>
+    <div class="faq">
+      <details open><summary>Q1. H3 和 MiniMax 的语言模型（M1/M2）是一回事吗？</summary>
+        <div class="answer"><p>不是。H3 是<b>全模态视频生成</b>系统（Hailuo 视频），与 MiniMax 的文本大语言模型是不同产品线。二者都出自 MiniMax，但架构与目标完全不同——请勿混淆。</p></div>
+      </details>
+      <details open><summary>Q2. 为什么说 H3 是「全模态」而不是「多模态」？</summary>
+        <div class="answer"><p>它把文本、图像、视频、<b>音频</b>都统一进同一条序列，且<b>输出也是音+视频</b>（原生立体声）。多数「多模态」模型只在输入端多模态、输出仍是单一模态；H3 在输入输出两端都覆盖多模态，故称 omni-modal。</p></div>
+      </details>
+      <details open><summary>Q3. 2K 是超分放大出来的吗？</summary>
+        <div class="answer"><p>不是。H3-Regenerate-2K 把 768p 结果 + 原始上下文回喂模型<b>重新生成</b>，能修复小字与细节，而非像素插值。它复用 H3-Base 的生成能力（in-context），不是独立超分网络。</p></div>
+      </details>
+      <details open><summary>Q4. 33B 模型部署真要 33B 显存吗？</summary>
+        <div class="answer"><p>推理时不必。约 13B 在 AdaLN 分支，其 modulation 输出<b>可预计算并缓存</b>，纯推理部署无需加载 → 实际按约 20B 规模部署。</p></div>
+      </details>
+      <details open><summary>Q5. FL2VA 和 Ref2VA 该选哪个？</summary>
+        <div class="answer"><p>要「文生视频 / 首帧或尾帧约束」选 <b>FL2VA</b>（0/1/2 图）；要「用已有主体、音色、视频片段做参考/编辑」选 <b>Ref2VA</b>（≤9图/≤3视频/≤3音频，总≤15s、≤12文件）。</p></div>
+      </details>
+      <details open><summary>Q6. 音画同步靠什么保证？</summary>
+        <div class="answer"><p>三点：① 视频与音频在<b>同一序列</b>被联合预测；② 三维 MM-RoPE 让音频 token 与视频 token 共享<b>同一时间轴</b>；③ AudioVAE 与 VisualVAE 时间压缩率对齐（VisualVAE t4、AudioVAE 32kHz→40Hz）。</p></div>
+      </details>
+      <details open><summary>Q7. 完全本地就能出 2K 吗？</summary>
+        <div class="answer"><p>不能。开源的只有 H3-Base（768p）。Context-IR 与 Regenerate-2K <b>未开源</b>，需调官方 API。本地 SGLang/diffusers 只能验证 768p 质量。</p></div>
+      </details>
+      <details open><summary>Q8. 为什么骨干里没有「模态专属」的 attention/FFN？</summary>
+        <div class="answer"><p>单流设计让主干对所有模态一视同仁，便于规模化与跨模态知识共享。模态差异只放在<b>入口 embedding、出口 head、AdaLN</b> 这些轻量位置，主干保持统一。</p></div>
+      </details>
+      <details open><summary>Q9. CFG-distilled 有什么好处？</summary>
+        <div class="answer"><p>传统无分类器引导（CFG）每步要跑「有条件 + 无条件」两次前向。蒸馏后把引导效果<b>压进单次前向</b>，推理速度接近翻倍，且权重已是蒸馏版，开箱即用。</p></div>
+      </details>
+      <details open><summary>Q10. 首版开源为什么只给 full attention？</summary>
+        <div class="answer"><p>native sparse attention 在训练末期才引入。首版只放 full attention 是为了<b>复现简单、结果稳定</b>；代价是长视频/长序列推理算力更高，后续版本可能补上稀疏实现。</p></div>
+      </details>
+    </div>
+
+    <h2 class="section-title" id="deepdive">12. 深挖思考（Deep Dive）</h2>
+    <div class="faq">
+      <details open><summary>为什么把音频塞进同一个 Transformer，而不是先出视频再配音？</summary>
+        <div class="answer"><p>「先视频后配音」的两阶段方案有个根本缺陷：<b>音画时序难对齐</b>——口型、脚步声、乐器击打点都要精确匹配画面，后配音只能靠对齐算法硬凑，且无法让画面反过来「迁就」声音。H3 把音频 latent 与视频 latent 放进同一序列联合预测，二者在 attention 里<b>互为条件</b>：说话时嘴型跟着音素动、鼓点落在动作帧上，都是同一次生成里自然涌现的。代价是序列更长、显存更贵，这也是为什么要 f16t4d24 + patch 把序列压到 32× 空间下采样。</p></div>
+      </details>
+      <details open><summary>AdaLN 缓存省 13B，这个设计的普适性有多大？</summary>
+        <div class="answer"><p>关键前提是 <b>modulation 只依赖时间步与条件、不依赖序列内容</b>。在 diffusion Transformer（DiT 系）里这普遍成立——AdaLN 输出的 scale/shift 由 timestep embedding + 条件 embedding 决定。所以「预计算缓存 AdaLN」是 DiT 类模型通用的推理优化，H3 只是把它规模化到 13B 量级并明确写进部署路径。但注意：一旦引入「随内容变化的调制」（如某些 cross-attention 变体），缓存假设就失效了。</p></div>
+      </details>
+      <details open><summary>in-context 再生成 2K，比训练一个专用超分模块好在哪、又差在哪？</summary>
+        <div class="answer"><p><b>好处</b>：① 零额外训练、复用 base 权重；② 风格/语义一致（同一模型的先验）；③ 能「造」细节而非插值——因为它拿着原始 prompt 重画。<b>代价</b>：① 要跑第二遍完整生成，2K 更慢更贵；② 再生成可能引入与 768p 不一致的漂移（需靠回喂 768p 结果约束）。这是典型的「用推理成本换训练成本与一致性」的权衡，适合追求质量上限、能接受更长延迟的场景。</p></div>
+      </details>
+      <details open><summary>单流「无模态专属结构」会不会导致某个模态被主导？</summary>
+        <div class="answer"><p>存在风险：视频 token 数量远多于音频 token，若不加平衡，梯度与注意力可能被视觉主导，音频质量退化。H3 把模态差异收敛到 <b>I/O 层 + AdaLN</b>，意味着模态平衡主要靠<b>数据配比与 AdaLN 调制</b>而非结构隔离。这是一个「赌主干规模够大 + 数据够均衡就能自平衡」的设计哲学，与「双流强制隔离」路线相反——H3 选择了前者以换取可规模化与知识共享。</p></div>
+      </details>
+      <details open><summary>CFG Distillation：为什么能把「跑两遍」压成「跑一遍」，代价是什么？</summary>
+        <div class="answer">
+          <p><b>先看 CFG 是什么。</b>无分类器引导（Classifier-Free Guidance）在采样每一步都要算两个预测：一个带条件 $\epsilon_\theta(x_t,c)$、一个不带条件 $\epsilon_\theta(x_t,\varnothing)$，再按引导系数 $w$ 外推：</p>
+          <div class="math-block">$$\tilde{\epsilon} = \epsilon_\theta(x_t,\varnothing) + w\,\big(\epsilon_\theta(x_t,c) - \epsilon_\theta(x_t,\varnothing)\big)$$</div>
+          <p>这样能显著提升「贴合 prompt」的程度，但代价是<b>每步两次前向</b>——对 33B、长音视频序列的 H3 而言，等于把推理算力直接翻倍。</p>
+          <h4>蒸馏做了什么</h4>
+          <p>CFG Distillation 训练一个<b>学生模型</b>，让它<b>单次前向</b>就直接输出「已经带上引导效果」的结果，去逼近教师（原模型跑完整 CFG 两遍外推）的输出。引导系数 $w$ 可以作为一个额外条件喂给学生，于是：</p>
+          <div class="math-block">$$\epsilon_{\text{student}}(x_t,c,w)\;\approx\;\epsilon_\theta(x_t,\varnothing) + w\,\big(\epsilon_\theta(x_t,c)-\epsilon_\theta(x_t,\varnothing)\big)$$</div>
+          <p>训练目标就是最小化两者差异（蒸馏损失）。收敛后，推理时只需跑<b>一遍</b>学生前向，无条件分支被彻底省掉。</p>
+          <h4>好处</h4>
+          <p>① 每步前向数从 2 → 1，长序列音视频生成<b>推理近乎提速一倍</b>；② H3-Base 权重<b>已是蒸馏版</b>，开箱即用、无需再自己调 CFG；③ 显存与调度更简单（不必同时保有条件/无条件两路激活）。</p>
+          <h4>代价与取舍</h4>
+          <p>① 引导强度<b>相对固化</b>：蒸馏时通常锁定或有限采样 $w$ 范围，推理时不像原 CFG 那样能任意大幅调 $w$；② 存在<b>蒸馏损失</b>：学生逼近教师会有微小质量/多样性折损，极端引导下更明显；③ 需要一次额外蒸馏训练成本。对 H3 这种「大模型 + 长序列 + 要落地部署」的场景，这笔账明显划算——用一次性训练换来每次推理永久减半的开销。</p>
+        </div>
+      </details>
+    </div>
+  </main>
+
+  <div id="lightbox" aria-hidden="true">
+    <span class="lb-close" aria-label="关闭">&times;</span>
+    <div class="lb-content"></div>
+    <div class="lb-cap"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>
+    mermaid.initialize({ startOnLoad: true, theme: 'neutral', securityLevel: 'loose' });
+
+    // Lightbox：事件委托，支持 img 与 svg（mermaid）
+    (function () {
+      var box = document.getElementById('lightbox');
+      var content = box.querySelector('.lb-content');
+      var closeBtn = box.querySelector('.lb-close');
+      var cap = box.querySelector('.lb-cap');
+
+      function openLightbox(el) {
+        content.innerHTML = '';
+        if (cap) {
+          var fig = el.closest('figure');
+          var fc = fig ? fig.querySelector('figcaption') : null;
+          cap.textContent = fc ? fc.textContent : '';
+        }
+        if (el.tagName === 'IMG') {
+          var img = new Image();
+          img.src = el.src;
+          content.appendChild(img);
+        } else if (el.tagName === 'svg' || el.closest('svg')) {
+          var svg = el.tagName === 'svg' ? el : el.closest('svg');
+          var rect = svg.getBoundingClientRect();
+          var clone = svg.cloneNode(true);
+          clone.setAttribute('width', rect.width);
+          clone.setAttribute('height', rect.height);
+          clone.style.maxWidth = '90vw';
+          clone.style.maxHeight = '90vh';
+          content.appendChild(clone);
+        }
+        box.classList.add('open');
+        box.setAttribute('aria-hidden', 'false');
+      }
+      function closeLightbox() {
+        box.classList.remove('open');
+        box.setAttribute('aria-hidden', 'true');
+        content.innerHTML = '';
+      }
+      document.body.addEventListener('click', function (e) {
+        var fig = e.target.closest('.figure-row img, .diagram svg, .diagram .mermaid svg');
+        if (fig) { openLightbox(fig); return; }
+      });
+      closeBtn.addEventListener('click', closeLightbox);
+      box.addEventListener('click', function (e) { if (e.target === box) closeLightbox(); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeLightbox(); });
+    })();
+
+    // chapter-nav 平滑滚动高亮
+    (function () {
+      var links = document.querySelectorAll('.chapter-nav a');
+      var sections = [];
+      links.forEach(function (a) {
+        var id = a.getAttribute('href').slice(1);
+        var sec = document.getElementById(id);
+        if (sec) sections.push({ a: a, sec: sec });
+      });
+      function onScroll() {
+        var y = window.scrollY + 120;
+        var cur = null;
+        sections.forEach(function (o) { if (o.sec.offsetTop <= y) cur = o; });
+        links.forEach(function (a) { a.classList.remove('active'); });
+        if (cur) cur.a.classList.add('active');
+      }
+      window.addEventListener('scroll', onScroll);
+      onScroll();
+    })();
+  </script>
+</body>
+</html>

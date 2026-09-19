@@ -136,6 +136,7 @@ There are paper with code for AIGC / Agent / LLM / VLM / CV.
 | LTX-2.3 | [LTX-2: Efficient Joint Audio-Visual Foundation Model](https://arxiv.org/abs/2601.03233) | blog(2026) | [PyTorch](https://github.com/Lightricks/LTX-2) |
 | Wan2.6 | [Wan2.6: Native Multimodal Video Generation with Multi-Shot Narrative](https://www.alibabacloud.com/blog/alibaba-unveils-wan2-6-series-enabling-everyone-to-star-in-videos_602742) | Alibaba(2026) | [code] |
 | MOVA | [MOVA: Towards Scalable and Synchronized Video–Audio Generation](https://arxiv.org/abs/2602.08794) | arXiv(2026) | [PyTorch](https://github.com/OpenMOSS/MOVA) |
+| [MiniMax-H3](https://gojay.top/paper-reading/minimax-h3.html) | [MiniMax-H3: A General-Purpose Omni-Modal Video Generation Model](https://github.com/MiniMax-AI/MiniMax-H3) | MiniMax(2026) | [PyTorch](https://github.com/MiniMax-AI/MiniMax-H3) |
 
 ## AIGC-Applications
 

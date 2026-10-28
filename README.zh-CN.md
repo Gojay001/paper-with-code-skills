@@ -22,7 +22,6 @@
 
 | 工具 | 发现路径 |
 |------|----------|
-| **Cursor** | `.cursor/skills/<name>` → 本地 skill 或 `skills/aris/skills/<name>` |
 | **Claude Code** | `.claude/skills/<name>` → 本地 skill 或 `skills/aris/skills/<name>` |
 | **Codex** | `.agents/skills/<name>` → 本地 skill 或 ARIS 的 `skills-codex/<name>` 镜像 |
 
@@ -49,7 +48,6 @@ paper-with-code-skills/
 │   └── aris/                       # Git submodule；完整 ARIS 上游仓库
 ├── research/                       # ARIS 自动学术研究产物（wiki / reports / projects）
 ├── scripts/sync-skill-links.sh     # ARIS 更新后重建扁平发现链接
-├── .cursor/skills/                 # 逐 skill 链接（Cursor）
 ├── .claude/skills/                 # 逐 skill 链接（Claude Code）
 └── .agents/skills/                 # 逐 skill 链接（Codex 镜像）
 ```

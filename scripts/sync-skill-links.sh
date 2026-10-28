@@ -118,16 +118,14 @@ write_runtime_metadata() {
     > "$ROOT/.aris/installed-skills-codex.txt"
 }
 
-for relative_dir in .agents/skills .claude/skills .cursor/skills; do
+for relative_dir in .agents/skills .claude/skills; do
   prepare_directory "$relative_dir"
   link_local_skills "$relative_dir"
 done
 
 link_aris_codex_skills .agents/skills
 link_aris_main_skills .claude/skills
-link_aris_main_skills .cursor/skills
 write_runtime_metadata
 
 printf 'Codex skills: %s\n' "$(find "$ROOT/.agents/skills" -mindepth 1 -maxdepth 1 -type l | wc -l | tr -d ' ')"
 printf 'Claude skills: %s\n' "$(find "$ROOT/.claude/skills" -mindepth 1 -maxdepth 1 -type l | wc -l | tr -d ' ')"
-printf 'Cursor skills: %s\n' "$(find "$ROOT/.cursor/skills" -mindepth 1 -maxdepth 1 -type l | wc -l | tr -d ' ')"

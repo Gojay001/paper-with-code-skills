@@ -22,7 +22,6 @@ The repository's own capabilities are implemented as [Agent Skills](https://agen
 
 | Tool | Discovery path |
 |------|----------------|
-| **Cursor** | `.cursor/skills/<name>` → local skill or `skills/aris/skills/<name>` |
 | **Claude Code** | `.claude/skills/<name>` → local skill or `skills/aris/skills/<name>` |
 | **Codex** | `.agents/skills/<name>` → local skill or ARIS's `skills-codex/<name>` mirror |
 
@@ -49,7 +48,6 @@ paper-with-code-skills/
 │   └── aris/                       # Git submodule; upstream ARIS repository
 ├── research/                       # ARIS automated-research artifacts (wiki / reports / projects)
 ├── scripts/sync-skill-links.sh     # Rebuild flat discovery links after ARIS updates
-├── .cursor/skills/                 # Generated per-skill links (Cursor)
 ├── .claude/skills/                 # Generated per-skill links (Claude Code)
 └── .agents/skills/                 # Generated per-skill links (Codex mirror)
 ```

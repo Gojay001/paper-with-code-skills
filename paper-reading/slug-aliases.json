@@ -10,5 +10,7 @@
   "FancyVideo": "fancyvideo",
   "Lay2Story": "lay2story",
   "Qihoo-T2X": "qihoo-t2x",
-  "U-StyDiT": "u-stydit"
+  "U-StyDiT": "u-stydit",
+  "DPO": "dpo",
+  "InstructGPT": "instructgpt"
 }

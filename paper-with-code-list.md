@@ -16,6 +16,8 @@ There are paper with code for AIGC / Agent / LLM / VLM / CV.
     - [Face Swapping](#Face-Swapping)
 - **Agent**
   - [Agentic Image Generation](#Agentic-Image-Generation)
+  - [Agentic RL](#Agentic-RL)
+    - [RL Algorithms](#RL-Algorithms)
 - **LLM / VLM** (Large Language Model / Vision-Language Model)
   - [Transformer](#Attention-or-Transformer)
   - [ViT](#Vision-Transformer)
@@ -179,6 +181,21 @@ There are paper with code for AIGC / Agent / LLM / VLM / CV.
 | Title | Paper | Conf | Code |
 | ----- | ----- | ---- | ---- |
 | [Qwen-Image-Agent](https://gojay.top/paper-reading/qwen-image-agent.html) | [Qwen-Image-Agent: Bridging the Context Gap in Real-World Image Generation](https://arxiv.org/abs/2606.26907) | arXiv(2026) | [code] |
+
+---
+
+## Agentic RL
+
+
+### RL Algorithms
+
+| Title | Paper | Conf | Code |
+| ----- | ----- | ---- | ---- |
+| RLHF | [Deep reinforcement learning from human preferences](https://arxiv.org/abs/1706.03741) | arXiv(2017) / NeurIPS(2017) | [TensorFlow](https://github.com/nottombrown/rl-teacher) |
+| PPO | [Proximal Policy Optimization Algorithms](https://arxiv.org/abs/1707.06347) | arXiv(2017) | [TensorFlow](https://github.com/openai/baselines) |
+| [InstructGPT](https://gojay.top/paper-reading/instructgpt.html) | [Training language models to follow instructions with human feedback](https://arxiv.org/abs/2203.02155) | arXiv(2022) / NeurIPS(2022) | [GitHub](https://github.com/openai/following-instructions-human-feedback) |
+| [DPO](https://gojay.top/paper-reading/dpo.html) | [Direct Preference Optimization: Your Language Model is Secretly a Reward Model](https://arxiv.org/abs/2305.18290) | arXiv(2023) / NeurIPS(2023) | [PyTorch](https://github.com/eric-mitchell/direct-preference-optimization) |
+| GRPO | [DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models](https://arxiv.org/abs/2402.03300) | arXiv(2024) | [PyTorch](https://github.com/deepseek-ai/DeepSeek-Math) |
 
 ---
 

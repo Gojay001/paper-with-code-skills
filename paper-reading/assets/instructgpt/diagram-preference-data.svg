@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="title desc">
+<title id="title">From ranked responses to preference data</title>
+<desc id="desc">Illustrative ranking A greater than C greater than B equals D gives five strict preference pairs. Ties are dropped and all pairs from one prompt are grouped for reward-model training.</desc>
+<style>text { font-family: Helvetica, Arial, sans-serif; fill:#111827; } .sub { fill:#6b7280; font-size:16px; } .label { font-size:20px; font-weight:600; }</style>
+<defs><marker id="arrow-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0,10 3.5,0 7" fill="#2563eb"/></marker></defs>
+<rect width="1200" height="620" fill="#ffffff"/>
+<text x="60" y="55" font-size="25" font-weight="600">InstructGPT: one prompt, several responses, one ranked group</text>
+<text x="60" y="88" class="sub">Illustrative data example based on paper §3.5 and Appendix C.2</text>
+<path d="M 300 205 H 420" fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)"/>
+<path d="M 750 205 H 850" fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)"/>
+<path d="M 990 290 V 370" fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)"/>
+<rect x="60" y="140" width="240" height="150" rx="8" fill="#eff6ff" stroke="#d1d5db" stroke-width="1.5"/>
+<text x="180.0" y="195" text-anchor="middle" class="label">Prompt x</text>
+<text x="180.0" y="231" text-anchor="middle" class="sub">Same task and context</text>
+<rect x="420" y="140" width="330" height="150" rx="8" fill="#faf5ff" stroke="#d1d5db" stroke-width="1.5"/>
+<text x="585.0" y="195" text-anchor="middle" class="label">Candidate responses</text>
+<text x="585.0" y="231" text-anchor="middle" class="sub">A, B, C, D</text>
+<rect x="850" y="140" width="280" height="150" rx="8" fill="#f0fdf4" stroke="#d1d5db" stroke-width="1.5"/>
+<text x="990.0" y="195" text-anchor="middle" class="label">Human ranking</text>
+<text x="990.0" y="231" text-anchor="middle" class="sub">A &gt; C &gt; B = D</text>
+<text x="344" y="193" class="sub">sample</text>
+<text x="772" y="193" class="sub">judge</text>
+<text x="1005" y="337" class="sub">expand strict pairs</text>
+<rect x="60" y="370" width="1070" height="165" rx="8" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
+<text x="85" y="407" class="label">Preference pairs from this ranking</text>
+<rect x="85" y="427" width="122" height="46" rx="8" fill="#eff6ff" stroke="#bfdbfe"/>
+<text x="146" y="456" font-size="19" text-anchor="middle">(A, C)</text>
+<rect x="230" y="427" width="122" height="46" rx="8" fill="#eff6ff" stroke="#bfdbfe"/>
+<text x="291" y="456" font-size="19" text-anchor="middle">(A, B)</text>
+<rect x="375" y="427" width="122" height="46" rx="8" fill="#eff6ff" stroke="#bfdbfe"/>
+<text x="436" y="456" font-size="19" text-anchor="middle">(A, D)</text>
+<rect x="520" y="427" width="122" height="46" rx="8" fill="#eff6ff" stroke="#bfdbfe"/>
+<text x="581" y="456" font-size="19" text-anchor="middle">(C, B)</text>
+<rect x="665" y="427" width="122" height="46" rx="8" fill="#eff6ff" stroke="#bfdbfe"/>
+<text x="726" y="456" font-size="19" text-anchor="middle">(C, D)</text>
+<text x="875" y="455" font-size="18" fill="#6b7280">Drop tie (B, D)</text>
+<text x="85" y="509" class="sub">K = 4: six possible pairs, five strict pairs after removing the tie</text>
+<text x="60" y="577" font-size="18">RM: score each response once; average all strict-pair losses within one prompt group.</text>
+</svg>

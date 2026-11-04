@@ -589,6 +589,12 @@
         </div>
       </div>
     </div>
+    <section class="figure-row">
+      <figure>
+        <img src="assets/dpo/diagram-dpo-training.png" width="1200" loading="lazy" alt="DPO 训练流程图：Actor 对 chosen / rejected 打分，Ref Model 提供参考分数，二者比值构成 R_policy 与 R_reference，再计算 -log sigmoid(beta log(R_policy/R_reference)) 并更新 Actor">
+        <figcaption>DPO 训练流程：Actor 对 chosen / rejected 分别打分，Ref Model 提供参考分数；两者比值形成 R_policy 与 R_reference，再计算 -log sigmoid(beta log(R_policy/R_reference)) 并更新 Actor。点击放大。</figcaption>
+      </figure>
+    </section>
     <h2 class="section-title" id="theory">5. Theoretical Analysis of DPO</h2>
     <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
     <div class="row">

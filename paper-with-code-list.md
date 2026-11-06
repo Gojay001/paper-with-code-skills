@@ -11,6 +11,7 @@ There are paper with code for AIGC / Agent / LLM / VLM / CV.
   - [VAE](#Variational-Auto-Encoder)
   - [Diffusion](#Diffusion-Model)
   - [Video Generation](#Video-Generation)
+  - [Diffusion RL](#Diffusion-RL)
   - [Applications](#AIGC-Applications)
     - [Face Editing](#Face-Editing)
     - [Face Swapping](#Face-Swapping)
@@ -139,6 +140,18 @@ There are paper with code for AIGC / Agent / LLM / VLM / CV.
 | Wan2.6 | [Wan2.6: Native Multimodal Video Generation with Multi-Shot Narrative](https://www.alibabacloud.com/blog/alibaba-unveils-wan2-6-series-enabling-everyone-to-star-in-videos_602742) | Alibaba(2026) | [code] |
 | MOVA | [MOVA: Towards Scalable and Synchronized Video–Audio Generation](https://arxiv.org/abs/2602.08794) | arXiv(2026) | [PyTorch](https://github.com/OpenMOSS/MOVA) |
 | [MiniMax-H3](https://gojay.top/paper-reading/minimax-h3.html) | [MiniMax-H3: A General-Purpose Omni-Modal Video Generation Model](https://github.com/MiniMax-AI/MiniMax-H3) | MiniMax(2026) | [PyTorch](https://github.com/MiniMax-AI/MiniMax-H3) |
+
+---
+
+## Diffusion RL
+
+
+| Title | Paper | Conf | Code |
+| ----- | ----- | ---- | ---- |
+| [DDPO](https://gojay.top/paper-reading/ddpo.html) | [Training Diffusion Models with Reinforcement Learning](https://arxiv.org/abs/2305.13301) | arXiv(2023) / ICLR(2024) | [PyTorch](https://github.com/kvablack/ddpo-pytorch) |
+| [VideoDPO](https://gojay.top/paper-reading/videodpo.html) | [VideoDPO: Omni-Preference Alignment for Video Diffusion Generation](https://arxiv.org/abs/2412.14167) | arXiv(2024) / CVPR(2025) | [PyTorch](https://github.com/CIntellifusion/VideoDPO) |
+| Flow-GRPO | [Flow-GRPO: Training Flow Matching Models via Online RL](https://arxiv.org/abs/2505.05470) | arXiv(2025) / NeurIPS(2025) | [PyTorch](https://github.com/yifan123/flow_grpo) |
+| DanceGRPO | [DanceGRPO: Unleashing GRPO on Visual Generation](https://arxiv.org/abs/2505.07818) | arXiv(2025) | [PyTorch](https://github.com/XueZeyue/DanceGRPO) |
 
 ## AIGC-Applications
 

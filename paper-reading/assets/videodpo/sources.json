@@ -1,0 +1,74 @@
+[
+  {
+    "asset": "fig2-workflow.png",
+    "source": "sec/fig-v-workflow3.pdf",
+    "method": "source PDF rendered at 300 dpi"
+  },
+  {
+    "asset": "fig2-workflow.svg",
+    "source": "sec/fig-v-workflow3.pdf",
+    "method": "source PDF exported to SVG; paper original, not self-drawn"
+  },
+  {
+    "asset": "fig3a-sampling.png",
+    "source": "figs/2.scorediff_N.pdf",
+    "method": "source PDF rendered at 300 dpi"
+  },
+  {
+    "asset": "fig3b-score-histogram.png",
+    "source": "figs/1.score_freq.pdf",
+    "method": "source PDF rendered at 300 dpi"
+  },
+  {
+    "asset": "fig3c-gap-histogram.png",
+    "source": "figs/4.scorediff_freq.pdf",
+    "method": "source PDF rendered at 300 dpi"
+  },
+  {
+    "asset": "fig3d-correlation.png",
+    "source": "figs/correlation_heatmap.pdf",
+    "method": "source PDF rendered at 300 dpi"
+  },
+  {
+    "asset": "fig1-teaser.jpg",
+    "sources": [
+      "imgs/quality/vc2_dpo/A_boat_sailing_leisurely_along_the_Seine_River_0_frame_0.jpg",
+      "imgs/quality/vc2_dpo/A_boat_sailing_leisurely_along_the_Seine_River_0_frame_6.jpg",
+      "imgs/quality/vc2_dpo/A_boat_sailing_leisurely_along_the_Seine_River_0_frame_12.jpg",
+      "imgs/quality/vc2_dpo/An_astronaut_flying_in_space_0_frame_0.jpg",
+      "imgs/quality/vc2_dpo/An_astronaut_flying_in_space_0_frame_6.jpg",
+      "imgs/quality/vc2_dpo/An_astronaut_flying_in_space_0_frame_12.jpg",
+      "imgs/quality/turbo_dpo/a_dog_enjoying_a_peaceful_walk_0_frame_0.jpg",
+      "imgs/quality/turbo_dpo/a_dog_enjoying_a_peaceful_walk_0_frame_6.jpg",
+      "imgs/quality/turbo_dpo/a_dog_enjoying_a_peaceful_walk_0_frame_12.jpg",
+      "imgs/quality/turbo_dpo/A_beautiful_coastal_beach_0_frame_0.jpg",
+      "imgs/quality/turbo_dpo/A_beautiful_coastal_beach_0_frame_6.jpg",
+      "imgs/quality/turbo_dpo/A_beautiful_coastal_beach_0_frame_12.jpg"
+    ],
+    "method": "source image mosaic; original frame order"
+  },
+  {
+    "asset": "fig5-temporal.jpg",
+    "sources": [
+      "imgs/inconsistent_frames/vc2_init/a_stop_sign_and_a_parking_meter_0_frame_0.jpg",
+      "imgs/inconsistent_frames/vc2_init/a_stop_sign_and_a_parking_meter_0_frame_3.jpg",
+      "imgs/inconsistent_frames/vc2_init/a_stop_sign_and_a_parking_meter_0_frame_4.jpg",
+      "imgs/inconsistent_frames/vc2_dpo/a_stop_sign_and_a_parking_meter_0_frame_0.jpg",
+      "imgs/inconsistent_frames/vc2_dpo/a_stop_sign_and_a_parking_meter_0_frame_4.jpg",
+      "imgs/inconsistent_frames/vc2_dpo/a_stop_sign_and_a_parking_meter_0_frame_6.jpg",
+      "imgs/inconsistent_frames/turbo_init/a_giraffe_and_a_bird_0_frame_8.jpg",
+      "imgs/inconsistent_frames/turbo_init/a_giraffe_and_a_bird_0_frame_9.jpg",
+      "imgs/inconsistent_frames/turbo_init/a_giraffe_and_a_bird_0_frame_11.jpg",
+      "imgs/inconsistent_frames/turbo_dpo/a_giraffe_and_a_bird_0_frame_0.jpg",
+      "imgs/inconsistent_frames/turbo_dpo/a_giraffe_and_a_bird_0_frame_5.jpg",
+      "imgs/inconsistent_frames/turbo_dpo/a_giraffe_and_a_bird_0_frame_9.jpg",
+      "imgs/inconsistent_frames/cogvideo_init/A_panda_drinking_coffee_in_a_cafe_in_Paris_0_frame_0.jpg",
+      "imgs/inconsistent_frames/cogvideo_init/A_panda_drinking_coffee_in_a_cafe_in_Paris_0_frame_2.jpg",
+      "imgs/inconsistent_frames/cogvideo_init/A_panda_drinking_coffee_in_a_cafe_in_Paris_0_frame_4.jpg",
+      "imgs/inconsistent_frames/cogvideo_dpo/A_panda_drinking_coffee_in_a_cafe_in_Paris_0_frame_0.jpg",
+      "imgs/inconsistent_frames/cogvideo_dpo/A_panda_drinking_coffee_in_a_cafe_in_Paris_0_frame_1.jpg",
+      "imgs/inconsistent_frames/cogvideo_dpo/A_panda_drinking_coffee_in_a_cafe_in_Paris_0_frame_4.jpg"
+    ],
+    "method": "source image mosaic; original frame order"
+  }
+]

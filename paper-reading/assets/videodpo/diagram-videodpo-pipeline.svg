@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 980" width="1200" height="980" role="img" aria-label="VideoDPO 完整训练流程：离线偏好数据 → 加权 DPO 损失">
+  <style>
+    text { font-family: 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+    .t { font-size: 14px; font-weight: 600; fill: #111827; }
+    .s { font-size: 11.5px; fill: #4b5563; }
+    .band { font-size: 12.5px; font-weight: 600; fill: #1a2744; }
+    .lg { font-size: 11px; fill: #6b7280; }
+  </style>
+  <defs>
+    <marker id="ab" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#2563eb"/></marker>
+    <marker id="ap" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#9333ea"/></marker>
+  </defs>
+  <rect width="1200" height="980" fill="#ffffff"/>
+  <text x="40" y="42" font-size="20" font-weight="600" fill="#111827">VideoDPO 完整训练流程：离线偏好数据 → 加权 DPO 损失</text>
+  <text x="40" y="68" font-size="13" fill="#6b7280">VideoDPO: Omni-Preference Alignment for Video Diffusion Generation · Liu et al., CVPR 2025 · 自绘，对应论文 §4.2–4.3 与官方 dpo_loss</text>
+  <rect x="40" y="88" width="1120" height="322" rx="10" fill="#fcfcfd" stroke="#d1d5db" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <line x1="196" y1="100" x2="196" y2="398" stroke="#e5e7eb" stroke-width="1"/>
+  <text class="band" x="52" y="224">阶段 A</text>
+  <text class="band" x="52" y="240">离线偏好</text>
+  <text class="band" x="52" y="258">数据构建</text>
+  <text class="band" x="52" y="274">一次性</text>
+  <rect x="205" y="124" width="250" height="64" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
+  <text class="t" x="219" y="148">VidProm 提示词</text>
+  <text class="s" x="219" y="168">K = 10,000 条人类撰写</text>
+  <rect x="485" y="124" width="300" height="64" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
+  <text class="t" x="499" y="148">基础模型生成</text>
+  <text class="s" x="499" y="168">每提示 N = 4 个视频</text>
+  <rect x="815" y="124" width="333" height="64" rx="8" fill="#fff7ed" stroke="#fed7aa" stroke-width="1.5"/>
+  <text class="t" x="829" y="148">OmniScore 七项打分</text>
+  <text class="s" x="829" y="168">画质 · 帧间 · 语义 → s_i</text>
+  <rect x="205" y="228" width="300" height="64" rx="8" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
+  <text class="t" x="219" y="252">选 best / worst（其余 2 个丢弃）</text>
+  <text class="s" x="219" y="272">vW = argmax s，vL = argmin s</text>
+  <rect x="535" y="228" width="330" height="64" rx="8" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
+  <text class="t" x="549" y="252">分数直方图</text>
+  <text class="s" x="549" y="272">p(s) = 桶频率（桶宽 0.01）</text>
+  <rect x="895" y="228" width="253" height="64" rx="8" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5"/>
+  <text class="t" x="909" y="252">pair 稀有度与权重</text>
+  <text class="s" x="909" y="272">q = √(pW·pL)，w = (β/q)^α</text>
+  <rect x="205" y="318" width="943" height="56" rx="8" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
+  <text class="t" x="219" y="342">输出 pair.json：(video1, video2, prompt, score) → 训练时按 w 加权</text>
+  <text class="s" x="219" y="362">N=4 → 每提示 1 对（10k 提示 → 10k 对）；多对策略见消融，总分更低</text>
+  <rect x="40" y="436" width="1120" height="494" rx="10" fill="#fcfcfd" stroke="#d1d5db" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <line x1="196" y1="448" x2="196" y2="918" stroke="#e5e7eb" stroke-width="1"/>
+  <text class="band" x="52" y="658">阶段 B</text>
+  <text class="band" x="52" y="674">加权 DPO</text>
+  <text class="band" x="52" y="692">训练</text>
+  <text class="band" x="52" y="708">3000 步</text>
+  <rect x="205" y="472" width="280" height="64" rx="8" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
+  <text class="t" x="219" y="496">读取一对 (vW, vL, p, w)</text>
+  <text class="s" x="219" y="516">w 来自阶段 A 的直方图</text>
+  <rect x="515" y="472" width="300" height="64" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
+  <text class="t" x="529" y="496">冻结 VAE 编码 → zW, zL</text>
+  <text class="s" x="529" y="516">沿 batch 维拼接为 2B</text>
+  <rect x="845" y="472" width="303" height="64" rx="8" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
+  <text class="t" x="859" y="496">采样 t, ε 并加噪</text>
+  <text class="s" x="859" y="516">z_t = √ᾱ_t·z + √(1−ᾱ_t)·ε</text>
+  <rect x="205" y="576" width="300" height="76" rx="8" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5"/>
+  <text class="t" x="219" y="600">策略 ε_θ（可训练 UNet / LoRA）</text>
+  <text class="s" x="219" y="620">预测 ε_θ(z_t, t, c)</text>
+  <rect x="535" y="576" width="300" height="76" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
+  <text class="t" x="549" y="600">参考 ε_ref（冻结，no_grad）</text>
+  <text class="s" x="549" y="620">同一 z_t, t, c</text>
+  <rect x="205" y="672" width="943" height="64" rx="8" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
+  <text class="t" x="219" y="696">每个样本 MSE：e = mean((ε − ε̂)²) → 分别得到 eW 与 eL</text>
+  <text class="s" x="219" y="716">赢家、输家共享同一加噪样本与目标噪声</text>
+  <rect x="205" y="756" width="520" height="64" rx="8" fill="#faf5ff" stroke="#e9d5ff" stroke-width="1.5"/>
+  <text class="t" x="219" y="780">Δθ = eW − eL；Δref 同理</text>
+  <text class="s" x="219" y="800">u = −0.5 · β_DPO · (Δθ − Δref)</text>
+  <rect x="755" y="756" width="393" height="64" rx="8" fill="#faf5ff" stroke="#e9d5ff" stroke-width="1.5"/>
+  <text class="t" x="769" y="780">L = −w · log σ(u)</text>
+  <text class="s" x="769" y="800">参考项不更新；w 放大稀有 pair</text>
+  <rect x="205" y="844" width="943" height="40" rx="8" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5"/>
+  <text class="t" x="219" y="868">AdamW · lr 6e-6 · 3000 步 · 只更新 UNet / LoRA</text>
+  <path d="M 455,156 H 485" fill="none" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M 785,156 H 815" fill="none" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M 980,188 V 208 H 355 V 228" fill="none" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M 505,260 H 535" fill="none" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M 865,260 H 895" fill="none" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M 1020,292 V 318" fill="none" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M 600,374 V 420 H 345 V 472" fill="none" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M 485,504 H 515" fill="none" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M 815,504 H 845" fill="none" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M 920,536 V 546 H 355 V 576" fill="none" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M 1050,536 V 572 H 685 V 576" fill="none" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M 355,652 V 672" fill="none" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M 685,652 V 672" fill="none" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M 465,736 V 756" fill="none" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M 725,788 H 755" fill="none" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M 950,820 V 844" fill="none" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+  <g transform="translate(40,956)">
+    <rect x="0" y="-9" width="16" height="12" rx="3" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.2"/>
+    <text class="lg" x="22" y="1">可训练</text>
+    <rect x="79" y="-9" width="16" height="12" rx="3" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.2"/>
+    <text class="lg" x="101" y="1">冻结 / 输入</text>
+    <rect x="187" y="-9" width="16" height="12" rx="3" fill="#fff7ed" stroke="#fed7aa" stroke-width="1.2"/>
+    <text class="lg" x="209" y="1">OmniScore 评分</text>
+    <rect x="317" y="-9" width="16" height="12" rx="3" fill="#faf5ff" stroke="#e9d5ff" stroke-width="1.2"/>
+    <text class="lg" x="339" y="1">损失计算</text>
+    <line x1="407" y1="-3" x2="433" y2="-3" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+    <text class="lg" x="439" y="1">数据流</text>
+  </g>
+</svg>

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VideoDPO — Omni-Preference Alignment for Video Diffusion Generation · 逻辑精读</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <!-- KaTeX：数学公式渲染（行内 $...$，行间 $$...$$） -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+  <style>
+    :root {
+      --navy: #1a2744;
+      --paper: #faf8f5;
+      --thesis: #fff3cd;
+      --concept: #f8d7da;
+      --evidence: #cfe2ff;
+      --counter: #d1e7dd;
+      --method: #e2d9f3;
+      --text: #2c2c2c;
+      --muted: #6c757d;
+      --border: #e8e4df;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'IBM Plex Sans', sans-serif; background: var(--paper); color: var(--text); line-height: 1.6; }
+    .sticky-head { position: sticky; top: 0; z-index: 100; }
+    .top-nav { background: var(--navy); color: #fff; padding: 1rem 2rem; }
+    .top-nav h1 { font-size: 1.25rem; font-weight: 600; }
+    .top-nav h1 a { color: #fff; text-decoration: none; border-bottom: 1px dotted rgba(255,255,255,0.5); }
+    .top-nav h1 a:hover { border-bottom-style: solid; }
+    .top-nav .meta { font-size: 0.85rem; opacity: 0.85; margin-top: 0.25rem; }
+    .legend { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.75rem; font-size: 0.8rem; }
+    .legend span { padding: 0.15rem 0.5rem; border-radius: 3px; color: #2c2c2c; }
+    .chapter-nav { background: #fff; border-bottom: 1px solid var(--border); padding: 0.75rem 2rem; overflow-x: auto; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+    .chapter-nav a { color: var(--navy); text-decoration: none; margin-right: 1.25rem; font-size: 0.9rem; font-weight: 500; }
+    .chapter-nav a:hover { text-decoration: underline; }
+    main { max-width: 1680px; margin: 0 auto; padding: 2rem; }
+    .section-title { font-size: 1.5rem; color: var(--navy); margin: 2rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--navy); }
+    .col-labels { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 0.5rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+    .row { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; align-items: start; }
+    .col-original { font-family: 'Lora', serif; font-size: 0.95rem; line-height: 1.75; }
+    .col-original p { margin-bottom: 0.75rem; }
+    .col-translation { font-size: 0.92rem; line-height: 1.75; color: #333; }
+    .col-translation p { margin-bottom: 0.75rem; }
+    .analysis-card { background: #fff; border-left: 4px solid var(--navy); padding: 1rem 1.25rem; border-radius: 0 6px 6px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.06); font-size: 0.9rem; }
+    .analysis-card .tag { display: inline-block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0.5rem; color: var(--navy); }
+    .analysis-card h4 { font-size: 0.85rem; color: var(--muted); margin: 0.75rem 0 0.25rem; }
+    .analysis-card p { margin-bottom: 0.5rem; }
+    .analysis-card.deep { border-left-width: 5px; }
+    .analysis-detail { margin: 0.75rem 0; padding-top: 0.5rem; border-top: 1px dashed var(--border); }
+    .analysis-detail:first-of-type { border-top: none; }
+    .exp-detail { list-style: none; margin: 0.5rem 0; }
+    .exp-detail li { margin-bottom: 0.4rem; }
+    .exp-detail li strong { color: var(--navy); }
+    .exp-table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.82rem; }
+    .exp-table th, .exp-table td { border: 1px solid var(--border); padding: 0.35rem 0.5rem; text-align: left; }
+    .exp-table th { background: var(--paper); color: var(--navy); font-weight: 600; }
+    .exp-table tr.is-ours { background: var(--evidence); }
+    .exp-table tr.is-ours td { font-weight: 600; }
+    .notation { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.85rem; background: #fff; }
+    .notation th, .notation td { border: 1px solid var(--border); padding: 0.4rem 0.6rem; text-align: left; }
+    .notation th { background: var(--paper); color: var(--navy); font-weight: 600; }
+    .notation td:first-child { width: 22%; white-space: nowrap; }
+    .diagram { margin: 0.75rem 0; }
+    .diagram img, .diagram svg { max-width: 100%; height: auto; display: block; border: 1px solid var(--border); border-radius: 4px; background: #fff; }
+    .diagram figcaption, .figure-row figcaption { font-size: 0.78rem; color: var(--muted); margin-top: 0.35rem; }
+    .figure-row { margin: 1.5rem 0; padding: 1rem; background: #fff; border: 1px solid var(--border); border-radius: 8px; }
+    .figure-row figure { margin: 0; text-align: center; }
+    .figure-row img, .figure-row svg { max-width: 100%; height: auto; }
+    .mermaid { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem; margin: 0.75rem 0; }
+    .hl-thesis { background: var(--thesis); padding: 0 2px; }
+    .hl-concept { background: var(--concept); padding: 0 2px; }
+    .hl-evidence { background: var(--evidence); padding: 0 2px; }
+    .hl-counter { background: var(--counter); padding: 0 2px; }
+    .hl-method { background: var(--method); padding: 0 2px; }
+    .summary { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 2rem; margin-top: 3rem; }
+    .summary h2 { color: var(--navy); margin-bottom: 1rem; }
+    .summary .skeleton { font-family: 'IBM Plex Sans', monospace; background: var(--paper); padding: 1rem; border-radius: 4px; margin: 1rem 0; }
+    .summary .strength, .summary .weakness { padding: 0.75rem 1rem; border-radius: 4px; margin: 0.5rem 0; }
+    .summary .strength { background: var(--counter); }
+    .summary .weakness { background: var(--concept); }
+    .feynman { background: #fff; border: 1px solid var(--border); border-left: 5px solid #0d9488; border-radius: 0 8px 8px 0; padding: 1.25rem 1.5rem; margin: 1.5rem 0 2rem; }
+    .feynman h2 { color: #0d9488; font-size: 1.15rem; margin-bottom: 0.35rem; }
+    .feynman .tldr-meta { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.6rem; }
+    .feynman p { font-size: 0.95rem; line-height: 1.85; margin-bottom: 0.6rem; }
+    .faq details { background: #fff; border: 1px solid var(--border); border-radius: 6px; margin: 0.5rem 0; }
+    .faq details[open] { box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .faq summary { cursor: pointer; font-weight: 600; color: var(--navy); padding: 0.7rem 0.9rem; list-style: none; font-size: 0.92rem; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::before { content: '▸'; color: #0d9488; margin-right: 0.5rem; }
+    .faq details[open] summary::before { content: '▾'; }
+    .faq .answer { padding: 0 0.9rem 0.85rem 1.8rem; font-size: 0.9rem; line-height: 1.8; color: #333; }
+    .deepdive .block { margin: 0.9rem 0; padding: 0.85rem 1.1rem; border-radius: 4px; background: var(--paper); border-left: 3px solid #6f42c1; }
+    .deepdive .block.crit { border-left-color: #dc3545; background: #fdf0f1; }
+    .deepdive .block h4 { color: var(--navy); margin-bottom: 0.3rem; }
+    .deepdive .block ul { margin: 0.3rem 0 0 1.1rem; }
+    .deepdive .block li { margin-bottom: 0.3rem; font-size: 0.9rem; }
+    .code-section { background:#fff; border:1px solid var(--border); border-radius:8px; padding:1.5rem 1.75rem; margin:2rem 0; }
+    .code-section h3 { color:var(--navy); font-size:1.05rem; margin:1.5rem 0 0.75rem; }
+    .code-section h3:first-of-type { margin-top:0; }
+    .code-section p, .code-section li { font-size:0.9rem; line-height:1.75; margin-bottom:0.5rem; }
+    .code-section ul { margin:0.5rem 0 0.75rem 1.25rem; }
+    .code-block { font-family:'IBM Plex Mono','IBM Plex Sans',monospace; font-size:0.78rem; line-height:1.65; background:#1e293b; color:#e2e8f0; padding:1rem 1.15rem; border-radius:6px; overflow-x:auto; margin:0.75rem 0; white-space:pre; tab-size:2; }
+    .code-block .cm { color:#94a3b8; font-style:italic; }
+    .code-block .kw { color:#7dd3fc; }
+    .code-block .fn { color:#fde68a; }
+    .code-block .str { color:#86efac; }
+    .code-note { font-size:0.82rem; color:var(--muted); margin:0.35rem 0 1rem; padding-left:0.75rem; border-left:3px solid #0d9488; }
+    .code-map { width:100%; border-collapse:collapse; margin:0.75rem 0; font-size:0.82rem; }
+    .code-map th, .code-map td { border:1px solid var(--border); padding:0.4rem 0.55rem; text-align:left; vertical-align:top; }
+    .code-map th { background:var(--paper); color:var(--navy); font-weight:600; }
+    .code-map code { font-size:0.78rem; background:var(--paper); padding:0.1rem 0.3rem; border-radius:3px; }
+    @media (max-width: 1100px) {
+      .col-labels { display: none; }
+      .row { grid-template-columns: 1fr; }
+      .row > div { position: relative; }
+      .row > div::before {
+        display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+        letter-spacing: 0.05em; color: var(--muted); margin-bottom: 0.35rem;
+      }
+      .col-original::before { content: '原文'; }
+      .col-translation::before { content: '翻译'; }
+      .col-analysis::before { content: '解析'; }
+    }
+    .diagram img, .diagram svg, .figure-row img, .figure-row svg { cursor: zoom-in; transition: box-shadow .15s; }
+    .diagram img:hover, .diagram svg:hover, .figure-row img:hover, .figure-row svg:hover { box-shadow: 0 0 0 2px #0d9488; }
+    #lightbox { position: fixed; inset: 0; background: rgba(10,12,20,0.92); display: none; align-items: center; justify-content: center; z-index: 1000; cursor: zoom-out; padding: 3vh 3vw; }
+    #lightbox.open { display: flex; }
+    #lightbox .lb-content { display: flex; align-items: center; justify-content: center; }
+    #lightbox .lb-content img, #lightbox .lb-content svg { display: block; background: #fff; border-radius: 6px; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
+    #lightbox .lb-close { position: fixed; top: 1rem; right: 1.5rem; color: #fff; font-size: 2rem; line-height: 1; opacity: 0.8; }
+    #lightbox .lb-cap { position: fixed; bottom: 1.2rem; left: 0; right: 0; text-align: center; color: #e8e4df; font-size: 0.8rem; padding: 0 2rem; }
+    .col-original .katex-display, .col-translation .katex-display { margin: 0.5rem 0; overflow-x: auto; overflow-y: hidden; max-width: 100%; font-size: 1em; }
+    .math-block { background:#fff; border:1px solid var(--border); border-left:4px solid #6f42c1; border-radius:0 8px 8px 0; padding:1rem 1.25rem; margin:1.25rem 0; box-shadow:0 1px 3px rgba(0,0,0,0.05); }
+    .math-block .mb-label { font-size:0.78rem; font-weight:600; letter-spacing:0.02em; color:#6f42c1; margin-bottom:0.5rem; }
+    .math-block .mb-eq { overflow-x:auto; overflow-y:hidden; }
+    .math-block .mb-eq .katex-display { margin:0.25rem 0; }
+    .math-block .mb-note { font-size:0.82rem; color:var(--muted); margin-top:0.5rem; line-height:1.7; }
+    .math-ref { font-size:0.85rem; color:var(--muted); font-style:italic; }
+    .col-original .katex-display > .katex, .col-translation .katex-display > .katex { max-width: 100%; }
+  .row > div { min-width:0; } .math-block .mb-eq {max-width:100%;}
+.figure-grid {display:grid;grid-template-columns:1fr 1fr;gap:1rem;} .figure-grid figure{min-width:0;}
+.source-note {font-size:.8rem;color:var(--muted);margin:.5rem 0 1rem;} .summary p {margin-bottom:.65rem;}
+.table-scroll {overflow-x:auto;} @media(max-width:700px){main{padding:1rem;}.top-nav{padding:1rem;}.figure-grid{grid-template-columns:1fr;}.summary,.code-section{padding:1rem;}}
+    .diagram img.wide { width: 100%; height: auto; }
+  </style>
+</head>
+
+<body><div class="sticky-head"><header class="top-nav">
+<h1><a href="https://arxiv.org/abs/2412.14167" target="_blank" rel="noopener">VideoDPO — Omni-Preference Alignment for Video Diffusion Generation</a></h1>
+<div class="meta">DeepLearning-Paper-with-Code · Diffusion RL · arXiv(2024) / CVPR(2025) · Liu et al.</div>
+<div class="legend"><span class="hl-thesis">核心论点</span><span class="hl-concept">关键概念</span><span class="hl-evidence">实证证据</span><span class="hl-counter">让步/反驳</span><span class="hl-method">方法论</span></div></header>
+<nav class="chapter-nav"><a href="#feynman">速读</a><a href="#abstract">Abstract</a><a href="#intro">Introduction</a><a href="#related">Related Work</a><a href="#prelims">Preliminaries</a><a href="#method">VideoDPO</a><a href="#code">代码</a><a href="#experiments">Experiments</a><a href="#discussion">Conclusion</a><a href="#notation">符号表</a><a href="#overview">总览</a><a href="#faq">十问</a><a href="#deepdive">深挖</a></nav></div><main>
+<section class="feynman" id="feynman"><h2>🎬 费曼一分钟</h2><div class="tldr-meta">先理解数据从哪里来，再理解模型怎样更新</div><p>把视频生成模型当成学生：给同一道题（提示词），让它用不同随机种子交四份答案（视频）。自动阅卷系统 OmniScore 同时看画面质量、帧间运动与文本匹配，选出最高分和最低分的视频。训练时不再重新生成整段视频，而是给保存的视频 latent 加噪，让可训练模型和冻结的参考模型分别预测噪声，用“赢家与输家的去噪误差差，相对于参考模型改善了多少”构建偏好损失。</p><p>VideoDPO 的特色不只是把 DPO 搬到视频，还在于自动选对和重加权：对分数落在罕见区间的视频对赋予更高训练权重。与 <a href="ddpo.html">DDPO</a> 在线生成轨迹、拿奖励更新不同，它主要是<strong>离线偏好对学习</strong>。无需额外人工逐对标注，不等于没有预训练数据或人工反馈来源；自动评分器本身仍来自外部训练资源。</p></section><p class="source-note">阅读范围：arXiv:2412.14167 的重点章节与段落、论文附录及官方仓库。左栏为可追溯英文摘录（省略引用编号，展开 LaTeX 宏）；中栏逐段翻译；右栏区分作者主张、数据证据和读者解释。长公式放全宽块，避免三栏错位。本文不将原文简写的 DPO 公式当作完整工程实现。</p>
+<section class="diagram">
+      <figure>
+        <img class="wide" src="assets/videodpo/diagram-videodpo-pipeline.svg" alt="自绘：VideoDPO 完整训练流程。阶段 A 离线完成：VidProm 提示词 → 每提示生成 N=4 个视频 → OmniScore 七项打分 → 选 best/worst（其余 2 个丢弃，每提示只留 1 对）→ 分数直方图 → pair 权重 w。阶段 B：读取一对 → 冻结 VAE 编码 → 加噪 → 策略与冻结参考各预测噪声 → 每样本 MSE → Δθ 与 Δref → 加权 DPO 损失 → 只更新 UNet/LoRA。论文 Fig.2 未展开 loss 内部计算，本图补齐。" loading="lazy">
+        <figcaption>自绘：VideoDPO 完整训练流程。阶段 A 离线完成：VidProm 提示词 → 每提示生成 N=4 个视频 → OmniScore 七项打分 → 选 best/worst → 分数直方图 → pair 权重 w。阶段 B：读取一对 → 冻结 VAE 编码 → 加噪 → 策略与冻结参考各预测噪声 → 每样本 MSE → Δθ 与 Δref → 加权 DPO 损失 → 只更新 UNet/LoRA。论文 Fig.2 未展开 loss 内部计算，本图补齐。 点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="abstract">Abstract</h2><div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+<div class="row"><div class="col-original"><p>While text-to-video models trained on large-scale, diverse datasets can produce varied outputs, these generations often <span class="hl-counter">deviate from user preferences</span>, highlighting the need for preference alignment on pre-trained models.</p></div><div class="col-translation"><p>尽管在大规模多样化数据集上训练的文生视频模型能够产生多样输出，这些生成结果仍经常偏离用户偏好，凸显了对预训练模型进行偏好对齐的必要性。</p></div><div class="col-analysis"><div class="analysis-card deep"><span class="tag">问题：多样性不等于满意度</span><p>预训练解决“能生成什么”，后训练解决“更倾向生成什么”。这与 DPO、InstructGPT 的行为选择问题同源，但视频增加了时间一致性要求。</p></div></div></div>
+<div class="row"><div class="col-original"><p>Unlike previous image alignment methods that focus solely on either (i) visual quality or (ii) semantic alignment between text and videos, we comprehensively consider both dimensions and construct a preference score accordingly, which we term the <span class="hl-concept">OmniScore</span>. We design a pipeline to automatically collect preference pair data based on the proposed OmniScore and discover that <span class="hl-method">re-weighting these pairs</span> based on the score significantly impacts overall preference alignment.</p></div><div class="col-translation"><p>不同于以往仅关注（i）视觉质量或（ii）文本与视频语义对齐其中一方面的图像对齐方法，我们综合考虑两个维度，并据此构建偏好分数，称为 OmniScore。我们设计了基于 OmniScore 自动收集偏好对数据的流水线，并发现依据分数对这些样本对进行重加权，会显著影响整体偏好对齐。</p></div><div class="col-analysis"><div class="analysis-card deep"><span class="tag">贡献的三个部件</span><p>OmniScore → 自动偏好数据 → 加权训练。不是新训一个奖励神经网络，也不是给每个去噪步骤在线奖励。其“兼顾各维度”的主张，后面要由总分与子分共同检验。</p></div></div></div>
+<section class="figure-row"><figure><img src="assets/videodpo/fig1-teaser.jpg" alt="VideoDPO paper Figure 1 aligned video frames" loading="lazy"><figcaption>Fig.1：论文源帧拼接；上排 VideoCrafter2，下排 T2V-Turbo 的对齐后样例。这里只展示输出，不是同种子前后对照。 点击放大。</figcaption></figure></section>
+<h2 class="section-title" id="intro">1. Introduction</h2><div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+<div class="row"><div class="col-original"><p>Specifically, two types of low-quality data are prevalent. First, regarding the videos themselves, some samples suffer from low resolution, blurriness, and <span class="hl-concept">temporal inconsistencies</span>, which negatively impact the visual quality of generated videos. Second, regarding text-video pairs, <span class="hl-counter">mismatches between text descriptions and video content</span> reduce the model’s ability to be controlled accurately through text prompts.</p></div><div class="col-translation"><p>具体而言，有两类低质量数据普遍存在。第一，就视频本身而言，一些样本存在低分辨率、模糊和时间不一致问题，负面影响生成视频的视觉质量。第二，就图文视频对而言，文本描述与视频内容不匹配，降低了通过文本提示准确控制模型的能力。</p></div><div class="col-analysis"><div class="analysis-card deep"><span class="tag">两个问题不能互相替代</span><p>画面漂亮但题不对，以及题对但闪烁模糊，是两种不同失败。一个单一的美学打分器无法自动解决另一类问题。这里是多维评分的动机，不是所有既有方法都只看一维的普遍定理。</p></div></div></div>
+<div class="row"><div class="col-original"><p>Second, obtaining preference annotations for generated videos is challenging due to the high cost of human labeling. To address this, we propose a pipeline that <span class="hl-method">automatically generates preference pair data</span> by strategically sampling from multiple videos conditioned on a given prompt, thereby eliminating the reliance on human annotation.</p></div><div class="col-translation"><p>第二，由于人工标注成本高，为生成视频获取偏好标注具有挑战性。为解决这一问题，我们提出一条流水线：针对给定提示词，从多个条件生成视频中有策略地取样，自动生成偏好对数据，从而不再依赖人工标注。</p></div><div class="col-analysis"><div class="analysis-card deep"><span class="tag">自动标签的边界</span><p>这里免除的是本任务的新增逐对人工标注，不能读成“完全无人类知识”。自动评分器仍是人为选择并训练的。它产生的是<strong>评分器偏好</strong>，是否等于部署用户的偏好，还需独立评估。</p></div></div></div>
+<section class="figure-row"><figure><img src="assets/videodpo/fig2-workflow.svg" alt="VideoDPO original pipeline diagram" loading="lazy"><figcaption>Fig.2 原始流水线：从论文矢量 PDF 导出 SVG，不是自绘。左侧多维评分，中间同提示词选 best/worst 并统计分数直方图，右侧带参考模型的加权训练。 点击放大。</figcaption></figure></section>
+<h2 class="section-title" id="related">2. Related Work</h2><div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+<div class="row"><div class="col-original"><p>DPO is a <span class="hl-concept">reward model free</span> method that can be easily performed on diffusion models. Despite the DPO-based methods being tested on text-to-image diffusion models and gaining significant process, it has been rarely tested on T2V diffusion models.</p></div><div class="col-translation"><p>DPO 是一种无需奖励模型的方法，可以方便地用于扩散模型。尽管基于 DPO 的方法已在文生图扩散模型上得到测试并取得显著进展，但它很少在文生视频扩散模型上接受测试。</p></div><div class="col-analysis"><div class="analysis-card deep"><span class="tag">训练阶段无奖励模型 ≠ 数据构建无评分器</span><p>原文的 reward model free 指偏好损失不需要显式训练奖励模型再做在线 RL；VideoDPO 构建离线数据时仍使用 OmniScore。VADER/T2V-Turbo 的可微奖励路线，则直接从分数反传。不要把 VideoDPO 等同于 DDPO 的 PPO 式训练。</p></div></div></div>
+<h2 class="section-title" id="prelims">3. Preliminaries</h2><div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+<div class="row"><div class="col-original"><p>The denoising model εθ, which learns to predict the noise added to x₀ for timestep t, is trained by <span class="hl-method">minimizing the loss</span> between the ground-truth ε and prediction.</p></div><div class="col-translation"><p>去噪模型 εθ 学习预测在时间步 t 向 x₀ 添加的噪声，其训练通过最小化真实噪声 ε 与预测值之间的损失完成。</p></div><div class="col-analysis"><div class="analysis-card deep"><span class="tag">先理解普通去噪误差</span><p>把视频编码为 latent z，再人为添加已知噪声 ε；模型猜噪声，猜得越接近误差越小。此处的 x₀ 可以是离线生成的视频，不一定是现实拍摄的视频。左栏将原文数学符号转写为文本，完整式子见下方。</p></div></div></div>
+<section class="math-block"><div class="mb-label">普通扩散训练：原文 Preliminaries 的去噪目标</div><div class="mb-eq">$$L_d(\theta)=\mathbb{E}_{t,x_0,\epsilon}\left[\left\|\epsilon-\epsilon_\theta\left(\sqrt{\bar\alpha_t}x_0+\sqrt{1-\bar\alpha_t}\epsilon,t\right)\right\|^2\right]$$</div><p class="mb-note">ᾱₜ 控制保留原信号的比例；ε 是已知的标准高斯噪声。原文上一式 q(xₜ|xₜ₋₁) 实际描述正向加噪，不能误读为逆向生成。代码在 latent 空间工作，文本条件在原文简式中省略。</p></section>
+<div class="row"><div class="col-original"><p>Training on <span class="hl-concept">pairs of generated samples</span> with positive and negative labels, the model learns to generate positive samples with higher probability and negative samples with lower probability.</p></div><div class="col-translation"><p>通过在带有正负标签的生成样本对上训练，模型学习以更高概率生成正样本，以更低概率生成负样本。</p></div><div class="col-analysis"><div class="analysis-card deep"><span class="tag">对偏好的概念解释</span><p>严格说，DPO 鼓励赢家对输家的<strong>相对偏好</strong>改善，并非保证每个赢家的绝对概率都上升。VideoDPO 的 Preliminaries 只写 L(xW,p)−L(xL,p)；这不是包含参考项、sigmoid 和尺度的完整 DiffusionDPO 损失。完整计算要对照 #code。</p></div></div></div>
+<h2 class="section-title" id="method">4. VideoDPO</h2><div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+<div class="row"><div class="col-original"><p>The quality of generated videos is influenced by multiple factors, which can be grouped into two main categories: <span class="hl-concept">visual quality and semantic alignment</span>. Visual quality includes the clarity and richness of detail within each frame, i.e., intra-frame quality, and the smoothness and coherence between frames, i.e., inter-frame motion and consistency. Semantic alignment, on the other hand, focuses on whether the generated video accurately follows the text prompt.</p></div><div class="col-translation"><p>生成视频的质量受多种因素影响，可分为两大类：视觉质量和语义对齐。视觉质量包含单帧内的清晰度与细节丰富度，即帧内质量，以及帧间的平滑度与连贯性，即帧间运动和一致性。另一方面，语义对齐关注生成视频是否准确遵循文本提示。</p></div><div class="col-analysis"><div class="analysis-card deep"><span class="tag">OmniScore 的组成</span><p>主文提到背景一致性；附录最终列出七个实际子分数，未单列背景一致性。下面依据附录明确枚举。多指标求和是手工标量化取舍，不是“所有维度必然同时改善”。</p></div></div></div>
+<section class="summary"><h2>OmniScore 七项：附录明确列出的评分器</h2><div class="table-scroll"><table class="exp-table"><thead><tr><th>子分数</th><th>模型/方法</th><th>权重</th></tr></thead><tbody><tr><td>运动平滑</td><td>AMT 插帧运动先验</td><td>4</td></tr><tr><td>时间闪烁</td><td>RAFT 选静态帧 + 帧间平均绝对差</td><td>4</td></tr><tr><td>主体一致性</td><td>DINO 跨帧特征相似度</td><td>4</td></tr><tr><td>成像质量</td><td>MUSIQ（SPAQ 训练）</td><td>4</td></tr><tr><td>美学质量</td><td>LAION aesthetic predictor</td><td>4</td></tr><tr><td>运动程度</td><td>RAFT 光流</td><td>4</td></tr><tr><td>视频文本对齐</td><td>ViCLIP overall consistency</td><td>1</td></tr></tbody></table></div><p>附录将主体一致性、闪烁、运动平滑、overall consistency 分别用给定 min/max 缩放到 [0,1]。不能直接把七项未校准原始分数相加；最终需核对评分数据的归一化与高低方向。</p></section>
+<div class="row"><div class="col-original"><p>Given a text prompt p, we generate a set of N videos {v₁, v₂, …, vN}, using the <span class="hl-method">pre-trained video generation model that we aim to align</span>. For each generated video vi, we apply the OmniScore model S to evaluate its quality conditioned on the text prompt p.</p></div><div class="col-translation"><p>给定文本提示 p，我们使用待对齐的预训练视频生成模型，生成 N 个视频 {v₁, v₂, …, vN}。对于每个生成视频 vi，我们用 OmniScore 模型 S 在提示词 p 的条件下评价其质量。</p></div><div class="col-analysis"><div class="analysis-card deep"><span class="tag">数据从哪里来</span><p>VidProm 提供真实用户撰写的提示词；候选视频由同一个待对齐基础模型生成。并不要求两个模型，也没有配对的真实目标视频。N=4、K=10,000，因此每个基础模型的数据构建预算约为 40,000 个候选视频。</p></div></div></div>
+<section class="math-block"><div class="mb-label">原文 §4.2：打分并选出最大对比的一对</div><div class="mb-eq">$$s_i=S(v_i,p),\qquad v^W=v_{\arg\max_i s_i},\quad v^L=v_{\arg\min_i s_i}$$</div><p class="mb-note">同一提示词的 N 个视频按分数排序，只保留最高分与最低分一对。K 个提示词产生 K 对，不是 N×K 对。并列分数如何处理，正文没有给出统一规则。</p></section>
+<div class="row"><div class="col-original"><p>By constructing preference pairs consistently with <span class="hl-thesis">maximally contrasting scores</span>, we aim to establish clear distinctions between the preferred, or winning, and the less-preferred, or losing video samples. This strategy serves as a strong foundation for training the alignment model.</p></div><div class="col-translation"><p>通过始终用对比最强的分数构建偏好对，我们希望在较受偏好的赢家视频与较不受偏好的输家视频之间建立清晰区别。这一策略为训练对齐模型提供了有力基础。</p></div><div class="col-analysis"><div class="analysis-card deep"><span class="tag">4 个候选 → 只留 2 个：为什么</span><p><strong>N=4 只输出 1 对。</strong>Best-vs-Worst 只取最高分与最低分，中间 2 个直接丢弃。K=10,000 提示词 → 10,000 对，不是 40,000 对。pair.json 每条记录只有 video1 / video2，就是这个原因。</p><p><strong>能否多对：可以。</strong>论文消融给了三种多对策略（N=4 时）：Better-Worse 取所有 s<sub>i</sub> &gt; s<sub>j</sub> 的组合，最多 6 对；Best-Worse 用最高分配其余 3 个，3 对；Better-Worst 用最低分配其余 3 个，3 对。VBench 总分分别为 81.32 / 80.80 / 80.73，都低于单对的 81.93。</p><p><strong>为什么单对更好。</strong>多对会把同一提示词重复计入多次，并混入大量分差很小的弱对，稀释「清晰对比」这一信号。作者的结论是「对齐效果取决于偏好对的平均质量，而非绝对数量」。这是本设定、本评分器下的经验结果，不是普遍定律。</p><p><strong>代价。</strong>丢弃的 2 个视频仍消耗了生成与打分算力。若想复用，可改成多对或按分差加权，但需重新验证是否值得。</p></div></div></div>
+<div class="row"><div class="col-original"><p>For each winning-losing pair, we define the pair probability as the <span class="hl-method">geometric mean</span> of their individual probabilities, i.e., prob(sW, sL) = √(p(sW) · p(sL)).</p></div><div class="col-translation"><p>对于每个赢家—输家对，我们把样本对的概率定义为各自概率的几何平均，即 prob(sW, sL) = √(p(sW) · p(sL))。</p></div><div class="col-analysis"><div class="analysis-card deep"><span class="tag">这里的概率不是生成概率</span><p>p(s) 来自全部 K×N 视频分数的直方图频率。它既不是模型的 pθ(v|p)，也不是人类偏好概率。所谓“pair probability”是作者定义的稀有度统计量，几何平均不是两事件独立时的联合概率。</p></div></div></div>
+<section class="math-block"><div class="mb-label">原文 §4.3：频率重加权与最终损失</div><div class="mb-eq">$$q_{\rm pair}=\sqrt{p(s^W)p(s^L)},\qquad w_{\rm pair}=\left(\frac{\beta_{\rm hist}}{q_{\rm pair}}\right)^\alpha,\qquad L_{\rm video}=w_{\rm pair}L_{\rm DPO}(p,v^W,v^L)$$</div><p class="mb-note">为避免符号混淆，这里把原文重加权常数 β 标为 β_hist，它不是代码的 beta_dpo，也不是加噪方差 βₜ。α=0 时所有权重为 1；α 越大，低频分数组成的对权重越大。低频不严格等于大分差：两个非常接近的尾部分数也可能获得高权重。</p></section>
+<div class="row"><div class="col-original"><p>A larger α increases the weight for <span class="hl-method">pairs with lower probability</span>.</p></div><div class="col-translation"><p>更大的 α 会提高低概率样本对的权重。</p></div><div class="col-analysis"><div class="analysis-card deep"><span class="tag">保留数据覆盖，而不是硬删除</span><p>大分差选对与低频加权是两个不同步骤。比如两个分数所在桶频率均为 0.1，qpair=0.1；均为 0.01 则 qpair=0.01，相同 βhist、α=1 下第二对权重为第一对的 10 倍。与 DDPO 的新旧策略重要性比完全不同，这里是离线损失权重。</p></div></div></div>
+<section class="code-section" id="code"><h2>💻 代码对照：离线视频对 → 参考校准的去噪误差差</h2><p>官方仓库：<a href="https://github.com/CIntellifusion/VideoDPO">CIntellifusion/VideoDPO</a>。以下基于本次读取的 main 源码，摘录与教学伪代码明确区分。仓库 README 公开 VideoCrafter2 与 T2V-Turbo 训练，CogVideoX 代码仍列 TODO；不能把论文表中的 CogVideo 自动改写成 CogVideoX。</p>
+<div class="table-scroll"><table class="exp-table"><thead><tr><th>论文步骤</th><th>官方文件 / 符号</th><th>实现重点</th></tr></thead><tbody><tr><td>读取赢家/输家</td><td><a href="https://github.com/CIntellifusion/VideoDPO/blob/main/data/video_data.py">data/video_data.py</a> · TextVideoDPO</td><td>pair.json 的 video1/video2/frame_caption/score；返回 video/caption/dupfactor</td></tr><tr><td>编码和加噪</td><td><a href="https://github.com/CIntellifusion/VideoDPO/blob/main/lvdm/models/ddpm3d.py">lvdm/models/ddpm3d.py</a> · get_batch_input / q_sample / p_losses</td><td>赢家输家先沿通道拼接，再转换为 2B 的 batch；VAE 编码 latent</td></tr><tr><td>参考预测</td><td>ddpm3d.py · shared_ref_pred</td><td>固定 ref_model；部分 LoRA 分支通过关闭适配器得到参考输出</td></tr><tr><td>加权损失</td><td>ddpm3d.py · dpo_loss</td><td>model_diff − ref_diff → -0.5×beta_dpo → -logsigmoid → 乘 dupfactor</td></tr><tr><td>直方图权重工具</td><td><a href="https://github.com/CIntellifusion/VideoDPO/blob/main/OmniScore/visualize_pair_prob.py">OmniScore/visualize_pair_prob.py</a></td><td>当前文件主要是注释/草稿，不能当作可运行的完整 OmniScore 构建脚本</td></tr></tbody></table></div>
+<h3>① 数据读取与权重：真实源码节选</h3><pre class="code-block"># data/video_data.py · TextVideoDPO.__getitem__
+videowidx, videolidx, frame_caption, prob_score = self.pairs[index]
+dupfactor = (0.72 / prob_score) ** self.dupbeta
+videow = self.data[videowidx][&quot;video&quot;]
+videol = self.data[videolidx][&quot;video&quot;]
+combined_frames = torch.cat([videow, videol], dim=0)
+return {&quot;video&quot;: combined_frames,
+        &quot;caption&quot;: frame_caption, &quot;dupfactor&quot;: dupfactor}</pre><p class="code-note">原文实现段写 α=0.72、β=1，但此代码的 0.72 是分子常数，dupbeta 是指数；消融表又写 α=1 为 Ours。三者口径不一致，不能静默合并。复现时必须核对实际配置和 pair.json 的 score：数据类只消费这个字段，不在这里计算直方图几何平均。</p>
+<h3>② 加噪和参考模型：教学伪代码，不是逐行摘录</h3><pre class="code-block"># 一个离线训练 batch；不做完整逆向生成，不重新调用 OmniScore
+z_w = vae.encode(video_w).detach()          # [B,C,F,H,W]
+z_l = vae.encode(video_l).detach()
+z = cat([z_w, z_l], dim=0)                 # [2B,C,F,H,W]
+t = sample_training_timesteps(z.shape[0])
+eps = randn_like(z)
+z_t = sqrt(alpha_bar[t]) * z + sqrt(1-alpha_bar[t]) * eps
+pred = policy(z_t, t, repeat_prompt_embeddings(c))
+with no_grad():
+    ref_pred = reference(z_t, t, repeat_prompt_embeddings(c))</pre><p class="code-note">关键是 policy 与 reference 对同一批 z_t、t、ε 做比较。官方 forward 默认逐样本取随机 t，不能无证据声称赢家与输家一定共享相同 t/ε。离线视频作为当前的“干净样本”，噪声 ε 是人为添加且已知的监督目标。</p>
+<h3>③ 偏好损失：真实 dpo_loss 核心摘录</h3><pre class="code-block"># lvdm/models/ddpm3d.py · dpo_loss
+model_losses = (pred - target).pow(2).mean(dim=[1, 2, 3])
+model_losses_w, model_losses_l = model_losses.chunk(2)
+model_diff = model_losses_w - model_losses_l
+with torch.no_grad():
+    ref_losses = (self.ref_pred - target).pow(2).mean(dim=[1, 2, 3])
+    ref_losses_w, ref_losses_l = ref_losses.chunk(2)
+    ref_diff = ref_losses_w - ref_losses_l
+inside_term = -0.5 * self.beta_dpo * (model_diff - ref_diff)
+loss = (-self.dupfactor * F.logsigmoid(inside_term)).mean()</pre><p class="code-note">重要实现检查：若张量按常见 [2B,C,F,H,W] 排列，mean([1,2,3]) 保留 W 维；这不是“所有非 batch 维取均值”。权重 shape 与广播要按实际分支检查。本页是源码对照，不宣称已经运行模型训练或验证所有分支正确。</p>
+<section class="math-block"><div class="mb-label">代码实际使用的偏好项（简化为每对一个误差标量，方便理解）</div><div class="mb-eq">$$e_\theta^W=\|\epsilon^W-\epsilon_\theta(z_t^W,t^W,p)\|^2,\quad \Delta_\theta=e_\theta^W-e_\theta^L,\quad u=-\tfrac12\beta_{\rm DPO}(\Delta_\theta-\Delta_{\rm ref}),\quad \ell=-w_{\rm pair}\log\sigma(u)$$</div><p class="mb-note">这是对已读取代码的教学表达，不是照抄原文 Preliminaries 简式。赢家误差相对输家降低，且改善超过 reference，则 Δθ−Δref 为负、u 变大、损失降低。模型学的是相对差，不是单独最小化赢家 MSE、无限最大化输家 MSE。上式省略 batch、t 权重和具体张量归约，完整复现以实际代码分支为准。</p></section>
+<h3>④ 用一个数字例子理解符号：教学伪代码</h3><pre class="code-block"># 基础参考：赢家误差 3，输家误差 5 -&gt; ref_diff = -2
+# 当前模型：赢家误差 2，输家误差 6 -&gt; model_diff = -4
+ref_diff = 3 - 5
+model_diff = 2 - 6
+u = -0.5 * beta_dpo * (model_diff - ref_diff)  # 正值
+loss = pair_weight * softplus(-u)            # 等于 -w*log(sigmoid(u))
+# 如果当前模型与 reference 完全相同，则 u=0，损失为 w*log(2)
+# 初始损失不是 0；此时仍可通过 policy 分支产生梯度。</pre><p class="code-note">βDPO 控制偏好 logit 的尺度；pair_weight 控制该对的整体梯度权重。reference 不更新。这里的预测噪声和误差都可微，但 OmniScore 不需要参与训练时反向传播。</p>
+</section>
+<h2 class="section-title" id="experiments">5. Experiment</h2><div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+<div class="row"><div class="col-original"><p>We train the video diffusion models for <span class="hl-evidence">3000 steps</span> with a global batch size of 8, using the AdamW optimizer with a learning rate of 6e-6. During training, the re-weighting algorithm hyper-parameters are set to α=0.72 and β=1. K=10,000 human-written prompts from VidProm are used for alignment training. For each prompt, the number of generated videos <span class="hl-method">N is set to 4</span>. The bin width for the distribution of video OmniScore scores is set to 0.01. All experiments are conducted on 4 Nvidia A100 GPUs.</p></div><div class="col-translation"><p>我们用全局 batch size 8 训练视频扩散模型 3000 步，优化器为 AdamW，学习率为 6e-6。训练时重加权超参数设为 α=0.72、β=1。对齐训练使用 VidProm 中 K=10,000 条人类撰写提示词。每条提示生成 N=4 个视频。视频 OmniScore 分布的直方图桶宽为 0.01。所有实验均在 4 张 Nvidia A100 GPU 上完成。</p></div><div class="col-analysis"><div class="analysis-card deep"><span class="tag">复现实验配置与歧义</span><p>主文配置按原样保留。α 数值与消融表、数据类常数位置不一致，#code 已列出。40,000 次候选视频生成以及多评分器成本不包括在 3000 个更新步中；离线不是没有采样成本，只是把成本放到了训练之前。</p></div></div></div>
+<div class="row"><div class="col-original"><p>We analyze the dataset by examining the OmniScore distribution, the score range, i.e., the difference between maximum and minimum scores, for each prompt, and the correlations among individual scoring metrics. To quantify these correlations, we calculate <span class="hl-method">Pearson correlation coefficients</span>.</p></div><div class="col-translation"><p>我们通过考察 OmniScore 分布、每条提示词的分数范围（即最高分与最低分之差）以及各评分指标之间的相关性来分析数据集。为量化这些相关性，我们计算 Pearson 相关系数。</p></div><div class="col-analysis"><div class="analysis-card deep"><span class="tag">分差和频率分别回答不同问题</span><p>分差衡量同题答案能否拉开；直方图衡量某个分数区间是否常见；相关性说明某个指标是否能替代另一个指标。低相关支持多维测量，但不能单凭相关性证明当前加权系数最优。</p></div></div></div>
+<section class="figure-row"><div class="figure-grid">
+<figure><img src="assets/videodpo/fig3a-sampling.png" alt="Fig.3a：候选数 N 与最高最低分差" loading="lazy"><figcaption>Fig.3a：候选数 N 与最高最低分差。来自原始矢量图，300 DPI 渲染；点击放大。</figcaption></figure>
+<figure><img src="assets/videodpo/fig3b-score-histogram.png" alt="Fig.3b：全部候选的 OmniScore 直方图" loading="lazy"><figcaption>Fig.3b：全部候选的 OmniScore 直方图。来自原始矢量图，300 DPI 渲染；点击放大。</figcaption></figure>
+<figure><img src="assets/videodpo/fig3c-gap-histogram.png" alt="Fig.3c：偏好对的分差直方图" loading="lazy"><figcaption>Fig.3c：偏好对的分差直方图。来自原始矢量图，300 DPI 渲染；点击放大。</figcaption></figure>
+<figure><img src="assets/videodpo/fig3d-correlation.png" alt="Fig.3d：子指标相关性" loading="lazy"><figcaption>Fig.3d：子指标相关性。来自原始矢量图，300 DPI 渲染；点击放大。</figcaption></figure>
+</div></section>
+<section class="summary"><h2>Table 1：主实验数字，不用总分掩盖退步</h2><div class="table-scroll"><table class="exp-table"><thead><tr><th>基础模型 / 方法</th><th>VBench 总分</th><th>质量</th><th>语义</th><th>HPS(V)</th><th>PickScore</th></tr></thead><tbody><tr><td>VC2 Baseline</td><td>80.44</td><td>82.20</td><td>73.42</td><td>0.258</td><td>20.65</td></tr><tr><td>VC2 SFT</td><td>78.78</td><td>79.90</td><td>74.32</td><td>0.258</td><td>20.35</td></tr><tr><td>VC2 VADER（原表写 VADAR）</td><td>80.59</td><td>82.46</td><td>73.09</td><td>0.259</td><td>20.62</td></tr><tr><td>VC2 VideoDPO</td><td>81.93</td><td>83.07</td><td>77.38</td><td>0.261</td><td>20.65</td></tr><tr><td>Turbo Baseline</td><td>80.95</td><td>82.71</td><td>73.93</td><td>0.262</td><td>21.15</td></tr><tr><td>Turbo VideoDPO</td><td>81.80</td><td>83.80</td><td>73.81</td><td>0.260</td><td>21.18</td></tr><tr><td>CogVideo Baseline</td><td>79.30</td><td>82.35</td><td>67.10</td><td>—</td><td>19.81</td></tr><tr><td>CogVideo SFT</td><td>79.64</td><td>82.74</td><td>67.23</td><td>—</td><td>19.79</td></tr><tr><td>CogVideo VideoDPO</td><td>79.80</td><td>83.00</td><td>66.99</td><td>—</td><td>19.79</td></tr></tbody></table></div><p>VBench 为百分数；变化以百分点描述。VC2 总分 +1.49、语义 +3.96；Turbo 总分 +0.85，但语义 −0.12、HPS −0.002；CogVideo 总分 +0.50，但语义 −0.11、PickScore −0.02。表中没有置信区间，不能把很小差异自动称为统计显著。</p></section>
+<div class="row"><div class="col-original"><p>After alignment using our approach, all models show performance improvements, with <span class="hl-evidence">consistent gains on the VBench metric</span>. Models such as VC2 and T2VTurbo also achieve higher scores on human preference metrics, including HPS (V) and PickScore, demonstrating the generalizability of our approach.</p></div><div class="col-translation"><p>经过我们的方法对齐后，所有模型都表现出性能提升，在 VBench 指标上获得一致收益。VC2 和 T2VTurbo 等模型在人类偏好指标（包括 HPS (V) 和 PickScore）上也获得更高分数，体现了我们方法的泛化性。</p></div><div class="col-analysis"><div class="analysis-card deep"><span class="tag">作者叙述与表格必须一起读</span><p>“consistent gains”能由三个模型的<strong>VBench 总分</strong>支持，但不能扩展成“所有偏好维度均提升”。Turbo 的 HPS 实际下降，CogVideo 的 PickScore 下降；VC2 的 PickScore 持平。保留原文，让读者看到叙述与证据边界。</p></div></div></div>
+<section class="figure-row"><figure><img src="assets/videodpo/fig5-temporal.jpg" alt="VideoDPO temporal consistency before after source frames" loading="lazy"><figcaption>Fig.5：论文帧间定性对照，左为对齐前、右为对齐后，依次为 VC2、Turbo、CogVideo。摘帧能展示内容稳定性，但不能替代完整播放的运动评估。 点击放大。</figcaption></figure></section>
+<div class="row"><div class="col-original"><p>The “Best-vs-Worst” strategy, adopted by us, pairs only the highest and lowest-scoring videos and <span class="hl-method">outputs 1 preference pair</span> for a prompt. The experiments show that this strategy, which generates only the most distinctive pair, yields the best performance.</p></div><div class="col-translation"><p>我们采用的“Best-vs-Worst”策略只将最高分与最低分视频配对，每条提示词输出 1 个偏好对。实验显示，这种只生成对比最鲜明样本对的策略获得最佳表现。</p></div><div class="col-analysis"><div class="analysis-card deep"><span class="tag">数据质量 vs 数量</span><p>配对消融支持每提示一对的选择：best/worst 总分 81.93，better/worse 81.32，best/worse 80.80，better/worst 80.73。它不证明“多样本永远无用”，因为噪声、提示覆盖、重复权重与预算会共同影响结果。</p></div></div></div>
+<div class="row"><div class="col-original"><p>However, the results show that excluding these training samples led to worse performance. This may be because the removal of these pairs, also including the prompts, <span class="hl-counter">reduced the diversity of the training data</span>, leaving the model with many prompts it had not seen before and weakening its alignment performance.</p></div><div class="col-translation"><p>然而，结果表明排除这些训练样本会使表现变差。可能的原因是，删除这些样本对也删除了对应提示词，降低训练数据多样性，使模型面对许多从未见过的提示词，削弱了对齐表现。</p></div><div class="col-analysis"><div class="analysis-card deep"><span class="tag">软加权保留覆盖</span><p>“可能因为多样性下降”是作者解释，不是已隔离验证的因果。删去弱对同时删掉 prompt，因此这里支持保留覆盖，但还缺少固定 prompt 集合的过滤对照。</p></div></div></div>
+<div class="row"><div class="col-original"><p>At α=2, we observe a significant increase in semantic performance but <span class="hl-counter">a decrease in quality performance</span> on VBench, resulting in the same total score as achieved with α=1.</p></div><div class="col-translation"><p>在 α=2 时，我们观察到 VBench 语义表现显著增加，但质量表现下降，最终总分与 α=1 相同。</p></div><div class="col-analysis"><div class="analysis-card deep"><span class="tag">重加权也有 Pareto 取舍</span><p>α=1 与 α=2 总分均 81.93；质量 83.07→82.52，语义 77.38→79.59。加权更强不是所有方面更好。此处原文使用 significant，但未提供显著性检验，宜理解为幅度描述。</p></div></div></div>
+<section class="summary"><h2>消融摘要：Table 3 与附录</h2><div class="table-scroll"><table class="exp-table"><thead><tr><th>实验</th><th>设置</th><th>VBench Total</th><th>解释</th></tr></thead><tbody><tr><td>α</td><td>0 / 0.5 / 1 / 2</td><td>80.89 / 81.51 / 81.93 / 81.93</td><td>加权有效；更强加权有质量语义取舍</td></tr><tr><td>候选数 N</td><td>2 / 3 / 4</td><td>80.89 / 81.51 / 81.93</td><td>同提示增加候选能提高可用对比</td></tr><tr><td>删除弱对</td><td>75% / 50% / 25% / 不删</td><td>80.08 / 81.29 / 81.42 / 81.93</td><td>删对也删提示，存在覆盖混淆</td></tr><tr><td>评分组合</td><td>仅语义 / 仅美学 / OmniScore</td><td>80.20 / 79.65 / 81.93</td><td>综合评分在本设定更好</td></tr><tr><td>按单维度各选对再合并</td><td>40,000 对</td><td>78.26</td><td>数量更多不等于标签更协调</td></tr></tbody></table></div><p>注意 α 和 N 消融前两行若干数字完全相同，本文照抄原始表，不把重复数字视为额外独立验证；需要复现或作者说明。</p></section>
+<h2 class="section-title" id="discussion">6. Conclusion</h2><div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+<div class="row"><div class="col-original"><p>VideoDPO introduces a comprehensive scoring method, OmniScore, along with a novel data reweighting strategy that <span class="hl-thesis">automatically constructs and prioritizes preference data</span>, enabling more effective alignment training.</p></div><div class="col-translation"><p>VideoDPO 引入综合评分方法 OmniScore，以及一种新的数据重加权策略，用于自动构建偏好数据并确定其优先级，从而实现更有效的对齐训练。</p></div><div class="col-analysis"><div class="analysis-card deep"><span class="tag">贡献与边界</span><p>本质贡献集中在“怎样制造更有效的离线偏好监督”。范围限于给定评分器、候选生成模型与 VidProm 提示分布。自动标签错误、稀有分数过度加权、运动质量退化、OOD 用户偏好，都需要独立研究，不能被总分结论覆盖。</p></div></div></div>
+<section class="summary" id="notation"><h2>符号速查与三种 β</h2><div class="table-scroll"><table class="exp-table"><thead><tr><th>符号</th><th>含义</th></tr></thead><tbody><tr><td>p / c</td><td>文本提示；注意 p(s) 中的 p 是频率函数，而不是提示字符串</td></tr><tr><td>vW / vL</td><td>同题候选中最高分与最低分视频</td></tr><tr><td>S / si</td><td>OmniScore 评分器 / 候选分数</td></tr><tr><td>K / N</td><td>提示词数量 / 每提示候选数；主实验 10,000 / 4</td></tr><tr><td>p(s)</td><td>分数所在直方图桶的经验频率，不是生成模型密度</td></tr><tr><td>qpair</td><td>√(p(sW)p(sL))：作者定义的 pair 稀有度</td></tr><tr><td>α / dupbeta</td><td>重加权指数；论文与代码配置存在口径差异</td></tr><tr><td>βhist</td><td>重加权分子常数；代码数据类硬编码 0.72</td></tr><tr><td>βDPO / beta_dpo</td><td>偏好 logit 尺度；与直方图常数不同</td></tr><tr><td>βt / ᾱt</td><td>正向加噪方差 / 累计信号保留比例</td></tr><tr><td>εθ / εref</td><td>可训练模型 / 固定参考模型的噪声预测</td></tr></tbody></table></div></section>
+<section class="summary" id="overview"><h2>论证结构总览</h2><div class="skeleton">噪声预训练数据导致画质与语义偏差 → 子指标低相关，需综合评分 → 同提示 N 次生成，best/worst 构对 → 分数频率重加权保留覆盖 → 参考校准去噪误差的 DPO → 三模型总分提升 + 配对/过滤/α/N 消融 → 子指标仍有退步与实现口径歧义。</div><div class="strength">最强证据：VC2 总分与语义分均提升，单维评分、弱对过滤与无加权消融提供了组件层支持。</div><div class="weakness">最弱环节：稀有度与大分差并不严格等价；总分改善不保证每维度改善；完整 DPO 定义、α 数值与公开代码存在需核对之处。</div></section>
+<section class="summary faq" id="faq"><h2>🧩 结构化十问</h2><details open><summary>Q1 · 解决什么问题？</summary><div class="answer">视频预训练输出在帧内画质、帧间稳定性和图文语义上偏离偏好，目标是离线后训练改善这些方面。</div></details><details open><summary>Q2 · 与 DDPO 有何区别？</summary><div class="answer">DDPO 在线采完整去噪轨迹并以标量奖励做策略梯度；VideoDPO 先离线生成赢家输家视频，再用随机加噪和参考误差比较做偏好学习。不是将 DDPO 的 PPO 比率改个名字。</div></details><details open><summary>Q3 · 训练数据是什么？</summary><div class="answer">VidProm 提示词，加同一个待对齐模型生成的 N 个视频；选出每提示一对并存储权重统计。无需额外配对真实参考视频，但仍需要基础模型和外部评分器。</div></details><details open><summary>Q4 · 4 个视频为什么只留 2 个？能多留吗？</summary><div class="answer">论文的 Best-vs-Worst 只取最高分与最低分组成 1 对，中间 2 个丢弃，所以 10,000 条提示词只产生 10,000 对。可以多留：Better-Worse（所有 s<sub>i</sub>&gt;s<sub>j</sub>，最多 6 对）、Best-Worse（3 对）、Better-Worst（3 对）都在消融里试过，VBench 总分 81.32 / 80.80 / 80.73，均低于单对的 81.93。原因推测是多对重复计入同一提示词、且混入大量弱对，稀释了对比信号。</div></details><details open><summary>Q5 · OmniScore 等于训练奖励模型吗？</summary><div class="answer">它是多指标自动评分组合，负责离线排序。DPO 更新时无需在线评估 OmniScore，也不对其反传；free reward model 的说法仅适用于偏好训练环节。</div></details><details open><summary>Q6 · 重加权到底按什么？</summary><div class="answer">按分数直方图的频率，qpair 是两个桶频率的几何平均，权重与 qpair 的 α 次幂成反比。不直接按分差，也不是新旧策略概率比。</div></details><details open><summary>Q7 · 模型怎样知道赢家更好？</summary><div class="answer">赢家输家通过标签排列进入 batch；当前模型和参考模型预测同一加噪样本的噪声，比较赢家输家误差差的相对改善，再用 sigmoid 损失。</div></details><details open><summary>Q8 · 实验是否所有维度都变好？</summary><div class="answer">不是。三个模型 VBench 总分变好，VC2 语义提升较强；Turbo 和 CogVideo 的聚合语义分略降，若干运动和偏好子指标也下降。</div></details><details open><summary>Q9 · 能直接复现吗？</summary><div class="answer">有官方 VC2/Turbo 代码和数据入口，但实际训练需要大模型、视频数据及 GPU。本次只核对源码；OmniScore 工具文件主要是注释，α 配置、score 字段和张量广播仍需复现实验检查。</div></details><details open><summary>Q10 · 下一步值得研究什么？</summary><div class="answer">独立人类或隐藏评分器验证、保留提示覆盖的噪声标签过滤、分差加权 vs 频率加权受控比较、权重上限、运动退化约束、OOD 偏好与现代视频模型。</div></details></section>
+<section class="summary deepdive" id="deepdive"><h2>🔬 深挖：哪些结论还不能直接接受？</h2><div class="block"><h4>一、频率加权为何不等于大分差加权？</h4><p>选对时 argmax/argmin 最大化同题分差；权重却只看两个端点的全局频率。两个同处罕见尾部、分数接近的视频，也可能得到很高权重。需要把 score gap、tail rarity 与 label confidence 分别测量。</p></div><div class="block"><h4>二、同一评分体系用于构对与评估，有什么风险？</h4><p>OmniScore 借鉴 VBench 的模型，评估又主要用 VBench，可能对共享测量机制产生适配。并不等于训练作弊，但结论需要独立评价器、人类盲测或运动专项测试支持。</p></div><div class="block crit"><h4>三、指标标量化的盲区</h4><p>附录六个视觉维度权重均为 4，语义维度为 1；这是价值取舍，不是中性真值。平均总分会掩盖 motion smoothness、dynamic degree 或文本匹配退步。应同时报告分维度指标与样本级错误。</p></div><div class="block crit"><h4>四、公开实现与论文定义的距离</h4><p>Preliminaries 的 DPO 简式缺少 reference 与 sigmoid；α=0.72/1 与代码常数位置不一致；5D 张量误差归约和权重广播需验证。仓库 main 可变，本页不承诺它等于作者最终实验配置。</p></div><div class="block"><h4>五、为什么离线 DPO 仍有覆盖限制？</h4><p>只在离线候选提供的赢家输家关系上学习，没有 DDPO/GRPO 式在线探索。训练可以重组已有能力，却不能保证发现候选集外的新行为。更强模型混合、迭代生成数据和 online RL 都是后续路线，不是本文已经证明的结论。</p></div></section>
+</main>
+<script>
+    function syncScrollPad() {
+      var head = document.querySelector('.sticky-head');
+      if (head) document.documentElement.style.scrollPaddingTop = (head.offsetHeight + 8) + 'px';
+    }
+    window.addEventListener('load', syncScrollPad);
+    window.addEventListener('resize', syncScrollPad);
+    syncScrollPad();
+  </script>
+
+  <div id="lightbox" role="dialog" aria-modal="true" aria-label="放大查看">
+    <span class="lb-close" aria-hidden="true">&times;</span>
+    <div class="lb-content"></div>
+    <div class="lb-cap"></div>
+  </div>
+  <script>
+  (function () {
+    var lb = document.getElementById('lightbox');
+    var content = lb.querySelector('.lb-content');
+    var cap = lb.querySelector('.lb-cap');
+    function findZoomTarget(node) {
+      var el = node.closest ? node.closest('img, svg') : null;
+      if (!el) return null;
+      if (!el.closest('.diagram, .figure-row, .mermaid')) return null;
+      return el;
+    }
+    function nearestCaption(el) {
+      var fig = el.closest('figure') || el.closest('.diagram') || el.closest('.figure-row');
+      var c = fig && fig.querySelector('figcaption');
+      if (!c) return '';
+      var clone = c.cloneNode(true);
+      clone.querySelectorAll('.katex-mathml').forEach(function (n) { n.remove(); });
+      return clone.textContent.trim();
+    }
+    function openLightbox(node, caption) {
+      content.innerHTML = '';
+      var clone = node.cloneNode(true);
+      clone.style.cursor = 'default';
+      clone.style.boxShadow = 'none';
+      var r = node.getBoundingClientRect();
+      var vw = window.innerWidth * 0.96, vh = window.innerHeight * 0.92;
+      var w = r.width || node.clientWidth || 600;
+      var h = r.height || node.clientHeight || 400;
+      var scale = Math.min(vw / w, vh / h);
+      if (!isFinite(scale) || scale <= 0) scale = 1;
+      clone.style.width = Math.round(w * scale) + 'px';
+      clone.style.height = Math.round(h * scale) + 'px';
+      clone.style.maxWidth = 'none';
+      clone.style.maxHeight = 'none';
+      content.appendChild(clone);
+      cap.textContent = caption || '';
+      lb.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeLightbox() {
+      lb.classList.remove('open');
+      content.innerHTML = '';
+      document.body.style.overflow = '';
+    }
+    document.addEventListener('click', function (e) {
+      if (lb.classList.contains('open')) { closeLightbox(); return; }
+      var el = findZoomTarget(e.target);
+      if (el) { e.preventDefault(); e.stopPropagation(); openLightbox(el, nearestCaption(el)); }
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && lb.classList.contains('open')) closeLightbox();
+    });
+  })();
+  </script>
+
+</body>
+</html>

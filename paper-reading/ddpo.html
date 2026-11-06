@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DDPO — Training Diffusion Models with Reinforcement Learning · 逻辑精读</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <!-- KaTeX：数学公式渲染（行内 $...$，行间 $$...$$） -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}],throwOnError:false});"></script>
+  <style>
+    :root {
+      --navy: #1a2744;
+      --paper: #faf8f5;
+      --thesis: #fff3cd;
+      --concept: #f8d7da;
+      --evidence: #cfe2ff;
+      --counter: #d1e7dd;
+      --method: #e2d9f3;
+      --text: #2c2c2c;
+      --muted: #6c757d;
+      --border: #e8e4df;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'IBM Plex Sans', sans-serif; background: var(--paper); color: var(--text); line-height: 1.6; }
+    .sticky-head { position: sticky; top: 0; z-index: 100; }
+    .top-nav { background: var(--navy); color: #fff; padding: 1rem 2rem; }
+    .top-nav h1 { font-size: 1.25rem; font-weight: 600; }
+    .top-nav h1 a { color: #fff; text-decoration: none; border-bottom: 1px dotted rgba(255,255,255,0.5); }
+    .top-nav h1 a:hover { border-bottom-style: solid; }
+    .top-nav .meta { font-size: 0.85rem; opacity: 0.85; margin-top: 0.25rem; }
+    .legend { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.75rem; font-size: 0.8rem; }
+    .legend span { padding: 0.15rem 0.5rem; border-radius: 3px; color: #2c2c2c; }
+    .chapter-nav { background: #fff; border-bottom: 1px solid var(--border); padding: 0.75rem 2rem; overflow-x: auto; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+    .chapter-nav a { color: var(--navy); text-decoration: none; margin-right: 1.25rem; font-size: 0.9rem; font-weight: 500; }
+    .chapter-nav a:hover { text-decoration: underline; }
+    main { max-width: 1680px; margin: 0 auto; padding: 2rem; }
+    .section-title { font-size: 1.5rem; color: var(--navy); margin: 2rem 0 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--navy); }
+    .col-labels { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 0.5rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+    .row { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; align-items: start; }
+    .col-original { font-family: 'Lora', serif; font-size: 0.95rem; line-height: 1.75; }
+    .col-original p { margin-bottom: 0.75rem; }
+    .col-translation { font-size: 0.92rem; line-height: 1.75; color: #333; }
+    .col-translation p { margin-bottom: 0.75rem; }
+    .analysis-card { background: #fff; border-left: 4px solid var(--navy); padding: 1rem 1.25rem; border-radius: 0 6px 6px 0; box-shadow: 0 1px 3px rgba(0,0,0,0.06); font-size: 0.9rem; }
+    .analysis-card .tag { display: inline-block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 0.5rem; color: var(--navy); }
+    .analysis-card h4 { font-size: 0.85rem; color: var(--muted); margin: 0.75rem 0 0.25rem; }
+    .analysis-card p { margin-bottom: 0.5rem; }
+    .analysis-card.deep { border-left-width: 5px; }
+    .analysis-detail { margin: 0.75rem 0; padding-top: 0.5rem; border-top: 1px dashed var(--border); }
+    .analysis-detail:first-of-type { border-top: none; }
+    .exp-detail { list-style: none; margin: 0.5rem 0; }
+    .exp-detail li { margin-bottom: 0.4rem; }
+    .exp-detail li strong { color: var(--navy); }
+    .exp-table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.82rem; }
+    .exp-table th, .exp-table td { border: 1px solid var(--border); padding: 0.35rem 0.5rem; text-align: left; }
+    .exp-table th { background: var(--paper); color: var(--navy); font-weight: 600; }
+    .exp-table tr.is-ours { background: var(--evidence); }
+    .exp-table tr.is-ours td { font-weight: 600; }
+    .notation { width: 100%; border-collapse: collapse; margin: 0.75rem 0; font-size: 0.85rem; background: #fff; }
+    .notation th, .notation td { border: 1px solid var(--border); padding: 0.4rem 0.6rem; text-align: left; }
+    .notation th { background: var(--paper); color: var(--navy); font-weight: 600; }
+    .notation td:first-child { width: 22%; white-space: nowrap; }
+    .diagram { margin: 0.75rem 0; }
+    .diagram img, .diagram svg { max-width: 100%; height: auto; display: block; border: 1px solid var(--border); border-radius: 4px; background: #fff; }
+    .diagram figcaption, .figure-row figcaption { font-size: 0.78rem; color: var(--muted); margin-top: 0.35rem; }
+    .figure-row { margin: 1.5rem 0; padding: 1rem; background: #fff; border: 1px solid var(--border); border-radius: 8px; }
+    .figure-row figure { margin: 0; text-align: center; }
+    .figure-row img, .figure-row svg { max-width: 100%; height: auto; }
+    .mermaid { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 0.5rem; margin: 0.75rem 0; }
+    .hl-thesis { background: var(--thesis); padding: 0 2px; }
+    .hl-concept { background: var(--concept); padding: 0 2px; }
+    .hl-evidence { background: var(--evidence); padding: 0 2px; }
+    .hl-counter { background: var(--counter); padding: 0 2px; }
+    .hl-method { background: var(--method); padding: 0 2px; }
+    .summary { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 2rem; margin-top: 3rem; }
+    .summary h2 { color: var(--navy); margin-bottom: 1rem; }
+    .summary .skeleton { font-family: 'IBM Plex Sans', monospace; background: var(--paper); padding: 1rem; border-radius: 4px; margin: 1rem 0; }
+    .summary .strength, .summary .weakness { padding: 0.75rem 1rem; border-radius: 4px; margin: 0.5rem 0; }
+    .summary .strength { background: var(--counter); }
+    .summary .weakness { background: var(--concept); }
+    .feynman { background: #fff; border: 1px solid var(--border); border-left: 5px solid #0d9488; border-radius: 0 8px 8px 0; padding: 1.25rem 1.5rem; margin: 1.5rem 0 2rem; }
+    .feynman h2 { color: #0d9488; font-size: 1.15rem; margin-bottom: 0.35rem; }
+    .feynman .tldr-meta { font-size: 0.78rem; color: var(--muted); margin-bottom: 0.6rem; }
+    .feynman p { font-size: 0.95rem; line-height: 1.85; margin-bottom: 0.6rem; }
+    .faq details { background: #fff; border: 1px solid var(--border); border-radius: 6px; margin: 0.5rem 0; }
+    .faq details[open] { box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .faq summary { cursor: pointer; font-weight: 600; color: var(--navy); padding: 0.7rem 0.9rem; list-style: none; font-size: 0.92rem; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::before { content: '▸'; color: #0d9488; margin-right: 0.5rem; }
+    .faq details[open] summary::before { content: '▾'; }
+    .faq .answer { padding: 0 0.9rem 0.85rem 1.8rem; font-size: 0.9rem; line-height: 1.8; color: #333; }
+    .deepdive .block { margin: 0.9rem 0; padding: 0.85rem 1.1rem; border-radius: 4px; background: var(--paper); border-left: 3px solid #6f42c1; }
+    .deepdive .block.crit { border-left-color: #dc3545; background: #fdf0f1; }
+    .deepdive .block h4 { color: var(--navy); margin-bottom: 0.3rem; }
+    .deepdive .block ul { margin: 0.3rem 0 0 1.1rem; }
+    .deepdive .block li { margin-bottom: 0.3rem; font-size: 0.9rem; }
+    .code-section { background:#fff; border:1px solid var(--border); border-radius:8px; padding:1.5rem 1.75rem; margin:2rem 0; }
+    .code-section h3 { color:var(--navy); font-size:1.05rem; margin:1.5rem 0 0.75rem; }
+    .code-section h3:first-of-type { margin-top:0; }
+    .code-section p, .code-section li { font-size:0.9rem; line-height:1.75; margin-bottom:0.5rem; }
+    .code-section ul { margin:0.5rem 0 0.75rem 1.25rem; }
+    .code-block { font-family:'IBM Plex Mono','IBM Plex Sans',monospace; font-size:0.78rem; line-height:1.65; background:#1e293b; color:#e2e8f0; padding:1rem 1.15rem; border-radius:6px; overflow-x:auto; margin:0.75rem 0; white-space:pre; tab-size:2; }
+    .code-block .cm { color:#94a3b8; font-style:italic; }
+    .code-block .kw { color:#7dd3fc; }
+    .code-block .fn { color:#fde68a; }
+    .code-block .str { color:#86efac; }
+    .code-note { font-size:0.82rem; color:var(--muted); margin:0.35rem 0 1rem; padding-left:0.75rem; border-left:3px solid #0d9488; }
+    .code-map { width:100%; border-collapse:collapse; margin:0.75rem 0; font-size:0.82rem; }
+    .code-map th, .code-map td { border:1px solid var(--border); padding:0.4rem 0.55rem; text-align:left; vertical-align:top; }
+    .code-map th { background:var(--paper); color:var(--navy); font-weight:600; }
+    .code-map code { font-size:0.78rem; background:var(--paper); padding:0.1rem 0.3rem; border-radius:3px; }
+    @media (max-width: 1100px) {
+      .col-labels { display: none; }
+      .row { grid-template-columns: 1fr; }
+      .row > div { position: relative; }
+      .row > div::before {
+        display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+        letter-spacing: 0.05em; color: var(--muted); margin-bottom: 0.35rem;
+      }
+      .col-original::before { content: '原文'; }
+      .col-translation::before { content: '翻译'; }
+      .col-analysis::before { content: '解析'; }
+    }
+    .diagram img, .diagram svg, .figure-row img, .figure-row svg { cursor: zoom-in; transition: box-shadow .15s; }
+    .diagram img:hover, .diagram svg:hover, .figure-row img:hover, .figure-row svg:hover { box-shadow: 0 0 0 2px #0d9488; }
+    #lightbox { position: fixed; inset: 0; background: rgba(10,12,20,0.92); display: none; align-items: center; justify-content: center; z-index: 1000; cursor: zoom-out; padding: 3vh 3vw; }
+    #lightbox.open { display: flex; }
+    #lightbox .lb-content { display: flex; align-items: center; justify-content: center; }
+    #lightbox .lb-content img, #lightbox .lb-content svg { display: block; background: #fff; border-radius: 6px; box-shadow: 0 8px 40px rgba(0,0,0,0.5); }
+    #lightbox .lb-close { position: fixed; top: 1rem; right: 1.5rem; color: #fff; font-size: 2rem; line-height: 1; opacity: 0.8; }
+    #lightbox .lb-cap { position: fixed; bottom: 1.2rem; left: 0; right: 0; text-align: center; color: #e8e4df; font-size: 0.8rem; padding: 0 2rem; }
+    .col-original .katex-display, .col-translation .katex-display { margin: 0.5rem 0; overflow-x: auto; overflow-y: hidden; max-width: 100%; font-size: 1em; }
+    .math-block { background:#fff; border:1px solid var(--border); border-left:4px solid #6f42c1; border-radius:0 8px 8px 0; padding:1rem 1.25rem; margin:1.25rem 0; box-shadow:0 1px 3px rgba(0,0,0,0.05); }
+    .math-block .mb-label { font-size:0.78rem; font-weight:600; letter-spacing:0.02em; color:#6f42c1; margin-bottom:0.5rem; }
+    .math-block .mb-eq { overflow-x:auto; overflow-y:hidden; }
+    .math-block .mb-eq .katex-display { margin:0.25rem 0; }
+    .math-block .mb-note { font-size:0.82rem; color:var(--muted); margin-top:0.5rem; line-height:1.7; }
+    .math-ref { font-size:0.85rem; color:var(--muted); font-style:italic; }
+    .col-original .katex-display > .katex, .col-translation .katex-display > .katex { max-width: 100%; }
+      .diagram img.wide { width: 100%; height: auto; }
+  </style>
+</head>
+<body>
+  <div class="sticky-head">
+    <header class="top-nav">
+      <h1><a href="https://arxiv.org/abs/2305.13301" target="_blank" rel="noopener">DDPO — Training Diffusion Models with Reinforcement Learning</a></h1>
+      <div class="meta">DeepLearning-Paper-with-Code · Diffusion RL · arXiv(2023) / ICLR(2024) · Black et al.</div>
+      <div class="legend">
+        <span class="hl-thesis">核心论点</span>
+        <span class="hl-concept">关键概念</span>
+        <span class="hl-evidence">实证证据</span>
+        <span class="hl-counter">让步/反驳</span>
+        <span class="hl-method">方法论</span>
+      </div>
+    </header>
+
+    <nav class="chapter-nav">
+      <a href="#feynman">速读</a>
+      <a href="#abstract">Abstract</a>
+      <a href="#intro">Introduction</a>
+      <a href="#related">Related Work</a>
+      <a href="#prelims">Preliminaries</a>
+      <a href="#method">Method</a>
+      <a href="#rewards">Rewards</a>
+      <a href="#code">代码</a>
+      <a href="#experiments">Experiments</a>
+      <a href="#discussion">Discussion</a>
+      <a href="#notation">符号表</a>
+      <a href="#overview">总览</a>
+      <a href="#faq">十问</a>
+      <a href="#deepdive">深挖</a>
+    </nav>
+  </div>
+
+  <main>
+
+    <section class="feynman" id="feynman">
+      <h2>🎮 费曼一分钟（通俗速读）</h2>
+      <div class="tldr-meta">通俗速读 · 先建立模糊认知，再读正文</div>
+      <p>扩散模型是用「对数似然的近似」训出来的，但我们真正想要的往往不是似然，而是「图好不好看」「文件能不能压小」这类下游指标。这些指标没法写进 prompt，也没法用监督学习直接训。DDPO 的做法是：<strong>把 50 步去噪过程当成 50 步决策</strong>——每一步的「状态」是（prompt、当前时间步、当前噪声图），「动作」是这一步输出的更干净的图，「策略」就是去噪网络本身。因为采样器固定、每步加的高斯噪声方差已知，<strong>每一步的条件似然是可以精确算出来的</strong>，于是可以直接套用策略梯度（REINFORCE / PPO）：采样一批轨迹 → 给最终图打一个奖励分 → 把奖励乘到「每步 log 概率的梯度」上，好图加分、差图减分。</p>
+      <p>关键对比是 RWR（奖励加权回归）：它把去噪压成「一步」决策，只用最终图，用 $e^{\beta r}$ 加权原来的去噪损失。但去噪损失只是似然的<em>变分下界</em>，不是真似然，所以「加权似然 ≈ 带 KL 约束的奖励最大化」这一步在扩散模型上并不成立。DDPO 换到多步 MDP 上用精确似然，效果明显更好，而且每轮只要 256 个样本（RWR 要 1 万个）。论文用三个奖励做了验证：JPEG 可压缩性、LAION 美学分、以及用 LLaVA 描述 + BERTScore 算出的「图文对齐」分——最后这个相当于把人工标注换成了 VLM 打分（RLAIF）。</p>
+    </section>
+
+    <section class="diagram">
+      <figure>
+        <img class="wide" src="assets/ddpo/diagram-ddpo-pipeline.svg" alt="自绘：DDPO 完整训练流程。① 提示词与初始噪声 → ② 50 步 on-policy rollout，保存每步 x_{t-1} 与 log π_old → ③ 黑盒奖励只对最终图打分 → ④ 按 prompt 归一化得到优势 A → ⑤ 重算新策略 log 概率、算比率并按 1e-4 裁剪 → ⑥ 只更新 UNet；紫色虚线回到 ② 表示下一轮重新采样。" loading="lazy">
+        <figcaption>自绘：DDPO 完整训练流程。① 提示词与初始噪声 → ② 50 步 on-policy rollout，保存每步 x_{t-1} 与 log π_old → ③ 黑盒奖励只对最终图打分 → ④ 按 prompt 归一化得到优势 A → ⑤ 重算新策略 log 概率、算比率并按 1e-4 裁剪 → ⑥ 只更新 UNet；紫色虚线回到 ② 表示下一轮重新采样。 点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="abstract">Abstract</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>Diffusion models are a class of flexible generative models trained with an approximation to the log-likelihood objective. However, <span class="hl-counter">most use cases of diffusion models are not concerned with likelihoods, but instead with downstream objectives</span> such as human-perceived image quality or drug effectiveness.</p>
+        <p>In this paper, we investigate reinforcement learning methods for directly optimizing diffusion models for such objectives. We describe how <span class="hl-thesis">posing denoising as a multi-step decision-making problem enables a class of policy gradient algorithms</span>, which we refer to as <span class="hl-concept">Denoising Diffusion Policy Optimization (DDPO)</span>, that are more effective than alternative reward-weighted likelihood approaches.</p>
+        <p>Empirically, DDPO can adapt text-to-image diffusion models to objectives that are difficult to express via prompting, such as image compressibility, and those derived from human feedback, such as aesthetic quality. Finally, we show that DDPO can <span class="hl-method">improve prompt-image alignment using feedback from a vision-language model</span> without the need for additional data collection or human annotation.</p>
+      </div>
+      <div class="col-translation">
+        <p>扩散模型是一类灵活的生成模型，其训练目标是对数似然目标的一个近似。然而，扩散模型的大多数使用场景并不关心似然，而是关心下游目标，例如人类感知的图像质量或药物有效性。</p>
+        <p>本文研究用强化学习方法直接针对这类目标优化扩散模型。我们说明：把去噪过程表述为一个多步决策问题，可以导出一类策略梯度算法，我们称之为去噪扩散策略优化（DDPO），它比另一类「奖励加权似然」方法更有效。</p>
+        <p>在实验上，DDPO 能把文生图扩散模型适配到难以通过提示词表达的目标（如图像可压缩性），以及来自人类反馈的目标（如美学质量）。最后我们展示：DDPO 可以利用视觉-语言模型的反馈来改善提示-图像对齐，而无需额外收集数据或人工标注。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#1a2744;">
+          <span class="tag">摘要解构</span>
+          <h4>四句话的骨架</h4>
+          <p>① 现状错配：训练用似然，使用看下游指标；② 方法：去噪 = 多步决策 → 策略梯度；③ 证据一：可压缩性 / 美学；④ 证据二：VLM 反馈做对齐，免人工标注。</p>
+          <h4>「more effective than」的比较对象</h4>
+          <p>指 RWR（reward-weighted regression，即 Lee et al. 2023 的 AlignProp 前身式做法）。全文的核心卖点就是「多步 MDP + 精确似然」胜过「单步 MDP + 变分下界」。</p>
+          <h4>读之前先记住</h4>
+          <p>这不是「用 RLHF 训扩散」的第一篇（DPOK 同期），它的差异点是：<strong>多提示词联合训练 + 多种奖励（含 VLM 自动奖励）+ 泛化分析</strong>。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="intro">1. Introduction</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>Diffusion probabilistic models have recently emerged as <span class="hl-concept">the de facto standard for generative modeling in continuous domains</span>. Their flexibility in representing complex, high-dimensional distributions has led to the adoption of diffusion models in applications including image and video synthesis, drug and material design, and continuous control.</p>
+        <p>The key idea behind diffusion models is to iteratively transform a simple prior distribution into a target distribution by applying a sequential denoising process. This procedure is <span class="hl-counter">conventionally motivated as a maximum likelihood estimation problem</span>, with the objective derived as a variational lower bound on the log-likelihood of the training data.</p>
+      </div>
+      <div class="col-translation">
+        <p>扩散概率模型近来已成为连续域生成建模事实上的标准。它们在表示复杂高维分布上的灵活性，使扩散模型被用于图像与视频合成、药物与材料设计以及连续控制等应用。</p>
+        <p>扩散模型的核心思想是：通过一个顺序去噪过程，把简单的先验分布迭代地变换为目标分布。这一过程通常被表述为最大似然估计问题，其目标被推导为训练数据对数似然的一个变分下界。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#6c757d;">
+          <span class="tag">铺垫</span>
+          <h4>这段在做什么</h4>
+          <p>建立「扩散 = 似然驱动」的默认叙事，为下一段的反转做铺垫：<em>训练用似然，使用却不用似然</em>。</p>
+          <h4>「variational lower bound」的分量</h4>
+          <p>这个措辞是全文技术论证的支点。因为 $\mathcal{L}_{\text{diff}}$ 只是下界（不是精确似然），所以「加权似然」类方法（RWR）在理论上站不住——§4.2 会回收这一点。</p>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-original">
+        <p>However, most use cases of diffusion models are not directly concerned with likelihoods, but instead with downstream objective such as human-perceived image quality or drug effectiveness. In this paper, we consider the problem of <span class="hl-thesis">training diffusion models to satisfy such objectives directly</span>, as opposed to matching a data distribution.</p>
+        <p>This problem is challenging because <span class="hl-counter">exact likelihood computation with diffusion models is intractable</span>, making it difficult to apply many conventional reinforcement learning (RL) algorithms. We instead propose to <span class="hl-method">frame denoising as a multi-step decision-making task</span>, using the exact likelihoods at each denoising step in place of the approximate likelihoods induced by a full denoising process. We present a policy gradient algorithm, which we refer to as DDPO, that can optimize a diffusion model for downstream tasks using only a black-box reward function.</p>
+      </div>
+      <div class="col-translation">
+        <p>然而，扩散模型的大多数使用场景并不直接关心似然，而是关心下游目标，例如人类感知的图像质量或药物有效性。本文考虑的问题是：直接训练扩散模型去满足这类目标，而不是去匹配数据分布。</p>
+        <p>这个问题之所以困难，是因为扩散模型的精确似然计算是不可解的，这使得许多常规强化学习算法难以直接套用。我们改为把去噪过程表述为一个多步决策任务，用<strong>每一步去噪的精确似然</strong>替代「整条去噪过程所诱导的近似似然」。我们提出一个策略梯度算法 DDPO，它只需一个黑盒奖励函数就能针对下游任务优化扩散模型。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#0d9488;">
+          <span class="tag">核心洞察</span>
+          <h4>一句话的技术转折</h4>
+          <p>$p_\theta(x_0\mid c)$ 算不出来 → 但 $p_\theta(x_{t-1}\mid x_t,c)$ 是已知方差的高斯，<strong>算得出来</strong>。把「一条轨迹」拆成「T 个可算的小步」，问题就解开了。</p>
+          <h4>为什么这算「换问题」而非「近似」</h4>
+          <p>RWR 用下界近似真似然（有偏）；DDPO 用每步真似然（无偏的梯度估计，方差另说）。这是全文最重要的区别，也是 §4.2 批评 RWR 的依据。</p>
+          <h4>「black-box reward」的含义</h4>
+          <p>奖励不需要可微、不需要知道内部结构——只要能对生成结果打分。这直接打开了「用另一个大模型当裁判」的门（§5.3）。</p>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-original">
+        <p>We apply our algorithm to the finetuning of large text-to-image diffusion models. Our initial evaluation focuses on tasks that are difficult to specify via prompting, such as image compressibility, and those derived from human feedback, such as aesthetic quality.</p>
+        <p>However, because many reward functions of interest are difficult to specify programmatically, finetuning procedures often rely on large-scale human labeling efforts to obtain a reward signal. In the case of text-to-image diffusion, we propose a method for <span class="hl-method">replacing such labeling with feedback from a vision-language model (VLM)</span>. Similar to RLAIF finetuning for language models, the resulting procedure allows for diffusion models to be adapted to reward functions that would otherwise require additional human annotations. We use this procedure to improve prompt-image alignment for unusual subject-setting compositions.</p>
+        <p>Our contributions are as follows. We first present the derivation and conceptual motivation of DDPO. We then document the design of various reward functions for text-to-image generation, ranging from simple computations to workflows involving large VLMs, and demonstrate the effectiveness of DDPO compared to alternative reward-weighted likelihood methods in these settings. Finally, we demonstrate the generalization ability of our finetuning procedure to unseen prompts.</p>
+      </div>
+      <div class="col-translation">
+        <p>我们把该算法用于大型文生图扩散模型的微调。初步评估聚焦于两类任务：难以通过提示词指定的任务（如图像可压缩性），以及来自人类反馈的任务（如美学质量）。</p>
+        <p>但由于许多感兴趣的奖励函数难以用程序化方式指定，微调流程往往依赖大规模人工标注来获得奖励信号。在文生图场景下，我们提出用<strong>视觉-语言模型（VLM）的反馈替代这类标注</strong>。与语言模型上的 RLAIF 微调类似，该流程使扩散模型能够适配那些原本需要额外人工标注的奖励函数。我们用这一流程改善「不寻常主体-场景组合」的提示-图像对齐。</p>
+        <p>我们的贡献如下：首先给出 DDPO 的推导与概念动机；其次记录文生图各类奖励函数的设计——从简单计算到涉及大型 VLM 的工作流——并在这些设定下证明 DDPO 相对奖励加权似然方法的有效性；最后展示微调过程对未见提示词的泛化能力。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#dc3545;">
+          <span class="tag">贡献清单</span>
+          <h4>三条贡献的分量</h4>
+          <p>① 推导（方法）——最硬；② 奖励设计谱系（工程）——最实用；③ 泛化（现象）——最有意思但证据最弱（只有定性图 + 附录一张曲线）。</p>
+          <h4>「RLAIF」类比的作用</h4>
+          <p>把「VLM 当裁判」框定为语言模型 RLAIF 的视觉版，等于借用了已被接受的合法性。注意：这里 VLM 只负责<em>描述</em>，相似度由 BERTScore 算，不是让 VLM 直接打分。</p>
+          <h4>与 DPOK 的隐含分工</h4>
+          <p>同期 DPOK 只做单一偏好奖励（ImageReward）且每个 prompt 训一个模型；本文强调多 prompt（最多 398 个）联合训练 + 泛化。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <figure>
+        <img src="assets/ddpo/fig1-teaser.jpg" alt="DDPO Figure 1: progression of samples over training for three reward functions">
+        <figcaption>Fig.1（原文 p.2）：同一 prompt、同一随机种子，训练过程中的样本演化。上：可压缩性（llama）；中：美学质量（rabbit）；下：提示-图像对齐（a raccoon washing dishes）。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="related">2. Related Work</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Diffusion probabilistic models.</strong> Denoising diffusion models have emerged as an effective class of generative models for modalities including images, videos, 3D shapes, and robotic trajectories. While the denoising objective is conventionally derived as an approximation to likelihood, the training of diffusion models typically departs from maximum likelihood in several ways. <span class="hl-counter">Modifying the objective to more strictly optimize likelihood often leads to worsened image quality</span>, as likelihood is not a faithful proxy for visual quality. In this paper, we show how diffusion models can be optimized directly for downstream objectives.</p>
+        <p><strong>Reinforcement learning from human feedback.</strong> A number of works have studied using human feedback to optimize models in settings such as simulated robotic control, game-playing, machine translation, citation retrieval, summarization, instruction-following, and alignment with specifications. Recently, Lee et al. studied the alignment of text-to-image diffusion models to human preferences using a method based on <span class="hl-concept">reward-weighted likelihood maximization</span>. In our comparisons, their method corresponds to <span class="hl-thesis">one iteration of the reward-weighted regression (RWR) method</span>.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>扩散概率模型。</strong>去噪扩散模型已成为图像、视频、3D 形状与机器人轨迹等多种模态上有效的一类生成模型。虽然去噪目标通常被推导为似然的近似，但扩散模型的训练在若干方面通常偏离最大似然。把目标改得更严格地优化似然，往往会<strong>恶化图像质量</strong>，因为似然并不是视觉质量的忠实代理。本文展示如何直接针对下游目标优化扩散模型。</p>
+        <p><strong>基于人类反馈的强化学习。</strong>已有大量工作研究用人类反馈优化模型，场景包括模拟机器人控制、博弈、机器翻译、引文检索、摘要、指令遵循以及与规范的对齐。最近 Lee 等人用基于<strong>奖励加权似然最大化</strong>的方法研究文生图扩散模型与人类偏好的对齐。在我们的比较中，他们的方法相当于<strong>奖励加权回归（RWR）方法的一次迭代</strong>。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#6f42c1;">
+          <span class="tag">定位</span>
+          <h4>为什么先讲「似然 ≠ 质量」</h4>
+          <p>如果似然就是质量，那直接最大似然就够了，不需要 RL。作者先用这条文献事实把「优化下游目标」的必要性钉住。</p>
+          <h4>把 AlignProp 归约为 RWR 一次迭代</h4>
+          <p>这是很聪明的定位：把最强的同类方法降格为「我们框架的一个特例（k=1）」，从而让「多轮 online RWR」和「DDPO」都成为自己框架内的变体，比较才有层级。</p>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Diffusion models as sequential decision-making processes.</strong> Although predating diffusion models, Bachman et al. similarly posed data generation as a sequential decision-making problem and used the resulting framework to apply reinforcement learning methods to image generation. More recently, Fan et al. introduced a policy gradient method for training diffusion models. However, <span class="hl-counter">this paper aimed to improve data distribution matching rather than optimizing downstream objectives</span>, and therefore the only reward function considered was a GAN-like discriminator.</p>
+        <p>In concurrent work to ours, DPOK built upon Fan et al. and Lee et al. to better align text-to-image diffusion models to human preferences using a policy gradient algorithm. Like Lee et al., DPOK only considers a single preference-based reward function; additionally, their work studies KL-regularization and primarily focuses on training a different diffusion model for each prompt. <span class="hl-thesis">In contrast, we train on many prompts at once (up to 398) and demonstrate generalization to many more prompts outside the training set.</span> Furthermore, we study how DDPO can be applied to multiple reward functions beyond those based on human feedback, including how rewards derived automatically from VLMs can improve prompt-image alignment.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>把扩散模型视为顺序决策过程。</strong>早在扩散模型出现之前，Bachman 等人就把数据生成表述为顺序决策问题，并用由此得到的框架把强化学习方法用于图像生成。更近期，Fan 等人提出了训练扩散模型的策略梯度方法。但该文的目标是<strong>改善数据分布匹配</strong>，而非优化下游目标，因此只考虑了类 GAN 判别器这一种奖励函数。</p>
+        <p>在与本文同期的工作中，DPOK 在 Fan 等人与 Lee 等人的基础上，用策略梯度算法更好地把文生图扩散模型对齐到人类偏好。与 Lee 等人一样，DPOK 只考虑单一的基于偏好的奖励函数；此外，他们的工作研究 KL 正则，并且主要聚焦于为每个 prompt 训练一个不同的扩散模型。<strong>相比之下，我们一次性在多个 prompt（最多 398 个）上训练，并展示对训练集之外更多 prompt 的泛化。</strong>此外，我们研究 DDPO 如何应用于人类反馈之外的多种奖励函数，包括如何用 VLM 自动导出的奖励来改善提示-图像对齐。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#dc3545;">
+          <span class="tag">与同期工作的切割</span>
+          <h4>三条差异线</h4>
+          <p>① 目标：分布匹配 vs 下游目标；② 奖励：单一偏好 vs 多奖励（含 VLM）；③ 训练：每 prompt 一模型 vs 多 prompt 一模型。</p>
+          <h4>为什么「多 prompt」重要</h4>
+          <p>单 prompt 训练无法谈泛化，也无法解释「跨 prompt 迁移」这一现象（§6.3 的「a dolphin riding a bike」零成功率案例）。这是本文相对 DPOK 最有辨识度的实验设计。</p>
+          <h4>注意</h4>
+          <p>DPOK 有 KL 正则而本文没有——这既是差异也是本文的弱点（附录 A.1 承认过优化问题）。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="prelims">3. Preliminaries</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>In this work, we consider conditional diffusion probabilistic models, which represent a distribution $p(\mathbf{x}_0 \mid \mathbf{c})$ over a dataset of samples $\mathbf{x}_0$ and corresponding contexts $\mathbf{c}$. The distribution is modeled as the reverse of a Markovian forward process $q(\mathbf{x}_t \mid \mathbf{x}_{t-1})$, which iteratively adds noise to the data. Reversing the forward process can be accomplished by training a neural network $\boldsymbol{\mu}_\theta(\mathbf{x}_t, \mathbf{c}, t)$ with the following objective:</p>
+        <p>$$\mathcal{L}_{\text{diff}}(\theta) = \mathbb{E}_{(\mathbf{x}_0,\mathbf{c}),\,t\sim\mathcal{U}\{0,T\},\,\mathbf{x}_t\sim q}\left[\left\|\tilde{\boldsymbol{\mu}}(\mathbf{x}_0,t) - \boldsymbol{\mu}_\theta(\mathbf{x}_t,\mathbf{c},t)\right\|^2\right]$$</p>
+        <p>where $\tilde{\boldsymbol{\mu}}$ is the posterior mean of the forward process, a weighted average of $\mathbf{x}_0$ and $\mathbf{x}_t$. This objective is justified as maximizing a variational lower bound on the log-likelihood of the data.</p>
+        <p>Sampling begins with drawing a random $\mathbf{x}_T \sim \mathcal{N}(\mathbf{0}, \mathbf{I})$ and following the reverse process $p_\theta(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{c})$. Most popular samplers use an isotropic Gaussian reverse process with a fixed timestep-dependent variance:</p>
+        <p>$$p_\theta(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{c}) = \mathcal{N}\!\left(\mathbf{x}_{t-1} \mid \boldsymbol{\mu}_\theta(\mathbf{x}_t,\mathbf{c},t),\ \sigma_t^2 \mathbf{I}\right)$$</p>
+      </div>
+      <div class="col-translation">
+        <p>本文考虑条件扩散概率模型，它在样本 $\mathbf{x}_0$ 与对应上下文 $\mathbf{c}$ 构成的数据集上表示一个分布 $p(\mathbf{x}_0 \mid \mathbf{c})$。该分布被建模为马尔可夫前向过程 $q(\mathbf{x}_t \mid \mathbf{x}_{t-1})$ 的逆过程，前向过程迭代地向数据加噪。逆过程可以通过训练一个神经网络 $\boldsymbol{\mu}_\theta(\mathbf{x}_t, \mathbf{c}, t)$ 来完成，其目标为：</p>
+        <p>$$\mathcal{L}_{\text{diff}}(\theta) = \mathbb{E}_{(\mathbf{x}_0,\mathbf{c}),\,t\sim\mathcal{U}\{0,T\},\,\mathbf{x}_t\sim q}\left[\left\|\tilde{\boldsymbol{\mu}}(\mathbf{x}_0,t) - \boldsymbol{\mu}_\theta(\mathbf{x}_t,\mathbf{c},t)\right\|^2\right]$$</p>
+        <p>其中 $\tilde{\boldsymbol{\mu}}$ 是前向过程的后验均值，即 $\mathbf{x}_0$ 与 $\mathbf{x}_t$ 的加权平均。该目标被论证为最大化数据对数似然的一个变分下界。</p>
+        <p>采样从随机抽取 $\mathbf{x}_T \sim \mathcal{N}(\mathbf{0}, \mathbf{I})$ 开始，然后沿逆过程 $p_\theta(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{c})$ 进行。多数流行采样器使用各向同性高斯逆过程，其方差只依赖时间步且固定：</p>
+        <p>$$p_\theta(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{c}) = \mathcal{N}\!\left(\mathbf{x}_{t-1} \mid \boldsymbol{\mu}_\theta(\mathbf{x}_t,\mathbf{c},t),\ \sigma_t^2 \mathbf{I}\right)$$</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#6f42c1;">
+          <span class="tag">关键前提</span>
+          <h4>式 (2) 是全文的地基</h4>
+          <p>「方差固定、只学均值」这个假设，让每一步的条件分布变成<strong>已知协方差的高斯</strong>。于是 $\log p_\theta(x_{t-1}\mid x_t,c)$ 有解析式，梯度可算——这正是 DDPO 能做而 RWR 不能做的原因。</p>
+          <h4>为什么不是「近似」</h4>
+          <p>式 (2) 是<em>采样器</em>的定义，不是对 $p_\theta(x_0\mid c)$ 的近似。DDPO 优化的就是「这个采样器所诱导的分布」上的期望奖励，目标与实现严格一致。</p>
+          <h4>代价</h4>
+          <p>把模型绑死在某个采样器上（DDIM / $\eta$ 固定）。换采样器 = 换 MDP，策略也就变了。这是后续工作（如 Flow-GRPO 换到 ODE→SDE）要重新推导的原因。</p>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-original">
+        <p>A Markov decision process (MDP) is a formalization of sequential decision-making problems. An MDP is defined by a tuple $(\mathcal{S}, \mathcal{A}, \rho_0, P, R)$, in which $\mathcal{S}$ is the state space, $\mathcal{A}$ is the action space, $\rho_0$ is the distribution of initial states, $P$ is the transition kernel, and $R$ is the reward function.</p>
+        <p>At each timestep $t$, the agent observes a state $\mathbf{s}_t \in \mathcal{S}$, takes an action $\mathbf{a}_t \in \mathcal{A}$, receives a reward $R(\mathbf{s}_t, \mathbf{a}_t)$, and transitions to a new state $\mathbf{s}_{t+1} \sim P(\mathbf{s}_{t+1} \mid \mathbf{s}_t, \mathbf{a}_t)$. As the agent acts, it produces trajectories $\tau = (\mathbf{s}_0, \mathbf{a}_0, \dots, \mathbf{s}_T, \mathbf{a}_T)$. The RL objective is to maximize the expected cumulative reward:</p>
+        <p>$$\mathcal{J}_{\text{RL}}(\pi) = \mathbb{E}_{\tau \sim p(\tau \mid \pi)}\left[\sum_{t=0}^{T} R(\mathbf{s}_t, \mathbf{a}_t)\right]$$</p>
+      </div>
+      <div class="col-translation">
+        <p>马尔可夫决策过程（MDP）是顺序决策问题的一种形式化。MDP 由元组 $(\mathcal{S}, \mathcal{A}, \rho_0, P, R)$ 定义，其中 $\mathcal{S}$ 是状态空间，$\mathcal{A}$ 是动作空间，$\rho_0$ 是初始状态分布，$P$ 是转移核，$R$ 是奖励函数。</p>
+        <p>在每一时间步 $t$，智能体观察到状态 $\mathbf{s}_t \in \mathcal{S}$，采取动作 $\mathbf{a}_t \in \mathcal{A}$，获得奖励 $R(\mathbf{s}_t, \mathbf{a}_t)$，并转移到新状态 $\mathbf{s}_{t+1} \sim P(\mathbf{s}_{t+1} \mid \mathbf{s}_t, \mathbf{a}_t)$。智能体行动时产生轨迹 $\tau = (\mathbf{s}_0, \mathbf{a}_0, \dots, \mathbf{s}_T, \mathbf{a}_T)$。强化学习的目标是最大化期望累积奖励：</p>
+        <p>$$\mathcal{J}_{\text{RL}}(\pi) = \mathbb{E}_{\tau \sim p(\tau \mid \pi)}\left[\sum_{t=0}^{T} R(\mathbf{s}_t, \mathbf{a}_t)\right]$$</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#6c757d;">
+          <span class="tag">记号</span>
+          <h4>只需记住三件事</h4>
+          <p>① 轨迹是 $(s,a)$ 的序列；② 目标是累积奖励的期望；③ 策略 $\pi(a\mid s)$ 决定轨迹分布。</p>
+          <h4>后面要用的隐含性质</h4>
+          <p>本文的 MDP 是<strong>确定性转移 + 稀疏终端奖励</strong>：$P$ 是狄拉克 δ，$R$ 只在 $t=0$ 非零。于是「累积奖励」退化为「终端奖励」，优势估计也退化为「整条轨迹一个标量」——这就是为什么不需要 critic。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="method">4. Reinforcement Learning Training of Diffusion Models</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>We now describe how RL algorithms can be used to train diffusion models. We present two classes of methods and show that each corresponds to a <span class="hl-thesis">different mapping of the denoising process to the MDP framework</span>.</p>
+        <p><strong>Problem statement.</strong> We assume a pre-existing diffusion model, which may be pretrained or randomly initialized. Assuming a fixed sampler, the diffusion model induces a sample distribution $p_\theta(\mathbf{x}_0 \mid \mathbf{c})$. The denoising diffusion RL objective is to maximize a reward signal $r$ defined on the samples and contexts:</p>
+        <p>$$\mathcal{J}_{\text{DDRL}}(\theta) = \mathbb{E}_{\mathbf{c}\sim p(\mathbf{c}),\ \mathbf{x}_0 \sim p_\theta(\mathbf{x}_0 \mid \mathbf{c})}\left[r(\mathbf{x}_0, \mathbf{c})\right]$$</p>
+        <p>for some context distribution $p(\mathbf{c})$ of our choosing.</p>
+      </div>
+      <div class="col-translation">
+        <p>下面说明如何用强化学习算法训练扩散模型。我们给出两类方法，并说明它们各自对应<strong>去噪过程到 MDP 框架的不同映射</strong>。</p>
+        <p><strong>问题陈述。</strong>假设已有一个扩散模型（预训练或随机初始化均可）。在采样器固定的前提下，该扩散模型诱导出一个样本分布 $p_\theta(\mathbf{x}_0 \mid \mathbf{c})$。去噪扩散强化学习的目标是最大化定义在样本与上下文上的奖励信号 $r$：</p>
+        <p>$$\mathcal{J}_{\text{DDRL}}(\theta) = \mathbb{E}_{\mathbf{c}\sim p(\mathbf{c}),\ \mathbf{x}_0 \sim p_\theta(\mathbf{x}_0 \mid \mathbf{c})}\left[r(\mathbf{x}_0, \mathbf{c})\right]$$</p>
+        <p>其中上下文分布 $p(\mathbf{c})$ 由我们自行选择。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#1a2744;">
+          <span class="tag">目标函数</span>
+          <h4>与标准 RL 的差别</h4>
+          <p>标准 RL 的 $\mathcal{J}_{\text{RL}}$ 对轨迹求和；这里直接对「最终样本」求期望。两者只有在奖励设计正确时才等价——§4.3 的 MDP 映射就是用来保证这一点的。</p>
+          <h4>$p(\mathbf{c})$ 是自由变量</h4>
+          <p>这是本文能做「多 prompt 联合训练」的形式化依据：prompt 分布由研究者指定，因此可以选 398 种动物，也可以选 45 种。它同时决定了泛化的边界。</p>
+          <h4>注意「fixed sampler」</h4>
+          <p>目标里已经隐含了采样器。换 $T$、换 $\eta$、换 guidance 权重，都会改变被优化的对象。</p>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Reward-weighted regression.</strong> To optimize $\mathcal{J}_{\text{DDRL}}$ with minimal changes to standard diffusion model training, we can use the denoising loss $\mathcal{L}_{\text{diff}}$, but with training data $\mathbf{x}_0 \sim p_\theta(\mathbf{x}_0 \mid \mathbf{c})$ and an added weighting that depends on the reward $r(\mathbf{x}_0, \mathbf{c})$. A standard weighting scheme uses exponentiated rewards to ensure nonnegativity,</p>
+        <p>$$w_{\text{RWR}}(\mathbf{x}_0, \mathbf{c}) = \frac{1}{Z}\exp\big(\beta r(\mathbf{x}_0, \mathbf{c})\big)$$</p>
+        <p>where $\beta$ is an inverse temperature and $Z$ a normalization constant. We also consider a simplified weighting scheme that uses binary weights, $w_{\text{sparse}}(\mathbf{x}_0,\mathbf{c}) = \mathbf{1}[r(\mathbf{x}_0,\mathbf{c}) \geq C]$, where $C$ is a reward threshold. In supervised learning terms, this is equivalent to repeated filtered finetuning on training data coming from the model.</p>
+        <p>Within the RL formalism, the RWR procedure corresponds to the following <span class="hl-concept">one-step MDP</span>: $\mathbf{s} \triangleq \mathbf{c}$, $\mathbf{a} \triangleq \mathbf{x}_0$, $\pi(\mathbf{a}\mid\mathbf{s}) \triangleq p_\theta(\mathbf{x}_0\mid\mathbf{c})$, $\rho_0(\mathbf{s}) \triangleq p(\mathbf{c})$, $R(\mathbf{s},\mathbf{a}) \triangleq r(\mathbf{x}_0,\mathbf{c})$, with a transition kernel that immediately leads to an absorbing termination state.</p>
+        <p>From RL literature, weighting a log-likelihood objective by $w_{\text{RWR}}$ is known to approximately maximize $\mathcal{J}_{\text{RL}}(\pi)$ subject to a KL divergence constraint on $\pi$. However, <span class="hl-counter">$\mathcal{L}_{\text{diff}}$ does not involve an exact log-likelihood — it is instead derived as a variational bound on $\log p_\theta(\mathbf{x}_0 \mid \mathbf{c})$. Therefore, the RWR procedure applied to diffusion model training is not theoretically justified and only optimizes $\mathcal{J}_{\text{DDRL}}$ very approximately.</span></p>
+      </div>
+      <div class="col-translation">
+        <p><strong>奖励加权回归。</strong>为了在对标准扩散训练改动最小的前提下优化 $\mathcal{J}_{\text{DDRL}}$，可以沿用去噪损失 $\mathcal{L}_{\text{diff}}$，但把训练数据换成 $\mathbf{x}_0 \sim p_\theta(\mathbf{x}_0 \mid \mathbf{c})$，并加入一个依赖奖励 $r(\mathbf{x}_0, \mathbf{c})$ 的权重。标准做法用指数化奖励来保证非负：</p>
+        <p>$$w_{\text{RWR}}(\mathbf{x}_0, \mathbf{c}) = \frac{1}{Z}\exp\big(\beta r(\mathbf{x}_0, \mathbf{c})\big)$$</p>
+        <p>其中 $\beta$ 是逆温度，$Z$ 是归一化常数。我们也考虑一种简化的二值权重方案 $w_{\text{sparse}}(\mathbf{x}_0,\mathbf{c}) = \mathbf{1}[r(\mathbf{x}_0,\mathbf{c}) \geq C]$，其中 $C$ 是奖励阈值。用监督学习的说法，这等价于在模型自己产出的数据上反复做「过滤后微调」。</p>
+        <p>在 RL 形式化下，RWR 对应下面这个<strong>单步 MDP</strong>：$\mathbf{s} \triangleq \mathbf{c}$，$\mathbf{a} \triangleq \mathbf{x}_0$，$\pi(\mathbf{a}\mid\mathbf{s}) \triangleq p_\theta(\mathbf{x}_0\mid\mathbf{c})$，$\rho_0(\mathbf{s}) \triangleq p(\mathbf{c})$，$R(\mathbf{s},\mathbf{a}) \triangleq r(\mathbf{x}_0,\mathbf{c})$，其转移核立即进入吸收终止状态。</p>
+        <p>根据强化学习文献，用 $w_{\text{RWR}}$ 加权对数似然目标，已知可近似地最大化「带 KL 散度约束的 $\mathcal{J}_{\text{RL}}(\pi)$」。然而，<strong>$\mathcal{L}_{\text{diff}}$ 并不涉及精确对数似然——它是 $\log p_\theta(\mathbf{x}_0 \mid \mathbf{c})$ 的一个变分下界。因此，把 RWR 用于扩散模型训练在理论上并不成立，只是非常近似地优化了 $\mathcal{J}_{\text{DDRL}}$。</strong></p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#dc3545;">
+          <span class="tag">对照方法</span>
+          <h4>RWR 的三层结构</h4>
+          <p>① 采样（从当前模型）；② 打分（奖励）；③ 用 $e^{\beta r}$ 加权原来的去噪 MSE。工程上改动极小，这是它的吸引力。</p>
+          <h4>理论缺口在哪</h4>
+          <p>「加权对数似然 ≈ KL 约束下的奖励最大化」这条定理的前提是<em>精确</em>对数似然。扩散模型只有下界，于是定理的前提不成立。注意作者措辞是「not theoretically justified」，不是「一定更差」——差多少要靠实验（§6.1）。</p>
+          <h4>单步 MDP 的后果</h4>
+          <p>把整条去噪轨迹压成一个动作，等于放弃了「每一步都能算似然」这个唯一的优势。DDPO 的全部收益都来自把这层展开。</p>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Denoising diffusion policy optimization.</strong> RWR relies on an approximate log-likelihood because it <span class="hl-counter">ignores the sequential nature of the denoising process</span>, only using the final samples $\mathbf{x}_0$. In this section, we show how the denoising process can be reframed as a <em>multi-step</em> MDP, allowing us to directly optimize $\mathcal{J}_{\text{DDRL}}$ using policy gradient estimators.</p>
+        <p><strong>Denoising as a multi-step MDP.</strong> We map the iterative denoising procedure to the following MDP:</p>
+        <p>$$\mathbf{s}_t \triangleq (\mathbf{c}, t, \mathbf{x}_t) \qquad \mathbf{a}_t \triangleq \mathbf{x}_{t-1} \qquad \pi(\mathbf{a}_t \mid \mathbf{s}_t) \triangleq p_\theta(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{c})$$</p>
+        <p>$$P(\mathbf{s}_{t+1} \mid \mathbf{s}_t, \mathbf{a}_t) \triangleq \big(\delta_{\mathbf{c}}, \delta_{t-1}, \delta_{\mathbf{x}_{t-1}}\big) \qquad \rho_0(\mathbf{s}_0) \triangleq \big(p(\mathbf{c}), \delta_T, \mathcal{N}(\mathbf{0}, \mathbf{I})\big)$$</p>
+        <p>$$R(\mathbf{s}_t, \mathbf{a}_t) \triangleq \begin{cases} r(\mathbf{x}_0, \mathbf{c}) & \text{if } t = 0 \\ 0 & \text{otherwise} \end{cases}$$</p>
+        <p>in which $\delta_y$ is the Dirac delta distribution with nonzero density only at $y$. Trajectories consist of $T$ timesteps, after which $P$ leads to a termination state. The cumulative reward of each trajectory is equal to $r(\mathbf{x}_0, \mathbf{c})$, so maximizing $\mathcal{J}_{\text{DDRL}}(\theta)$ is equivalent to maximizing $\mathcal{J}_{\text{RL}}(\pi)$ in this MDP.</p>
+        <p>The benefit of this formulation is that if we use a standard sampler with $p_\theta(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{c})$ parameterized as in Equation 2, <span class="hl-thesis">the policy $\pi$ becomes an isotropic Gaussian as opposed to the arbitrarily complicated distribution $p_\theta(\mathbf{x}_0 \mid \mathbf{c})$</span> as it is in the RWR formulation. This simplification allows for the evaluation of exact log-likelihoods and their gradients with respect to the diffusion model parameters.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>去噪扩散策略优化。</strong>RWR 之所以只能依赖近似的对数似然，是因为它<strong>忽略了去噪过程的顺序结构</strong>，只使用最终样本 $\mathbf{x}_0$。本节说明如何把去噪过程重新表述为一个<em>多步</em> MDP，从而用策略梯度估计量直接优化 $\mathcal{J}_{\text{DDRL}}$。</p>
+        <p><strong>把去噪视为多步 MDP。</strong>我们把迭代去噪过程映射为如下 MDP：</p>
+        <p>$$\mathbf{s}_t \triangleq (\mathbf{c}, t, \mathbf{x}_t) \qquad \mathbf{a}_t \triangleq \mathbf{x}_{t-1} \qquad \pi(\mathbf{a}_t \mid \mathbf{s}_t) \triangleq p_\theta(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{c})$$</p>
+        <p>$$P(\mathbf{s}_{t+1} \mid \mathbf{s}_t, \mathbf{a}_t) \triangleq \big(\delta_{\mathbf{c}}, \delta_{t-1}, \delta_{\mathbf{x}_{t-1}}\big) \qquad \rho_0(\mathbf{s}_0) \triangleq \big(p(\mathbf{c}), \delta_T, \mathcal{N}(\mathbf{0}, \mathbf{I})\big)$$</p>
+        <p>$$R(\mathbf{s}_t, \mathbf{a}_t) \triangleq \begin{cases} r(\mathbf{x}_0, \mathbf{c}) & \text{若 } t = 0 \\ 0 & \text{其他} \end{cases}$$</p>
+        <p>其中 $\delta_y$ 是只在 $y$ 处密度非零的狄拉克 δ 分布。轨迹包含 $T$ 个时间步，之后 $P$ 进入终止状态。每条轨迹的累积奖励等于 $r(\mathbf{x}_0, \mathbf{c})$，因此最大化 $\mathcal{J}_{\text{DDRL}}(\theta)$ 等价于在这个 MDP 中最大化 $\mathcal{J}_{\text{RL}}(\pi)$。</p>
+        <p>这一表述的好处是：如果使用按式 (2) 参数化的标准采样器，<strong>策略 $\pi$ 就变成各向同性高斯</strong>，而不是 RWR 表述中那个任意复杂的分布 $p_\theta(\mathbf{x}_0 \mid \mathbf{c})$。这一简化使得我们可以计算精确的对数似然及其关于扩散模型参数的梯度。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color:#0d9488;">
+          <span class="tag">核心推导</span>
+          <h4>为什么「多步」是必要的</h4>
+          <p>单步 MDP 里策略是 $p_\theta(x_0\mid c)$——一个 512×512×3 维空间上的隐式分布，似然不可算。多步 MDP 里策略是 $\mathcal{N}(x_{t-1};\mu_\theta,\sigma_t^2 I)$——协方差已知，似然是解析的。</p>
+          <h4>奖励设计的巧思</h4>
+          <p>把奖励全部放在 $t=0$（终端），中间步为 0。这样「累积奖励 = 终端奖励」，不需要做 credit assignment 的折扣，也不需要 critic。代价是<strong>方差大</strong>（所有步共用同一个标量奖励）。</p>
+          <h4>确定性转移的副作用</h4>
+          <p>$P$ 是 δ，所以 $p(\tau\mid\pi) = \prod_t \pi(a_t\mid s_t)$——轨迹概率完全由策略决定，没有环境随机性。这让 REINFORCE 的推导变干净。</p>
+          <h4>与 Fan et al. 的关系</h4>
+          <p>同一映射在 Fan et al. 2023 中已出现，但那里的奖励是 GAN 判别器（为了匹配分布）。本文的贡献是把它接到<em>任意</em>下游奖励上。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="diagram">
+      <figure>
+        <img src="assets/ddpo/diagram-ddpo.svg" alt="DDPO: denoising as multi-step MDP and the policy gradient training loop">
+        <figcaption>自绘图：左 = 去噪过程到多步 MDP 的六项映射（§4.3）；右 = 每轮的采样-打分-更新循环（§4.3、附录 A.4）。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Policy gradient estimation.</strong> With access to likelihoods and likelihood gradients, we can make direct Monte Carlo estimates of $\nabla_\theta \mathcal{J}_{\text{DDRL}}$. Like RWR, DDPO alternates collecting denoising trajectories $\{\mathbf{x}_T, \mathbf{x}_{T-1}, \dots, \mathbf{x}_0\}$ via sampling and updating parameters via gradient descent.</p>
+        <p>The first variant of DDPO, which we call <span class="hl-concept">DDPO$_{\text{SF}}$</span>, uses the score function policy gradient estimator, also known as the likelihood ratio method or REINFORCE:</p>
+        <p>$$\nabla_\theta \mathcal{J}_{\text{DDRL}} = \mathbb{E}\left[\sum_{t=0}^{T} \nabla_\theta \log p_\theta(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{c}) \; r(\mathbf{x}_0, \mathbf{c})\right]$$</p>
+        <p>where the expectation is taken over denoising trajectories generated by the current parameters $\theta$. However, <span class="hl-counter">this estimator only allows for one step of optimization per round of data collection</span>, as the gradient must be computed using data generated by the current parameters. To perform multiple steps of optimization, we may use an importance sampling estimator:</p>
+        <p>$$\nabla_\theta \mathcal{J}_{\text{DDRL}} = \mathbb{E}\left[\sum_{t=0}^{T} \frac{p_\theta(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{c})}{p_{\theta_{\text{old}}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{c})} \nabla_\theta \log p_\theta(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{c}) \; r(\mathbf{x}_0, \mathbf{c})\right]$$</p>
+        <p>which we refer to as <span class="hl-concept">DDPO$_{\text{IS}}$</span>. This estimator becomes inaccurate if $p_\theta$ deviates too far from $p_{\theta_{\text{old}}}$, which can be addressed using trust regions to constrain the size of the update. In practice, we implement the trust region via clipping, as in proximal policy optimization (PPO).</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>策略梯度估计。</strong>在能获得似然与似然梯度的前提下，我们可以对 $\nabla_\theta \mathcal{J}_{\text{DDRL}}$ 做直接的蒙特卡洛估计。与 RWR 一样，DDPO 交替地进行「采样收集去噪轨迹 $\{\mathbf{x}_T, \mathbf{x}_{T-1}, \dots, \mathbf{x}_0\}$」与「用梯度下降更新参数」。</p>
+        <p>DDPO 的第一个变体我们称为 <strong>DDPO$_{\text{SF}}$</strong>，它使用得分函数策略梯度估计量，也称似然比方法或 REINFORCE：</p>
+        <p>$$\nabla_\theta \mathcal{J}_{\text{DDRL}} = \mathbb{E}\left[\sum_{t=0}^{T} \nabla_\theta \log p_\theta(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{c}) \; r(\mathbf{x}_0, \mathbf{c})\right]$$</p>
+        <p>其中期望取自当前参数 $\theta$ 生成的去噪轨迹。然而，<strong>该估计量在每轮数据收集后只允许做一步优化</strong>，因为梯度必须用当前参数生成的数据来计算。为了能做多步优化，我们可以使用重要性采样估计量：</p>
+        <p>$$\nabla_\theta \mathcal{J}_{\text{DDRL}} = \mathbb{E}\left[\sum_{t=0}^{T} \frac{p_\theta(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{c})}{p_{\theta_{\text{old}}}(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{c})} \nabla_\theta \log p_\theta(\mathbf{x}_{t-1} \mid \mathbf{x}_t, \mathbf{c}) \; r(\mathbf{x}_0, \mathbf{c})\right]$$</p>
+        <p>我们称之为 <strong>DDPO$_{\text{IS}}$</strong>。当 $p_\theta$ 偏离 $p_{\theta_{\text{old}}}$ 太远时，该估计量会变得不准，这可以通过信赖域来约束更新幅度加以解决。实践中我们用裁剪（clipping）实现信赖域，与近端策略优化（PPO）相同。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card deep" style="border-left-color:#6f42c1;">
+          <span class="tag">两个估计量</span>
+          <h4>SF vs IS 的实质差别</h4>
+          <p>SF：每轮采样 256 条 → 1 次梯度更新。IS：同样 256 条 → 切成 4 个 minibatch → 4 次更新。<strong>同样的采样成本，多 4 倍梯度步</strong>，这是 IS 略优的主要原因（§6.1 原文归因于「increased number of optimization steps」）。</p>
+          <h4>为什么 clip range 要小到 1e-4</h4>
+          <p>扩散的「动作」是整张图，维度极高，$p_\theta/p_{\theta_{old}}$ 稍微一动就爆炸。标准 RL 用 0.2，这里用 $10^{-4}$——这个数量级本身就是「高维动作空间让重要性采样几乎不可用」的证据。</p>
+          <h4>没有 critic 的代价</h4>
+          <p>奖励是终端标量，没有 baseline 就只有「每 prompt 的 running mean/std」做归一化（附录 A.3）。这等价于一个极简的 value baseline，方差仍偏大。</p>
+          <h4>梯度形式对照</h4>
+          <p>与语言模型 RLHF 的 PPO 完全同构，区别只在「token 序列」换成「去噪步序列」，且每步动作是连续高维向量而非离散 token。</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title" id="rewards">5. Reward Functions for Text-to-Image Diffusion</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>In this work, we evaluate our methods on text-to-image diffusion. Text-to-image diffusion serves as a valuable test environment for reinforcement learning due to the availability of large pretrained models and the versatility of using diverse and visually interesting reward functions. We study <span class="hl-thesis">a spectrum of reward functions of varying complexity</span>, ranging from those that are straightforward to specify and evaluate to those that capture the depth of real-world downstream tasks.</p>
+        <p><strong>Compressibility and incompressibility.</strong> The capabilities of text-to-image diffusion models are limited by the co-occurrences of text and images in their training distribution. For instance, images are rarely captioned with their file size, making it impossible to specify a desired file size via prompting. This limitation makes reward functions based on file size a convenient case study: they are simple to compute, but not controllable through the conventional methods of likelihood maximization and prompt engineering.</p>
+        <p>We fix the resolution of diffusion model samples at 512×512, such that the file size is determined solely by the compressibility of the image. We define two tasks based on file size: <em>compressibility</em>, in which the file size of the image after JPEG compression is minimized, and <em>incompressibility</em>, in which the same measure is maximized.</p>
+      </div>
+      <div class="col-translation">
+        <p>本文在文生图扩散模型上评估我们的方法。文生图扩散是强化学习的一个有价值的测试环境：既有大规模预训练模型可用，又能灵活地使用多样且视觉上有趣的奖励函数。我们研究<strong>一个复杂度各异的奖励函数谱系</strong>，从易于指定与评估的奖励，到能体现真实下游任务深度的奖励。</p>
+        <p><strong>可压缩性与不可压缩性。</strong>文生图扩散模型的能力受训练分布中文本与图像共现关系的限制。例如，图像很少以文件大小作为标题，因此无法通过提示词指定期望的文件大小。这一限制使基于文件大小的奖励成为一个方便的案例：它计算简单，却无法通过传统的似然最大化与提示工程来控制。</p>
+        <p>我们把扩散模型样本的分辨率固定为 512×512，使文件大小完全由图像的可压缩性决定。基于文件大小我们定义两个任务：<em>可压缩性</em>，即最小化图像经 JPEG 压缩后的文件大小；<em>不可压缩性</em>，即最大化同一度量。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#0d9488;">
+          <span class="tag">奖励设计 ①</span>
+          <h4>为什么选「文件大小」当第一个任务</h4>
+          <p>它是「<strong>可精确计算、但完全不可提示</strong>」的极端样本。如果 DDPO 能学会它，就证明 RL 能触达 prompt 工程根本触达不到的区域。</p>
+          <h4>两个方向互为镜像</h4>
+          <p>可压缩 → 去背景、平滑；不可压缩 → 高频噪声、锐利边缘。后者正是附录 A.1 里「奖励被利用到语义崩塌」的起点。</p>
+          <h4>固定 512×512 的作用</h4>
+          <p>排除分辨率这个混淆变量，让文件大小只反映「内容复杂度」。这是让奖励成为干净实验工具的必要控制。</p>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Aesthetic quality.</strong> To capture a reward function that would be useful to a human user, we define a task based on perceived aesthetic quality. We use the <span class="hl-concept">LAION aesthetics predictor</span>, which is trained on 176,000 human image ratings. The predictor is implemented as a linear model on top of CLIP embeddings. Annotations range between 1 and 10, with the highest-rated images mostly containing artwork.</p>
+        <p>Since the aesthetic quality predictor is trained on human judgments, this task constitutes <span class="hl-thesis">reinforcement learning from human feedback</span>.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>美学质量。</strong>为了刻画一个对人类用户有用的奖励函数，我们定义一个基于感知美学质量的任务。我们使用 <strong>LAION 美学预测器</strong>，它在 176,000 条人类图像评分上训练。该预测器实现为 CLIP 嵌入之上的一个线性模型。标注范围是 1 到 10，评分最高的图像大多是艺术作品。</p>
+        <p>由于美学质量预测器是在人类判断上训练的，该任务构成<strong>基于人类反馈的强化学习</strong>。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#6f42c1;">
+          <span class="tag">奖励设计 ②</span>
+          <h4>「RLHF」在这里的含义</h4>
+          <p>不是在线问人，而是「用一个在人类评分上训好的打分器」。所以它是<strong>离线的、代理的</strong>人类反馈——与语言模型 RLHF 的 reward model 完全同构。</p>
+          <h4>为什么结果是「变成插画」</h4>
+          <p>训练集里高分图多为艺术作品 → 奖励函数把「艺术性」编码成「高分」。DDPO 忠实地把这个偏好放大（见 Fig.1 中排）。这不是 bug，是 reward hacking 的温和版本。</p>
+          <h4>可微性无关</h4>
+          <p>LAION 打分器其实可微（CLIP + 线性层），但 DDPO 只把它当黑盒用——这正是与 DRaFT / AlignProp 的分野。</p>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Automated prompt alignment with vision-language models.</strong> A very general-purpose reward function for training a text-to-image model is prompt-image alignment. However, specifying a reward that captures generic prompt alignment is difficult, conventionally requiring large-scale human labeling efforts. We propose using an existing VLM to replace additional human annotation. This design is inspired by recent work on <span class="hl-concept">RLAIF</span>, in which language models are improved using feedback from themselves.</p>
+        <p>We use <span class="hl-method">LLaVA</span>, a state-of-the-art VLM, to describe an image. The finetuning reward is the <span class="hl-method">BERTScore recall metric</span>, a measure of semantic similarity, using the prompt as the reference sentence and the VLM description as the candidate sentence. Samples that more faithfully include all of the details of the prompt receive higher rewards, to the extent that those visual details are legible to the VLM.</p>
+        <p>In Figure 4, we show one simple question: “<em>what is happening in this image?</em>”. While this captures the general task of prompt-image alignment, in principle any question could be used to specify complex or hard-to-define reward functions for a particular use case. One could even employ a language model to automatically generate candidate questions and evaluate responses based on the prompt. This framework provides a flexible interface where the complexity of the reward function is only limited by the capabilities of the vision and language models involved.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>用视觉-语言模型实现自动提示对齐。</strong>训练文生图模型时一个非常通用的奖励函数是提示-图像对齐。然而，要指定一个能刻画通用提示对齐的奖励很困难，传统上需要大规模人工标注。我们提出用现成的 VLM 替代额外的人工标注。这一设计受近期 <strong>RLAIF</strong> 工作的启发——用模型自身的反馈来改进模型。</p>
+        <p>我们用最先进的 VLM <strong>LLaVA</strong> 来描述图像。微调奖励是 <strong>BERTScore 召回率</strong>，一种语义相似度度量：以提示词为参考句，以 VLM 的描述为候选句。越忠实地包含提示词全部细节的样本获得越高奖励——前提是这些视觉细节对 VLM 而言是可辨识的。</p>
+        <p>在图 4 中我们只用一个简单问题：「<em>这张图里发生了什么？</em>」。虽然这已能刻画通用的提示-图像对齐任务，但原则上可以用任何问题来为特定用例指定复杂或难以定义的奖励函数。甚至可以用一个语言模型自动生成候选问题，并基于提示词评估回答。该框架提供了一个灵活的接口：奖励函数的复杂度只受所涉视觉与语言模型能力的限制。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#1a2744;">
+          <span class="tag">奖励设计 ③</span>
+          <h4>三步流水线</h4>
+          <p>生成图 → LLaVA 写一句话描述 → 用 BERTScore 算「描述 vs 原 prompt」的召回。奖励 = 召回分。</p>
+          <h4>为什么用 BERTScore 而不是让 VLM 直接打分</h4>
+          <p>直接打分需要标定、易被提示词操纵；而「描述-原句相似度」是可复现的确定性计算，VLM 只承担「看图说话」这一它最擅长的角色。这是很克制的设计。</p>
+          <h4>为什么用 recall 而非 F1</h4>
+          <p>召回率奖励「把 prompt 里的元素都画出来」；F1 会同时惩罚「画了 prompt 没说的东西」，而生成模型几乎总会多画。用 recall 更符合「对齐」的直觉。</p>
+          <h4>副作用：卡通化</h4>
+          <p>训练后样本普遍变卡通（§6.2）。作者给两种解释：预训练分布里「动物做日常事」本就多为插画；或 LLaVA 更容易识别简单卡通图的内容。后者是典型的<strong>裁判偏好被利用</strong>。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <figure>
+        <img src="assets/ddpo/fig7-vlm-reward.png" alt="DDPO Figure 4: VLM-based reward function for prompt-image alignment">
+        <figcaption>Fig.4（原文 p.5）：基于 VLM 的奖励函数。生成图 → LLaVA 描述 → 与原 prompt 计算 BERTScore 相似度，作为奖励。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <section class="code-section" id="code">
+      <h2 class="section-title" style="margin-top:0;border:none;padding:0;">💻 代码对照 — 从 $\nabla_\theta \mathcal{J}_{\text{DDRL}}$ 到 ddpo-pytorch</h2>
+      <p>官方实现：<a href="https://github.com/kvablack/ddpo-pytorch" target="_blank" rel="noopener">github.com/kvablack/ddpo-pytorch</a>（PyTorch + diffusers）。核心只有三处：<code>scripts/train.py</code> 的采样与 PPO 更新、<code>ddpo_pytorch/diffusers_patch/ddim_with_logprob.py</code> 的每步高斯 logprob、<code>ddpo_pytorch/stat_tracking.py</code> 的 per-prompt 优势归一化。</p>
+
+      <table class="code-map">
+        <thead><tr><th>论文符号 / 步骤</th><th>代码位置</th><th>含义</th></tr></thead>
+        <tbody>
+          <tr><td>$\pi_\theta(\mathbf{x}_{t-1}\mid\mathbf{x}_t,\mathbf{c})$</td><td><code>ddim_with_logprob.py</code>：<code>ddim_step_with_logprob(...)</code></td><td>DDIM 一步，返回 <code>prev_sample</code> 与 <code>log_prob</code></td></tr>
+          <tr><td>$\log p_\theta(\mathbf{x}_{t-1}\mid\mathbf{x}_t,\mathbf{c})$</td><td>同上：<code>-((prev_sample - mean)**2)/(2*std**2) - log(std) - log(sqrt(2π))</code></td><td>对角高斯对数密度，再对非 batch 维取均值</td></tr>
+          <tr><td>轨迹 $\{\mathbf{x}_T,\dots,\mathbf{x}_0\}$</td><td><code>pipeline_with_logprob(...)</code> → <code>latents, log_probs</code></td><td>一次采样返回全部中间 latent 与每步 logprob</td></tr>
+          <tr><td>$r(\mathbf{x}_0,\mathbf{c})$</td><td><code>ddpo_pytorch/rewards.py</code>：<code>jpeg_compressibility</code> / <code>aesthetic_score</code> / <code>llava_bertscore</code></td><td>黑盒奖励，返回 $(B,)$ 的分数</td></tr>
+          <tr><td>per-context 归一化（附录 A.3）</td><td><code>stat_tracking.py</code>：<code>PerPromptStatTracker.update</code></td><td>按 prompt 维护 running mean/std，得到 advantage</td></tr>
+          <tr><td>DDPO$_{\text{IS}}$ 的比率与裁剪</td><td><code>scripts/train.py</code>：<code>ratio = torch.exp(log_prob - sample["log_probs"][:, j])</code></td><td>新旧策略的每步重要性比</td></tr>
+          <tr><td>clip 目标</td><td><code>scripts/train.py</code>：<code>torch.maximum(-adv*ratio, -adv*clamp(ratio, 1-e, 1+e))</code></td><td>PPO 的 clipped surrogate</td></tr>
+          <tr><td>clip range $\epsilon$</td><td><code>config/base.py</code>：<code>train.clip_range = 1e-4</code></td><td>比标准 RL（0.2）小三个数量级</td></tr>
+          <tr><td>CFG training（附录 A.5）</td><td><code>config/base.py</code>：<code>train.cfg = True</code>；<code>train.py</code> 里 <code>noise_pred_uncond + w*(text - uncond)</code></td><td>训练时也用 guided ε，防止 guidance 失准</td></tr>
+        </tbody>
+      </table>
+
+      <h3>① 每步 logprob：把「去噪」变成「高斯对数密度」</h3>
+      <p>论文式 (2) 说每步是 $\mathcal{N}(\mu_\theta, \sigma_t^2 I)$。代码里 <code>std_dev_t = eta * sqrt(variance)</code>，然后直接算对角高斯的对数密度。<strong>关键细节</strong>：最后对除 batch 外的所有维度取 <code>mean</code>，所以 logprob 是「每个像素维度的平均」而不是求和——这让不同分辨率/通道数下的数值尺度可比。</p>
+      <div class="code-block"><span class="cm"># ddpo_pytorch/diffusers_patch/ddim_with_logprob.py（节选）</span>
+variance = _get_variance(self, timestep, prev_timestep)
+std_dev_t = eta * variance ** (0.5)          <span class="cm"># σ_t（η=1 时即完整 DDPM 方差）</span>
+std_dev_t = _left_broadcast(std_dev_t, sample.shape)
+
+pred_sample_direction = (1 - alpha_prod_t_prev - std_dev_t**2) ** 0.5 * pred_epsilon
+prev_sample_mean = alpha_prod_t_prev**0.5 * pred_original_sample + pred_sample_direction
+
+<span class="cm"># 若未给定 prev_sample，则按 N(mean, σ²I) 采样；否则用它算 logprob</span>
+<span class="kw">if</span> prev_sample <span class="kw">is</span> <span class="kw">None</span>:
+    prev_sample = prev_sample_mean + std_dev_t * variance_noise
+
+log_prob = (
+    -((prev_sample.detach() - prev_sample_mean) ** 2) / (2 * (std_dev_t**2))
+    - torch.log(std_dev_t)
+    - torch.log(torch.sqrt(2 * torch.as_tensor(math.pi)))
+)
+log_prob = log_prob.mean(dim=tuple(range(1, log_prob.ndim)))   <span class="cm"># 对像素维取均值</span></div>
+      <p class="code-note">注意 <code>prev_sample.detach()</code>：被采样的动作本身不参与梯度，梯度只通过 <code>prev_sample_mean</code>（即 $\mu_\theta$）回传。这正是得分函数估计量「$\nabla\log p$ 只依赖模型输出」的实现方式。</p>
+
+      <h3>② 优势归一化：没有 critic，就用 per-prompt 的 running mean/std</h3>
+      <p>论文附录 A.3 说奖励按 context 归一化，等价于一个 value baseline。代码里就是 <code>PerPromptStatTracker</code>：每个 prompt 维护一个定长 deque，用历史奖励的均值/标准差标准化当前奖励。样本数不足 <code>min_count</code> 时退化为全局统计。</p>
+      <div class="code-block"><span class="cm"># ddpo_pytorch/stat_tracking.py（节选）</span>
+<span class="kw">class</span> <span class="fn">PerPromptStatTracker</span>:
+    <span class="kw">def</span> <span class="fn">update</span>(self, prompts, rewards):
+        advantages = np.empty_like(rewards)
+        <span class="kw">for</span> prompt <span class="kw">in</span> np.unique(prompts):
+            prompt_rewards = rewards[prompts == prompt]
+            self.stats[prompt].extend(prompt_rewards)      <span class="cm"># deque(maxlen=buffer_size)</span>
+            <span class="kw">if</span> len(self.stats[prompt]) &lt; self.min_count:
+                mean, std = np.mean(rewards), np.std(rewards) + 1e-6
+            <span class="kw">else</span>:
+                mean, std = np.mean(self.stats[prompt]), np.std(self.stats[prompt]) + 1e-6
+            advantages[prompts == prompt] = (prompt_rewards - mean) / std
+        <span class="kw">return</span> advantages</div>
+      <p class="code-note">为什么必须 per-prompt：不同 prompt 的奖励量纲差别很大（JPEG 大小是字节数，美学分是 1–10）。全局归一化会让「容易的 prompt」主导梯度。这与论文「一次训 398 个 prompt」的设计直接对应。</p>
+
+      <h3>③ PPO 裁剪：论文式 (7) 的工程形态</h3>
+      <p>对每个去噪步 $j$，用「当前 logprob − 采样时 logprob」得到比率，再套 PPO 的 min/max 形式。因为动作是高维连续向量，<code>clip_range</code> 取 $10^{-4}$。</p>
+      <div class="code-block"><span class="cm"># scripts/train.py（节选）</span>
+<span class="cm"># 1) 重算当前策略在该步的 logprob（带梯度）</span>
+_, log_prob = ddim_step_with_logprob(
+    pipeline.scheduler, noise_pred, sample["timesteps"][:, j],
+    sample["latents"][:, j], eta=config.sample.eta,
+    prev_sample=sample["next_latents"][:, j],      <span class="cm"># 复用采样时的动作</span>
+)
+
+<span class="cm"># 2) PPO clipped surrogate</span>
+advantages = torch.clamp(sample["advantages"], -config.train.adv_clip_max, config.train.adv_clip_max)
+ratio = torch.exp(log_prob - sample["log_probs"][:, j])
+unclipped_loss = -advantages * ratio
+clipped_loss   = -advantages * torch.clamp(ratio, 1.0 - config.train.clip_range,
+                                                  1.0 + config.train.clip_range)
+loss = torch.mean(torch.maximum(unclipped_loss, clipped_loss))</div>
+      <p class="code-note">与论文式 (7) 的对应：$\text{ratio}=p_\theta/p_{\theta_{\text{old}}}$，$\text{advantages}=r$（已归一化）。<code>adv_clip_max=5</code> 是额外的稳健性措施，论文正文未提，属于实现细节。注意 <strong>DDPO$_{\text{SF}}$ 只需把 <code>ratio</code> 置 1</strong>（等价于不做重要性修正），代码里通过 <code>num_train_timesteps</code> 与更新次数控制。</p>
+
+      <h3>④ 与论文的差异（读代码时容易踩的坑）</h3>
+      <ul>
+        <li><strong>论文用 TPU，仓库用 GPU + accelerate</strong>：论文附录 A.4 写的是 v4-64 TPU pod，开源实现是单机多卡，超参不完全一致（<code>lr=3e-4</code> 而非论文的 <code>1e-5</code>）。</li>
+        <li><strong>默认配置不是论文配置</strong>：README 明确说 <code>config/base.py</code> 的超参只为「跑通」，不追求效果。</li>
+        <li><strong>论文的 KL 正则缺失</strong>：DDPO 本身没有 KL 项（附录 A.1 承认过优化问题），代码同样没有；DPOK 才有。</li>
+        <li><strong>CFG training 是必需的</strong>：不开 <code>train.cfg</code> 时，第一轮之后性能会迅速崩坏（附录 A.5 的 Fig.8）。</li>
+      </ul>
+    </section>
+
+    <h2 class="section-title" id="experiments">6. Experimental Evaluation</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>The purpose of our experiments is to evaluate the effectiveness of RL algorithms for finetuning diffusion models to align with a variety of user-specified objectives. After examining the viability of the general approach, we focus on the following questions:</p>
+        <p>(1) How do variants of DDPO compare to RWR and to each other? (2) Can VLMs allow for optimizing rewards that are difficult to specify manually? (3) Do the effects of RL finetuning generalize to prompts not seen during finetuning?</p>
+        <p><strong>Algorithm comparisons.</strong> We begin by evaluating all methods on the compressibility, incompressibility, and aesthetic quality tasks, as these tasks isolate the effectiveness of the RL approach from considerations relating to the VLM reward function. We use <span class="hl-method">Stable Diffusion v1.4</span> as the base model for all experiments. Compressibility and incompressibility prompts are sampled uniformly from all 398 animals in the ImageNet-1000 categories. Aesthetic quality prompts are sampled uniformly from a smaller set of 45 common animals.</p>
+      </div>
+      <div class="col-translation">
+        <p>我们实验的目的是评估强化学习算法在「把扩散模型微调到符合多种用户指定目标」上的有效性。在检验了总体方法的可行性之后，我们聚焦以下问题：</p>
+        <p>（1）DDPO 的各变体与 RWR 相比、彼此相比如何？（2）VLM 能否让我们优化那些难以人工指定的奖励？（3）RL 微调的效果能否泛化到微调时未见的提示词？</p>
+        <p><strong>算法比较。</strong>我们先在可压缩性、不可压缩性与美学质量三个任务上评估所有方法，因为这些任务能把 RL 方法本身的有效性与 VLM 奖励函数相关的因素隔离开。所有实验都以 <strong>Stable Diffusion v1.4</strong> 为基础模型。可压缩性与不可压缩性的提示词从 ImageNet-1000 类别的全部 398 种动物中均匀采样；美学质量的提示词从一个更小的 45 种常见动物集合中均匀采样。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#6f42c1;">
+          <span class="tag">实验设计</span>
+          <h4>三个问题对应三组实验</h4>
+          <p>Q1 → Fig.3（reward-query 曲线）；Q2 → Fig.5（对齐进展）；Q3 → Fig.6（泛化前后对比）。结构非常干净。</p>
+          <h4>为什么先做「非 VLM」任务</h4>
+          <p>如果一上来就用 VLM 奖励，效果差时无法区分是「RL 不行」还是「VLM 奖励不行」。先用确定性奖励（JPEG 大小）验证算法，是标准的消融思路。</p>
+          <h4>398 vs 45 的用意</h4>
+          <p>398 种动物覆盖广，用于「算法能力」；45 种常见动物覆盖窄，用于「泛化测试」——训练分布越窄，泛化证据越强。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <figure>
+        <img src="assets/ddpo/fig2-samples.jpg" alt="DDPO Figure 2: qualitative samples for pretrained and three reward functions">
+        <figcaption>Fig.2（原文 p.6）：左上为预训练模型；其余三格为 DDPO 微调后。美学 → 艺术化；可压缩 → 去背景 + 平滑；不可压缩 → 高频纹理与锐边。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <div class="row">
+      <div class="col-original">
+        <p>As shown qualitatively in Figure 2, DDPO is able to effectively adapt a pretrained model with only the specification of a reward function and without any further data curation. The strategies found to optimize each reward are nontrivial; for example, to maximize LAION-predicted aesthetic quality, DDPO <span class="hl-evidence">transforms a model that produces naturalistic images into one that produces artistic drawings</span>. To maximize compressibility, DDPO removes backgrounds and applies smoothing to what remains. To maximize incompressibility, DDPO finds artifacts that are difficult for the JPEG compression algorithm to encode, such as high-frequency noise and sharp edges.</p>
+        <p>We provide a quantitative comparison of all methods in Figure 3. We plot the attained reward as a function of <span class="hl-method">the number of queries to the reward function</span>, as reward evaluation becomes the limiting factor in many practical applications. <span class="hl-thesis">DDPO shows a clear advantage over RWR on all tasks</span>, demonstrating that formulating the denoising process as a multi-step MDP and estimating the policy gradient directly is more effective than optimizing a reward-weighted variational bound on log-likelihood. Within the DDPO class, the importance sampling estimator slightly outperforms the score function estimator, likely due to the increased number of optimization steps. Within the RWR class, the performance of weighting schemes is comparable, making the sparse weighting scheme preferable on these tasks due to its simplicity and reduced resource requirements.</p>
+      </div>
+      <div class="col-translation">
+        <p>如图 2 的定性结果所示，DDPO 仅凭一个奖励函数的指定、无需任何额外数据整理，就能有效地适配预训练模型。为优化各个奖励而找到的策略并不平凡：例如，为最大化 LAION 预测的美学质量，DDPO <strong>把一个生成自然写实图像的模型变成了生成艺术绘画的模型</strong>。为最大化可压缩性，DDPO 去掉了背景并对剩余部分做平滑。为最大化不可压缩性，DDPO 找到了 JPEG 压缩算法难以编码的伪影，例如高频噪声与锐利边缘。</p>
+        <p>我们在图 3 中给出所有方法的定量比较。我们把获得的奖励画成<strong>奖励函数查询次数</strong>的函数，因为在许多实际应用中奖励评估会成为限制因素。<strong>DDPO 在所有任务上都明显优于 RWR</strong>，这说明「把去噪过程表述为多步 MDP 并直接估计策略梯度」比「优化奖励加权的对数似然变分下界」更有效。在 DDPO 类内部，重要性采样估计量略优于得分函数估计量，很可能是因为优化步数更多。在 RWR 类内部，各加权方案表现相当，因此在这些任务上稀疏加权方案更可取——它更简单、资源需求更低。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#0d9488;">
+          <span class="tag">主结果</span>
+          <h4>横轴选「奖励查询次数」而非「训练步数」</h4>
+          <p>这是很讲究的选择：如果奖励来自付费 API 或人类标注，<strong>查询次数才是真成本</strong>。DDPO 每轮 256 次查询，RWR 每轮 10k 次——同一条横轴上，RWR 天然吃亏，但这个「吃亏」正是作者想强调的工程差异。</p>
+          <h4>「clear advantage」的证据强度</h4>
+          <p>三条曲线（美学 / 可压缩 / 不可压缩）上 DDPO 都高于 RWR，且 RWR 曲线在 50k 查询内没有交叉趋势。这是全文最硬的一张图。</p>
+          <h4>IS 略优于 SF 的解释要打折</h4>
+          <p>作者归因于「更多优化步」。但 IS 同时引入了 off-policy 偏差，两者效应混在一起，没有单独消融。</p>
+          <h4>注意缺失的基线</h4>
+          <p>没有与「可微奖励反向传播」（DRaFT / AlignProp）比较——因为那类方法需要可微奖励，而本文强调黑盒设定。这是设定差异，不是遗漏。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <figure>
+        <img src="assets/ddpo/fig6-alg-comparison.png" alt="DDPO Figure 3: reward versus number of reward function queries for all methods">
+        <figcaption>Fig.3（原文 p.6）：三个奖励任务上，奖励随「奖励查询次数」的变化。蓝 = DDPO$_{\text{IS}}$，紫 = DDPO$_{\text{SF}}$，红/橙 = RWR 两种加权。点击放大。</figcaption>
+      </figure>
+    </section>
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Automated prompt alignment.</strong> We next evaluate the ability of VLMs, in conjunction with DDPO, to automatically improve the image-prompt alignment of the pretrained model without additional human labels. We focus on DDPO$_{\text{IS}}$ for this experiment, as we found it to be the most effective algorithm. The prompts for this task all have the form “<em>a(n) [animal] [activity]</em>”, where the animal comes from the same list of 45 common animals and the activity is chosen from a list of 3 activities: “<em>riding a bike</em>”, “<em>playing chess</em>”, and “<em>washing dishes</em>”.</p>
+        <p>Qualitatively, the samples come to depict the prompts much more faithfully throughout the course of training. This trend is also reflected quantitatively, though is less salient as small changes in BERTScore can correspond to large differences in relevance. <span class="hl-thesis">It is important to note that some of the prompts in the finetuning set, such as “a dolphin riding a bike”, had zero success rate from the pretrained model</span>; if trained in isolation, this prompt would be unlikely to ever improve because there would be no reward signal. It was only via <span class="hl-concept">transferrable learning across prompts</span> that these difficult prompts could improve.</p>
+        <p>Nearly all of the samples become more cartoon-like or artistic during finetuning. This was not optimized for directly. We hypothesize that this may be a function of the pretraining distribution or of the reward function (perhaps LLaVA has an easier time recognizing the content of simple cartoon-like images).</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>自动提示对齐。</strong>接下来我们评估 VLM 与 DDPO 结合后，能否在无额外人工标注的情况下自动改善预训练模型的图像-提示对齐。本实验聚焦 DDPO$_{\text{IS}}$，因为它是我们发现最有效的算法。该任务的提示词形式均为「<em>一只（个）[动物] [活动]</em>」，动物取自同一份 45 种常见动物列表，活动从 3 项中选择：「<em>骑自行车</em>」「<em>下棋</em>」「<em>洗碗</em>」。</p>
+        <p>定性上看，训练过程中样本对提示词的刻画明显更忠实。这一趋势在定量上也有体现，但不够显著——因为 BERTScore 的微小变化可能对应相关性上的巨大差异。<strong>需要强调的是，微调集中有些提示词（如「一只骑自行车的海豚」）在预训练模型上的成功率为零</strong>；如果单独训练，这个提示词几乎不可能改善，因为它拿不到任何奖励信号。这些困难提示词之所以能改善，靠的是<strong>跨提示词的可迁移学习</strong>。</p>
+        <p>训练过程中几乎所有样本都变得更卡通化或艺术化。这并非我们直接优化的目标。我们推测这可能与预训练分布有关，也可能与奖励函数有关（也许 LLaVA 更容易识别简单卡通图的内容）。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#1a2744;">
+          <span class="tag">VLM 奖励实验</span>
+          <h4>「零成功率 prompt 也能学会」的意义</h4>
+          <p>这是本文最反直觉的发现：一个从未成功过的 prompt，因为没有正奖励，单看它自己永远学不会；但它与「狗骑车」「猫下棋」共享「骑车」「下棋」的视觉概念，于是<strong>概念层面的迁移</strong>把它带起来了。这解释了为什么必须多 prompt 联合训练。</p>
+          <h4>为什么 BERTScore 曲线「不够显著」</h4>
+          <p>BERTScore 是语义相似度，对「有没有画对元素」不敏感。图 5 左的视觉改善远大于右的曲线抬升——这是指标分辨率问题，不是方法问题。作者诚实地指出了这一点。</p>
+          <h4>卡通化 = 裁判偏好被利用</h4>
+          <p>没有优化「卡通」，却得到卡通。两种解释都指向同一个机制：<strong>奖励函数在某个子空间上更「好打分」</strong>，策略就朝那里跑。这是 reward hacking 的温和形态，也是附录 A.1 剧烈形态（文字攻击）的前兆。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <figure>
+        <img src="assets/ddpo/fig3-alignment.jpg" alt="DDPO Figure 5 left: progression of prompt-alignment samples over training">
+        <figcaption>Fig.5 左（原文 p.7）：同一 prompt、同一随机种子，训练过程中的样本演化。三行分别为「骑车的海豚」「下棋的蚂蚁」「洗碗的熊」。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <div class="row">
+      <div class="col-original">
+        <p><strong>Generalization.</strong> RL finetuning on large language models has been shown to produce interesting generalization properties; for example, instruction finetuning almost entirely in English has been shown to improve capabilities in other languages. <span class="hl-counter">It is difficult to reconcile this phenomenon with our current understanding of generalization</span>; it would <em>a priori</em> seem more likely for finetuning to have an effect only on the finetuning prompt set or distribution.</p>
+        <p>In order to investigate the same phenomenon with diffusion models, Figure 6 shows a set of DDPO-finetuned model samples corresponding to prompts that were not seen during finetuning. In concordance with instruction-following transfer in language modeling, <span class="hl-evidence">we find that the effects of finetuning do generalize, even with prompt distributions as narrow as 45 animals and 3 activities</span>. We find evidence of generalization to animals outside of the training distribution, to non-animal everyday objects, and in the case of prompt-image alignment, even to novel activities such as “<em>taking an exam</em>”.</p>
+      </div>
+      <div class="col-translation">
+        <p><strong>泛化。</strong>已有研究表明，在大语言模型上做强化学习微调会产生有趣的泛化性质；例如几乎完全用英文做指令微调，也能提升其他语言上的能力。<strong>这一现象很难用我们目前对泛化的理解来解释</strong>；先验地看，微调更可能只影响微调所用的提示词集合或分布。</p>
+        <p>为了在扩散模型上研究同一现象，图 6 展示了一组 DDPO 微调模型在「微调时未见过的提示词」上的样本。与语言模型中的指令遵循迁移一致，<strong>我们发现微调的效果确实会泛化，即使提示词分布窄到只有 45 种动物和 3 种活动</strong>。我们找到了泛化到训练分布之外的动物、到非动物的日常物品、以及在提示-图像对齐任务中甚至泛化到「<em>参加考试</em>」这类全新活动的证据。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#dc3545;">
+          <span class="tag">泛化</span>
+          <h4>证据的层级</h4>
+          <p>定性：Fig.6 的三列（新动物 / 非动物 / 新场景）都很直观。定量：附录 Fig.11 的奖励曲线显示「新动物」提升明显、「日常物品」提升较弱。作者自己承认后者更弱。</p>
+          <h4>「泛化」的两种可能机制</h4>
+          <p>① 奖励函数本身是通用的（美学分对任何物体都成立），微调只是把模型推向「更符合该打分器」的区域；② 模型学到了可迁移的「风格/构图」变换。本文没有区分这两者——这是最大的解释缺口。</p>
+          <h4>与 LLM 类比的限度</h4>
+          <p>语言模型的指令微调迁移涉及语义理解；扩散模型的「风格迁移式泛化」可能只是分布位移。类比很有启发性，但不能当作机制证据。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <figure>
+        <img src="assets/ddpo/fig4-generalization.jpg" alt="DDPO Figure 6: generalization before and after finetuning">
+        <figcaption>Fig.6（原文 p.8）：泛化。上排为预训练模型，下排为 DDPO 微调后。三列分别为「新动物（火烈鸟 / 海星）」「非动物（自行车 / 冰箱）」「新场景（水豚洗碗 / 鸭子考试）」。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <h2 class="section-title" id="discussion">7. Discussion and Limitations</h2>
+    <div class="col-labels"><span>原文</span><span>翻译</span><span>解析</span></div>
+    <div class="row">
+      <div class="col-original">
+        <p>We presented an RL-based framework for training denoising diffusion models to directly optimize a variety of reward functions. By posing the iterative denoising procedure as a multi-step decision-making problem, we were able to design a class of policy gradient algorithms that are highly effective at training diffusion models. We found that DDPO was an effective optimizer for tasks that are difficult to specify via prompts, such as image compressibility, and difficult to evaluate programmatically, such as semantic alignment with prompts.</p>
+        <p>While our evaluation considers a variety of prompts, <span class="hl-counter">the full range of images in our experiments was constrained</span> (<em>e.g.</em>, animals performing activities). Future iterations could expand both the questions posed to the VLM, possibly using language models to propose relevant questions based on the prompt, as well as the diversity of the prompt distribution. <span class="hl-counter">We also chose not to study the problem of overoptimization</span>, a common issue with RL finetuning in which the model diverges too far from the original distribution to be useful; we highlight this as an important area for future work.</p>
+        <p>We hope that this work will provide a step toward more targeted training of large generative models, where optimization via RL can produce models that are effective at achieving user-specified goals rather than simply matching an entire data distribution.</p>
+        <p><strong>Broader Impacts.</strong> Generative models can be valuable productivity aids, but may also pose harm when used for disinformation, impersonation, or phishing. Our work aims to make diffusion models more useful by enabling them to optimize user-specified objectives. This adaptation has beneficial applications, such as the generation of more understandable educational material, but may also be used maliciously. Work on the reliable detection of synthetic content remains important to mitigate such harms.</p>
+      </div>
+      <div class="col-translation">
+        <p>我们提出了一个基于强化学习的框架，用于训练去噪扩散模型直接优化多种奖励函数。通过把迭代去噪过程表述为多步决策问题，我们设计出一类在训练扩散模型上非常有效的策略梯度算法。我们发现 DDPO 对「难以通过提示词指定」的任务（如图像可压缩性）和「难以程序化评估」的任务（如与提示词的语义对齐）都是有效的优化器。</p>
+        <p>尽管我们的评估考虑了多种提示词，但<strong>实验中图像的完整范围是受限的</strong>（例如动物做各种活动）。未来的迭代可以扩展两方面：向 VLM 提出的问题（可能用语言模型基于提示词自动生成相关问题），以及提示词分布的多样性。<strong>我们也没有研究过优化（overoptimization）问题</strong>——这是 RL 微调中的常见问题，模型会偏离原始分布太远而失去用处；我们将其列为未来工作的重要方向。</p>
+        <p>我们希望这项工作能朝着「更有针对性训练大型生成模型」迈进一步：通过 RL 优化，模型能有效达成用户指定的目标，而不是仅仅匹配整个数据分布。</p>
+        <p><strong>更广泛影响。</strong>生成模型可以是有价值的生产力工具，但在用于虚假信息、冒名顶替或钓鱼时也可能造成危害。我们的工作旨在让扩散模型通过优化用户指定目标而更有用。这种适配有有益的应用（如生成更易懂的教学材料），但也可能被恶意使用。可靠的合成内容检测工作对缓解此类危害仍然重要。</p>
+      </div>
+      <div class="col-analysis">
+        <div class="analysis-card" style="border-left-color:#dc3545;">
+          <span class="tag">局限</span>
+          <h4>作者自认的三条</h4>
+          <p>① 图像范围窄（动物 + 活动）；② VLM 问题单一（只有「发生了什么」）；③ 未研究过优化。</p>
+          <h4>第三条其实有数据</h4>
+          <p>附录 A.1 明确给了两个过优化案例（不可压缩 → 噪声；计数 → 文字攻击），只是没做系统研究。所以「chose not to study」是「不深入」，不是「没观察到」。</p>
+          <h4>没写出来但更关键的局限</h4>
+          <p>① 没有 KL 正则（DPOK 有），靠人工挑 checkpoint；② 奖励是唯一监督信号，奖励错了模型就学错；③ 计算成本高（v4-64 TPU pod 4 小时到 50k 样本）；④ 只对 UNet 微调，文本编码器冻结，无法改变「理解」。</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="figure-row">
+      <figure>
+        <img src="assets/ddpo/fig5-overoptimization.jpg" alt="DDPO Appendix Figure 7: reward overoptimization examples">
+        <figcaption>Fig.7（附录 A.1）：奖励过优化。左：优化不可压缩性时，DDPO 与 RWR 最终都退化为噪声；右：优化「n 只动物」时，模型用文字攻击 VLM——写出「Sixx TTuttlAs」「8ighn Fxx Foxx」这类被读成数字的字符串。点击放大。</figcaption>
+      </figure>
+    </section>
+
+    <section class="summary" id="notation">
+      <h2>符号速查</h2>
+      <table class="notation">
+        <thead><tr><th>符号</th><th>含义</th><th>备注</th></tr></thead>
+        <tbody>
+          <tr><td>$\mathbf{c},\ p(\mathbf{c})$</td><td>上下文（prompt）及其分布</td><td>由研究者指定，决定泛化边界</td></tr>
+          <tr><td>$\mathbf{x}_t$</td><td>第 $t$ 步的噪声 latent</td><td>$\mathbf{x}_T\sim\mathcal{N}(0,I)$，$\mathbf{x}_0$ 为样本</td></tr>
+          <tr><td>$T$</td><td>去噪步数</td><td>论文与代码均为 50</td></tr>
+          <tr><td>$\boldsymbol{\mu}_\theta(\mathbf{x}_t,\mathbf{c},t)$</td><td>去噪网络预测的均值</td><td>即 UNet 输出经 scheduler 换算</td></tr>
+          <tr><td>$\sigma_t^2$</td><td>第 $t$ 步采样方差</td><td>固定、不学习；$\eta=1$ 时为完整 DDPM 方差</td></tr>
+          <tr><td>$\mathcal{L}_{\text{diff}}$</td><td>去噪 MSE 损失</td><td>对数似然的<strong>变分下界</strong>，非精确似然</td></tr>
+          <tr><td>$\mathcal{J}_{\text{DDRL}}$</td><td>去噪扩散 RL 目标</td><td>$\mathbb{E}_{\mathbf{c},\mathbf{x}_0}[r(\mathbf{x}_0,\mathbf{c})]$</td></tr>
+          <tr><td>$\mathcal{J}_{\text{RL}}$</td><td>标准 MDP 累积奖励</td><td>在本文的 MDP 映射下与 $\mathcal{J}_{\text{DDRL}}$ 等价</td></tr>
+          <tr><td>$r(\mathbf{x}_0,\mathbf{c})$</td><td>黑盒奖励</td><td>JPEG 大小 / LAION 美学 / LLaVA+BERTScore</td></tr>
+          <tr><td>$w_{\text{RWR}},\ w_{\text{sparse}}$</td><td>RWR 的指数权重 / 二值权重</td><td>$\beta=0.2$；稀疏阈值取 90 分位</td></tr>
+          <tr><td>$\beta$</td><td>RWR 的逆温度</td><td>注意：与 DPO 的 $\beta$ 含义不同</td></tr>
+          <tr><td>DDPO$_{\text{SF}}$</td><td>得分函数（REINFORCE）变体</td><td>每轮 256 样本 → 1 次更新</td></tr>
+          <tr><td>DDPO$_{\text{IS}}$</td><td>重要性采样（PPO 式）变体</td><td>256 样本切 4 个 minibatch → 4 次更新</td></tr>
+          <tr><td>$\epsilon$（clip range）</td><td>PPO 裁剪范围</td><td>$10^{-4}$，远小于标准 RL 的 0.2</td></tr>
+          <tr><td>CFG training</td><td>训练时也使用 guided $\epsilon$</td><td>否则第二轮起性能崩坏</td></tr>
+          <tr><td>BERTScore recall</td><td>VLM 描述与原 prompt 的语义召回</td><td>奖励 = 召回分，不是 F1</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="summary" id="overview">
+      <h2>论证结构总览</h2>
+      <div class="skeleton">问题（训练用似然、使用看下游指标）→ 障碍（$p_\theta(x_0|c)$ 精确似然不可解）→ 洞察（每步高斯似然可解）→ 方法（多步 MDP + 策略梯度 SF/IS）→ 对照（RWR 只有变分下界，理论不成立）→ 证据（三任务 reward-query 曲线 + VLM 对齐 + 泛化）→ 承认（过优化未研究）</div>
+      <h4>核心主张（一句话）</h4>
+      <p>把去噪过程展开成多步 MDP 后，每步策略都是已知方差的高斯，因此可以用精确似然做策略梯度；这比在单步 MDP 上用变分下界加权（RWR）更有效。</p>
+      <div class="strength"><strong>论证最强处：</strong>「RWR 用变分下界、DDPO 用精确似然」这一条差异既在理论上干净（§4.2 明确指出定理前提不成立），又在三条 reward-query 曲线上一致体现（Fig.3）。理论与实验咬合得很紧。</div>
+      <div class="weakness"><strong>论证最弱处：</strong>「泛化」只有定性图 + 附录一条曲线，且无法区分「奖励函数通用」与「模型学到可迁移变换」；同时全文没有 KL 正则，靠人工挑 checkpoint 回避过优化，使「稳定」这一卖点打了折扣。</div>
+    </section>
+
+    <section class="summary faq" id="faq">
+      <h2>🧩 结构化十问（AI 解构）</h2>
+      <details open><summary>Q1 · 论文试图解决什么问题？</summary><div class="answer">扩散模型的训练目标是「对数似然的变分下界」，但实际使用关心的是下游指标（人眼觉得好不好看、文件能不能压小、图文是否对齐）。这些指标既写不进 prompt，也不能用监督学习直接训。论文要解决的是：<strong>如何只用黑盒奖励函数，直接优化扩散模型去最大化这些下游目标</strong>（§1、§4.1）。</div></details>
+      <details open><summary>Q2 · 这是否是一个新问题？</summary><div class="answer">问题不新（RL 微调生成模型、RLHF 都已有），<strong>新意在「映射」</strong>：把去噪过程展开成多步 MDP，从而让每步策略成为已知方差的高斯，精确似然可算。同一映射在 Fan et al. 2023 出现过，但那里只用于「匹配分布」（奖励是 GAN 判别器）；本文把它接到任意下游奖励上，并系统比较了 RWR 与策略梯度两类做法（§2、§4.2–4.3）。</div></details>
+      <details open><summary>Q3 · 要验证什么科学假设？</summary><div class="answer">假设：<strong>在扩散模型上，「多步 MDP + 精确每步似然」的策略梯度，优于「单步 MDP + 变分下界加权」的 RWR</strong>，且这种优势在多种奖励（可压缩性、美学、VLM 对齐）上都成立，并能泛化到未见 prompt。验证：Fig.3 的 reward-query 曲线（三任务）、Fig.5 的对齐进展、Fig.6 的泛化前后对比、附录 Fig.11 的泛化定量曲线。</div></details>
+      <details open><summary>Q4 · 相关研究如何归类？值得关注的研究者？</summary><div class="answer">四条线：① 扩散模型本身（Ho 2020 DDPM、Song 2021 DDIM、Rombach 2022 LDM）；② 可控生成（DreamBooth、Textual Inversion、ControlNet、classifier / classifier-free guidance）；③ RLHF / 偏好优化（Christiano 2017、Ziegler 2019、Stiennon 2020、Ouyang 2022 InstructGPT、Bai 2022 RLAIF）；④ 扩散 + RL（Bachman 2015、Fan 2023 SFT、Lee 2023 AlignProp、Fan 2023 DPOK 同期）。核心作者：Kevin Black、Michael Janner、Yilun Du、Ilya Kostrikov、Sergey Levine。</div></details>
+      <details open><summary>Q5 · 解决方案的关键是什么？</summary><div class="answer">三步：① 把状态定义为 $(\mathbf{c},t,\mathbf{x}_t)$、动作定义为 $\mathbf{x}_{t-1}$，于是策略就是 $p_\theta(\mathbf{x}_{t-1}\mid\mathbf{x}_t,\mathbf{c})$；② 因为采样器方差固定，该策略是各向同性高斯，$\log p$ 有解析式、可求导；③ 用 REINFORCE（DDPO$_{\text{SF}}$）或重要性采样 + PPO 裁剪（DDPO$_{\text{IS}}$）估计 $\nabla_\theta\mathcal{J}$。工程上只需「采样轨迹 → 打分 → 对每步 logprob 加权回传」。</div></details>
+      <details open><summary>Q6 · 实验是如何设计的？</summary><div class="answer">基础模型 Stable Diffusion v1.4，只微调 UNet。三个奖励任务：① 可压缩性 / 不可压缩性（JPEG 文件大小，512×512 固定分辨率，398 种动物 prompt）；② 美学质量（LAION 美学预测器，45 种常见动物 prompt）；③ 提示对齐（LLaVA 描述 + BERTScore 召回，45 动物 × 3 活动）。基线：RWR（指数权重 / 稀疏权重）、DDPO$_{\text{SF}}$、DDPO$_{\text{IS}}$。评价：奖励随「奖励查询次数」变化的曲线、定性样本、泛化前后对比。</div></details>
+      <details open><summary>Q7 · 数据集？代码是否开源（给链接）？</summary><div class="answer">不需要训练数据集——奖励就是监督信号，prompt 从 ImageNet-1000 的 398 种动物 / 45 种常见动物中采样。奖励侧用到的外部资源：LAION aesthetics predictor（176k 人类评分）、LLaVA（描述）、BERTScore、ImageReward（仅附录与 DPOK 对比时用）。代码开源：<a href="https://github.com/kvablack/ddpo-pytorch" target="_blank" rel="noopener">kvablack/ddpo-pytorch</a>（PyTorch + diffusers，支持 LoRA，单卡 10GB 可跑）。</div></details>
+      <details open><summary>Q8 · 结果是否很好支持了假设？</summary><div class="answer">支持较强：三个任务上 DDPO 的 reward-query 曲线都高于 RWR，且 RWR 在 50k 查询内无交叉趋势；定性上策略差异明显（艺术化 / 去背景 / 高频纹理）。支持中等：VLM 对齐的定量曲线（BERTScore）抬升不显著，主要靠定性图；泛化只有定性 + 附录一条曲线。未验证：与可微奖励方法（DRaFT / AlignProp）的比较、过优化的系统研究、更大模型与更广 prompt 分布。</div></details>
+      <details open><summary>Q9 · 这篇论文到底有什么贡献？</summary><div class="answer">① 明确了「去噪 = 多步 MDP」这一映射在「任意下游奖励」设定下的用法，并给出 SF / IS 两个估计量；② 指出 RWR 类方法的理论缺口（变分下界 ≠ 精确似然），并用实验证明差距；③ 设计了一条奖励谱系（可计算 → 人类反馈 → VLM 自动），把「人工标注」替换为「VLM + BERTScore」；④ 展示多 prompt 联合训练带来的跨 prompt 迁移与泛化；⑤ 开源了可复现的 PyTorch 实现，成为后续 Diffusion-RL 工作的通用基线（Flow-GRPO、DanceGRPO 等都直接基于它）。</div></details>
+      <details open><summary>Q10 · 下一步可以做什么？</summary><div class="answer">作者列出：扩展 VLM 提问方式（用 LLM 自动生成问题）、扩展 prompt 分布、系统研究过优化。社区后续方向：<strong>换生成范式</strong>（Flow-GRPO 把 MDP 搬到 flow matching 的 ODE→SDE；DanceGRPO 统一到视觉生成）、<strong>换优化器</strong>（GRPO 去掉 critic、DanceGRPO 的多种奖励归一化）、<strong>换奖励</strong>（VideoDPO 用偏好对、VADER 用可微奖励梯度）、<strong>加正则</strong>（KL 约束、DPOK 式 KL 惩罚）、<strong>效率</strong>（LoRA、少步采样、梯度检查点）。</div></details>
+    </section>
+
+    <section class="summary deepdive" id="deepdive">
+      <h2>🔬 深挖追问</h2>
+      <div class="block"><h4>第一性原理 · 本质</h4><p>DDPO 的本质是「<strong>把不可解的边缘似然，换成可解的条件似然</strong>」。$p_\theta(x_0\mid c)$ 是 T 步复合出来的复杂分布，算不出来；但把它拆成 T 个条件高斯，每个都算得出来。于是「对最终样本求期望奖励」这个目标，就可以用「对每步 log 概率求梯度」来估计。它不是新算法，而是<strong>把已有的策略梯度算法接到一个正确的 MDP 上</strong>。</p></div>
+      <div class="block"><h4>第一性原理 · 哲学基础</h4><p>一种「<strong>把生成过程当作决策过程</strong>」的世界观：生成不是一次性映射，而是一串选择。一旦这样看，「模型输出」就变成了「策略」，「采样」变成了「rollout」，「训练」变成了「策略改进」。这也解释了为什么 DDPO 能直接继承 PPO 的全部工程经验（裁剪、优势归一化、梯度累积）。另一层是「<strong>奖励即接口</strong>」：只要能把目标写成一个打分函数，就能优化它——这把「任务定义」从数据标注转移到了奖励设计。</p></div>
+      <div class="block"><h4>第一性原理 · 数学基础</h4><p>① 采样器固定 ⇒ 每步策略 $\pi(a_t|s_t)=\mathcal{N}(\mu_\theta,\sigma_t^2 I)$，协方差已知；② 轨迹概率 $p(\tau|\pi)=\prod_t \pi(a_t|s_t)$（转移是 δ，无环境随机性）；③ 得分函数恒等式 $\nabla_\theta \mathbb{E}[r]=\mathbb{E}[r\sum_t\nabla_\theta\log\pi]$；④ 重要性采样把 on-policy 换成 off-policy，代价是比率方差；⑤ PPO 裁剪把「比率过大」的样本梯度截断，等价于软信赖域；⑥ RWR 的定理前提是精确似然，而 $\mathcal{L}_{\text{diff}}$ 只是 ELBO，故前提不成立。</p></div>
+      <div class="block crit"><h4>批判性思维 · 我们还没问的根本问题（盲区）</h4>
+        <ul>
+          <li><strong>奖励是唯一真值：</strong>整个框架把「什么算好」完全外包给奖励函数。奖励有偏（LAION 偏好艺术、LLaVA 偏好卡通）时，模型会精确地学到这个偏差——Fig.1 中排的「艺术化」就是证据。</li>
+          <li><strong>没有 KL 约束：</strong>DPOK 有 KL 惩罚，DDPO 没有。作者靠「人工挑最后一个没崩的 checkpoint」回避过优化（附录 A.1），这不是可扩展的方案。</li>
+          <li><strong>「泛化」的机制未明：</strong>无法区分「奖励函数本身通用」与「模型学到可迁移变换」。若只是前者，那所谓泛化不过是「把模型推向奖励函数的全局最优区域」，与「理解概念」无关。</li>
+          <li><strong>重要性采样的适用性存疑：</strong>动作是整张 512×512×3 的图，clip range 被迫取 $10^{-4}$，说明比率几乎一动就出界。IS 相对 SF 的收益（4 倍梯度步）是否值得这份脆弱性，缺少消融。</li>
+          <li><strong>成本被低估：</strong>v4-64 TPU pod 4 小时到 50k 样本；若奖励来自付费 API 或人类标注，「查询次数」这个横轴的现实成本远高于论文呈现。</li>
+          <li><strong>只微调 UNet：</strong>文本编码器冻结意味着模型「理解 prompt 的能力」不变，只能改变「画法」。这限制了「对齐」能达到的上限，也解释了为什么「骑车的海豚」需要靠跨 prompt 迁移而非真正理解。</li>
+          <li><strong>单一种子 / 单次运行：</strong>Fig.3 的曲线没有误差棒，无法判断 DDPO 与 RWR 的差距是否稳定；定性图也是挑出来的。</li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+  <script>
+    function syncScrollPad() {
+      var head = document.querySelector('.sticky-head');
+      if (head) document.documentElement.style.scrollPaddingTop = (head.offsetHeight + 8) + 'px';
+    }
+    window.addEventListener('load', syncScrollPad);
+    window.addEventListener('resize', syncScrollPad);
+    syncScrollPad();
+  </script>
+
+  <div id="lightbox" role="dialog" aria-modal="true" aria-label="放大查看">
+    <span class="lb-close" aria-hidden="true">&times;</span>
+    <div class="lb-content"></div>
+    <div class="lb-cap"></div>
+  </div>
+  <script>
+  (function () {
+    var lb = document.getElementById('lightbox');
+    var content = lb.querySelector('.lb-content');
+    var cap = lb.querySelector('.lb-cap');
+    function findZoomTarget(node) {
+      var el = node.closest ? node.closest('img, svg') : null;
+      if (!el) return null;
+      if (!el.closest('.diagram, .figure-row, .mermaid')) return null;
+      return el;
+    }
+    function nearestCaption(el) {
+      var fig = el.closest('figure') || el.closest('.diagram') || el.closest('.figure-row');
+      var c = fig && fig.querySelector('figcaption');
+      if (!c) return '';
+      var clone = c.cloneNode(true);
+      clone.querySelectorAll('.katex-mathml').forEach(function (n) { n.remove(); });
+      return clone.textContent.trim();
+    }
+    function openLightbox(node, caption) {
+      content.innerHTML = '';
+      var clone = node.cloneNode(true);
+      clone.style.cursor = 'default';
+      clone.style.boxShadow = 'none';
+      var r = node.getBoundingClientRect();
+      var vw = window.innerWidth * 0.96, vh = window.innerHeight * 0.92;
+      var w = r.width || node.clientWidth || 600;
+      var h = r.height || node.clientHeight || 400;
+      var scale = Math.min(vw / w, vh / h);
+      if (!isFinite(scale) || scale <= 0) scale = 1;
+      clone.style.width = Math.round(w * scale) + 'px';
+      clone.style.height = Math.round(h * scale) + 'px';
+      clone.style.maxWidth = 'none';
+      clone.style.maxHeight = 'none';
+      content.appendChild(clone);
+      cap.textContent = caption || '';
+      lb.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeLightbox() {
+      lb.classList.remove('open');
+      content.innerHTML = '';
+      document.body.style.overflow = '';
+    }
+    document.addEventListener('click', function (e) {
+      if (lb.classList.contains('open')) { closeLightbox(); return; }
+      var el = findZoomTarget(e.target);
+      if (el) { e.preventDefault(); e.stopPropagation(); openLightbox(el, nearestCaption(el)); }
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && lb.classList.contains('open')) closeLightbox();
+    });
+  })();
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js" defer></script>
+  <script>window.addEventListener('DOMContentLoaded', function () { if (window.mermaid) { mermaid.initialize({ startOnLoad: true, theme: 'neutral', flowchart: { htmlLabels: true } }); } });</script>
+</body>
+</html>

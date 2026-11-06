@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 720" width="1120" height="720" role="img" aria-label="DDPO: denoising as a multi-step MDP and the policy-gradient training loop">
+  <style>
+    text { font-family: 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+    .sym { font-size: 14px; font-weight: 600; fill: #1d4ed8; }
+    .desc { font-size: 12px; fill: #6b7280; }
+    .step { font-size: 14px; font-weight: 600; fill: #111827; }
+    .sub { font-size: 11.5px; fill: #4b5563; }
+    .panel { font-size: 15px; font-weight: 600; fill: #1a2744; }
+  </style>
+  <defs>
+    <marker id="arrow-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#2563eb"/>
+    </marker>
+    <marker id="arrow-purple" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#9333ea"/>
+    </marker>
+  </defs>
+
+  <rect width="1120" height="720" fill="#ffffff"/>
+
+  <text x="40" y="44" font-size="20" font-weight="600" fill="#111827">DDPO：把去噪写成多步 MDP，再用策略梯度最大化黑盒奖励</text>
+  <text x="40" y="70" font-size="13" fill="#6b7280">Training Diffusion Models with Reinforcement Learning · Black et al., ICLR 2024 · arXiv:2305.13301</text>
+
+  <!-- ============ Panel 1: MDP mapping ============ -->
+  <text class="panel" x="40" y="112">① 去噪过程 → 多步 MDP（T = 50 步，奖励只在最后一步给出）</text>
+
+  <g>
+    <rect x="40" y="128" width="520" height="58" rx="8" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
+    <text class="sym" x="58" y="152">状态 s_t = (c, t, x_t)</text>
+    <text class="desc" x="58" y="172">context + 当前时间步 + 当前噪声图</text>
+
+    <rect x="40" y="198" width="520" height="58" rx="8" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
+    <text class="sym" x="58" y="222">动作 a_t = x_(t-1)</text>
+    <text class="desc" x="58" y="242">一步去噪的输出（下一张更干净的图）</text>
+
+    <rect x="40" y="268" width="520" height="58" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
+    <text class="sym" x="58" y="292">策略 π_θ(a_t | s_t) = p_θ(x_(t-1) | x_t, c)</text>
+    <text class="desc" x="58" y="312">固定采样器 → 策略为各向同性高斯，似然可精确求导</text>
+
+    <rect x="40" y="338" width="520" height="58" rx="8" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
+    <text class="sym" x="58" y="362">转移 P = (δ_c, δ_(t-1), δ_(x_(t-1)))</text>
+    <text class="desc" x="58" y="382">确定性：c 不变、t 递减、状态就是刚生成的动作</text>
+
+    <rect x="40" y="408" width="520" height="58" rx="8" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5"/>
+    <text class="sym" x="58" y="432">奖励 R(s_t, a_t) = r(x_0, c) 仅当 t = 0</text>
+    <text class="desc" x="58" y="452">轨迹累积奖励 = r(x_0, c)，故 J_DDRL ≡ J_RL</text>
+
+    <rect x="40" y="478" width="520" height="58" rx="8" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
+    <text class="sym" x="58" y="502">初始 ρ_0 = (p(c), δ_T, N(0, I))</text>
+    <text class="desc" x="58" y="522">从 prompt 分布取 c，从纯高斯噪声起步</text>
+  </g>
+
+  <!-- ============ Panel 2: training loop ============ -->
+  <text class="panel" x="600" y="112">② 训练循环（每轮采样 256 条轨迹）</text>
+
+  <g>
+    <rect x="600" y="128" width="400" height="64" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
+    <text class="step" x="618" y="154">1 · 采样 prompt</text>
+    <text class="sub" x="618" y="176">c ~ p(c)：398 种动物 / 45 种常见动物</text>
+
+    <rect x="600" y="208" width="400" height="64" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
+    <text class="step" x="618" y="234">2 · Rollout 去噪轨迹</text>
+    <text class="sub" x="618" y="256">x_T → x_(T-1) → … → x_0，记录每步 log p_θ</text>
+
+    <rect x="600" y="288" width="400" height="64" rx="8" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5"/>
+    <text class="step" x="618" y="314">3 · 黑盒奖励 r(x_0, c)</text>
+    <text class="sub" x="618" y="336">JPEG 大小 / LAION 美学 / LLaVA+BERTScore</text>
+
+    <rect x="600" y="368" width="400" height="76" rx="8" fill="#faf5ff" stroke="#e9d5ff" stroke-width="1.5"/>
+    <text class="step" x="618" y="392">4 · 策略梯度估计</text>
+    <text class="sub" x="618" y="412">DDPO_SF：Σ_t ∇log p_θ · r</text>
+    <text class="sub" x="618" y="430">DDPO_IS：再乘 p_θ / p_θold 并 clip</text>
+
+    <rect x="600" y="460" width="400" height="76" rx="8" fill="#faf5ff" stroke="#e9d5ff" stroke-width="1.5"/>
+    <text class="step" x="618" y="484">5 · 更新 θ（AdamW）</text>
+    <text class="sub" x="618" y="504">lr 1e-5，clip range 1e-4</text>
+    <text class="sub" x="618" y="522">只训 UNet，VAE 与文本编码器冻结</text>
+  </g>
+
+  <line x1="800" y1="192" x2="800" y2="204" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <line x1="800" y1="272" x2="800" y2="284" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <line x1="800" y1="352" x2="800" y2="364" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+  <line x1="800" y1="444" x2="800" y2="456" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+
+  <path d="M 1000 498 H 1052 V 160 H 1004" fill="none" stroke="#9333ea" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow-purple)"/>
+  <text x="1046" y="118" font-size="11" fill="#9333ea" text-anchor="end">下一轮（on-policy）</text>
+
+  <!-- ============ Note ============ -->
+  <rect x="40" y="566" width="1000" height="118" rx="8" fill="#fff7ed" stroke="#fed7aa" stroke-width="1.5"/>
+  <text x="60" y="592" font-size="13" font-weight="600" fill="#9a3412">为什么不能直接用 RWR（奖励加权回归）</text>
+  <text x="60" y="616" font-size="12.5" fill="#7c2d12">RWR 把去噪压成单步 MDP（s = c，a = x_0），用 w = exp(βr) 加权去噪损失 L_diff 训练；但 L_diff 只是对数似然的变分下界，</text>
+  <text x="60" y="638" font-size="12.5" fill="#7c2d12">不是精确似然，因此「加权似然 ≈ 约束奖励最大化」这一步在扩散模型上不成立。DDPO 改在多步 MDP 上用精确的每步高斯似然，</text>
+  <text x="60" y="660" font-size="12.5" fill="#7c2d12">三个任务（美学、可压缩、不可压缩）上均稳定优于 RWR；且 DDPO 每轮只用 256 个样本，RWR 需要 10k。</text>
+
+  <!-- ============ Legend ============ -->
+  <g transform="translate(700, 700)">
+    <line x1="0" y1="0" x2="28" y2="0" stroke="#2563eb" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+    <text x="34" y="4" font-size="11" fill="#6b7280">前向流程</text>
+    <line x1="120" y1="0" x2="148" y2="0" stroke="#9333ea" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow-purple)"/>
+    <text x="154" y="4" font-size="11" fill="#6b7280">回环 / 参数更新</text>
+  </g>
+</svg>

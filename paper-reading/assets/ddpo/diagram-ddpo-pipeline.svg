@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" width="1200" height="900" role="img" aria-label="DDPO 完整训练流程：从提示词到策略梯度更新">
+  <style>
+    text { font-family: 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+    .t { font-size: 14px; font-weight: 600; fill: #111827; }
+    .s { font-size: 11.5px; fill: #4b5563; }
+    .band { font-size: 12.5px; font-weight: 600; fill: #1a2744; }
+    .lg { font-size: 11px; fill: #6b7280; }
+  </style>
+  <defs>
+    <marker id="ab" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#2563eb"/></marker>
+    <marker id="ap" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#9333ea"/></marker>
+  </defs>
+  <rect width="1200" height="900" fill="#ffffff"/>
+  <text x="40" y="42" font-size="20" font-weight="600" fill="#111827">DDPO 完整训练流程：从提示词到策略梯度更新</text>
+  <text x="40" y="68" font-size="13" fill="#6b7280">Training Diffusion Models with Reinforcement Learning · Black et al., ICLR 2024 · 自绘，节点与超参对应论文 §4 与附录 A.4</text>
+  <rect x="40" y="92" width="1120" height="88" rx="10" fill="#fcfcfd" stroke="#d1d5db" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <line x1="196" y1="104" x2="196" y2="168" stroke="#e5e7eb" stroke-width="1"/>
+  <text class="band" x="52" y="119">① 输入</text>
+  <text class="band" x="52" y="136">提示词</text>
+  <text class="band" x="52" y="153">初始噪声</text>
+  <rect x="205" y="124" width="470" height="48" rx="8" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.5"/>
+  <text class="t" x="219" y="148">提示词 c ~ p(c) → 文本编码器（冻结）</text>
+  <text class="s" x="219" y="168">398 种动物 / 45 种常见动物 → 条件 c_emb</text>
+  <rect x="705" y="124" width="380" height="48" rx="8" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
+  <text class="t" x="719" y="148">初始噪声 x_T ~ N(0, I)</text>
+  <text class="s" x="719" y="168">每个 prompt 独立采样</text>
+  <rect x="40" y="200" width="1120" height="150" rx="10" fill="#fcfcfd" stroke="#d1d5db" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <line x1="196" y1="212" x2="196" y2="338" stroke="#e5e7eb" stroke-width="1"/>
+  <text class="band" x="52" y="258">② Rollout</text>
+  <text class="band" x="52" y="275">T = 50 步</text>
+  <text class="band" x="52" y="292">on-policy</text>
+  <rect x="205" y="232" width="300" height="100" rx="8" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5"/>
+  <text class="t" x="219" y="256">UNet ε_θ（可训练）</text>
+  <text class="s" x="219" y="276">输入 x_t, c, t；输出 μ_θ</text>
+  <rect x="535" y="232" width="300" height="100" rx="8" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
+  <text class="t" x="549" y="256">采样 x_{t-1} ~ N(μ_θ, σ_t² I)</text>
+  <text class="s" x="549" y="276">保存 x_{t-1} 与 log π_old</text>
+  <rect x="865" y="232" width="283" height="100" rx="8" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
+  <text class="t" x="879" y="256">t = T … 1，循环 50 步</text>
+  <text class="s" x="879" y="276">得到轨迹 τ 与 x_0（不反传）</text>
+  <rect x="40" y="368" width="1120" height="112" rx="10" fill="#fcfcfd" stroke="#d1d5db" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <line x1="196" y1="380" x2="196" y2="468" stroke="#e5e7eb" stroke-width="1"/>
+  <text class="band" x="52" y="407">③ 奖励</text>
+  <text class="band" x="52" y="424">黑盒打分</text>
+  <text class="band" x="52" y="441">不对奖励求导</text>
+  <rect x="205" y="400" width="310" height="64" rx="8" fill="#fff7ed" stroke="#fed7aa" stroke-width="1.5"/>
+  <text class="t" x="219" y="424">JPEG 文件大小</text>
+  <text class="s" x="219" y="444">可压缩 / 不可压缩（512×512）</text>
+  <rect x="545" y="400" width="310" height="64" rx="8" fill="#fff7ed" stroke="#fed7aa" stroke-width="1.5"/>
+  <text class="t" x="559" y="424">LAION 美学分</text>
+  <text class="s" x="559" y="444">在 17.6 万条人类评分上训练</text>
+  <rect x="885" y="400" width="263" height="64" rx="8" fill="#fff7ed" stroke="#fed7aa" stroke-width="1.5"/>
+  <text class="t" x="899" y="424">LLaVA + BERTScore</text>
+  <text class="s" x="899" y="444">描述与原 prompt 的语义召回</text>
+  <rect x="40" y="498" width="1120" height="86" rx="10" fill="#fcfcfd" stroke="#d1d5db" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <line x1="196" y1="510" x2="196" y2="572" stroke="#e5e7eb" stroke-width="1"/>
+  <text class="band" x="52" y="524">④ 优势</text>
+  <text class="band" x="52" y="541">per-prompt</text>
+  <text class="band" x="52" y="558">归一化</text>
+  <rect x="205" y="528" width="943" height="48" rx="8" fill="#ffffff" stroke="#d1d5db" stroke-width="1.5"/>
+  <text class="t" x="219" y="552">A = (r − μ_prompt) / (σ_prompt + ε)</text>
+  <text class="s" x="219" y="572">每个 prompt 独立统计；终端奖励即整条轨迹的累积奖励</text>
+  <rect x="40" y="602" width="1120" height="150" rx="10" fill="#fcfcfd" stroke="#d1d5db" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <line x1="196" y1="614" x2="196" y2="740" stroke="#e5e7eb" stroke-width="1"/>
+  <text class="band" x="52" y="660">⑤ 损失</text>
+  <text class="band" x="52" y="677">重算 log π</text>
+  <text class="band" x="52" y="694">比率 + 裁剪</text>
+  <rect x="205" y="632" width="460" height="52" rx="8" fill="#faf5ff" stroke="#e9d5ff" stroke-width="1.5"/>
+  <text class="t" x="219" y="656">重算 log π_θ(x_{t-1} | x_t, c)</text>
+  <text class="s" x="219" y="676">同一条轨迹、同一个动作，这次带梯度</text>
+  <rect x="205" y="696" width="460" height="44" rx="8" fill="#faf5ff" stroke="#e9d5ff" stroke-width="1.5"/>
+  <text class="t" x="219" y="720">ratio = exp(log π_θ − log π_old)</text>
+  <text class="s" x="219" y="740">新旧策略在同一动作上的概率比</text>
+  <rect x="695" y="632" width="453" height="108" rx="8" fill="#faf5ff" stroke="#e9d5ff" stroke-width="1.5"/>
+  <text class="t" x="709" y="656">L = −mean[ max(ratio·A, clip(ratio,1±ε)·A) ]</text>
+  <text class="s" x="709" y="676">ε = 1e-4；A 为整条轨迹共享的终端优势</text>
+  <rect x="40" y="770" width="1120" height="80" rx="10" fill="#fcfcfd" stroke="#d1d5db" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <line x1="196" y1="782" x2="196" y2="838" stroke="#e5e7eb" stroke-width="1"/>
+  <text class="band" x="52" y="802">⑥ 更新</text>
+  <text class="band" x="52" y="818">只训 UNet</text>
+  <rect x="205" y="800" width="943" height="40" rx="8" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.5"/>
+  <text class="t" x="219" y="824">AdamW · lr 1e-5 · grad clip 1.0 · VAE 与文本编码器冻结</text>
+  <path d="M 440,172 V 232" fill="none" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M 895,172 V 210 H 685 V 232" fill="none" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M 505,282 H 535" fill="none" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M 835,282 H 865" fill="none" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M 1006,332 V 400" fill="none" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M 360,464 V 528" fill="none" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M 700,464 V 528" fill="none" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M 1016,464 V 528" fill="none" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M 880,576 V 632" fill="none" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M 435,684 V 696" fill="none" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M 665,718 H 695" fill="none" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M 880,740 V 800" fill="none" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+  <path d="M 1148,820 H 1176 V 282 H 1148" fill="none" stroke="#9333ea" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#ap)"/>
+  <text x="1160" y="790" text-anchor="end" font-size="11" fill="#9333ea">下一轮重新采样</text>
+  <g transform="translate(40,872)">
+    <rect x="0" y="-9" width="16" height="12" rx="3" fill="#f0fdf4" stroke="#bbf7d0" stroke-width="1.2"/>
+    <text class="lg" x="22" y="1">可训练</text>
+    <rect x="79" y="-9" width="16" height="12" rx="3" fill="#eff6ff" stroke="#bfdbfe" stroke-width="1.2"/>
+    <text class="lg" x="101" y="1">冻结 / 输入</text>
+    <rect x="187" y="-9" width="16" height="12" rx="3" fill="#fff7ed" stroke="#fed7aa" stroke-width="1.2"/>
+    <text class="lg" x="209" y="1">奖励</text>
+    <rect x="255" y="-9" width="16" height="12" rx="3" fill="#faf5ff" stroke="#e9d5ff" stroke-width="1.2"/>
+    <text class="lg" x="277" y="1">损失计算</text>
+    <line x1="345" y1="-3" x2="371" y2="-3" stroke="#2563eb" stroke-width="1.6" marker-end="url(#ab)"/>
+    <text class="lg" x="377" y="1">前向数据流</text>
+    <line x1="456" y1="-3" x2="482" y2="-3" stroke="#9333ea" stroke-width="1.6" stroke-dasharray="5 3" marker-end="url(#ap)"/>
+    <text class="lg" x="488" y="1">下一轮反馈</text>
+  </g>
+</svg>
